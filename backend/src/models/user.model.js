@@ -105,8 +105,6 @@ addresses: [addressSchema], // ✅ Use the imported schema here
 });
 
 // Indexes
-userSchema.index({ email: 1 });
-userSchema.index({ phone: 1 });
 userSchema.index({ 'restaurantDetails.location': '2dsphere' });
 userSchema.index({ 'deliveryDetails.currentLocation': '2dsphere' });
 

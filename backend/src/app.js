@@ -45,7 +45,7 @@ app.use('/api/delivery', deliveryboyRoutes); // <-- Add this line
 app.use(errorHandler);
 
 // Database connection
-mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.DATABASE_URL)
     .then(() => {
         console.log('MongoDB connected');
     })

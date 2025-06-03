@@ -10,8 +10,6 @@ exports.getCart = async (req, res) => {
     // Find or create cart
     let cart = await Cart.findOne({ customer: customerId })
       .populate('items.product', 'name price image')
-      .populate('restaurantId', 'name restaurantDetails.name')
-      .populate('appliedPromotion')
       .lean();
 
     if (!cart) {

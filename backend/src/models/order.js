@@ -257,7 +257,6 @@ orderSchema.index({ restaurant: 1 });
 orderSchema.index({ deliveryPartner: 1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ createdAt: 1 });
-orderSchema.index({ orderNumber: 1 }, { unique: true });
 
 const Order = mongoose.model('Order', orderSchema);
 module.exports = Order;
