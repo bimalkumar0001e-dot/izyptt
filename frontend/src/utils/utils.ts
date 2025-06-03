@@ -1,5 +1,3 @@
 // ...existing code...
-
-export const BACKEND_URL = "https://www.izypt.com";
-
+export const BACKEND_URL = "https://<your-backend-on-render>.onrender.com"; // ✅ Correct
 // ...existing code...
