@@ -1,6 +1,6 @@
 const User = require('../models/user.model');
 const Product = require('../models/product');
-const PickupDrop = require('../models/pickupDrop.model');
+const PickupDrop = require('../models/PickupDrop.model');
 // const Restaurant = require('../models/restaurant');
 const Order = require('../models/order');
 const Cart = require('../models/cart.model'); // If you have a Cart model
@@ -526,7 +526,7 @@ exports.placeNewOrder = async (req, res) => {
       discount: discount,
       finalAmount: finalAmount,
       deliveryAddress: req.body.deliveryAddress,
-      paymentMethod, // use mapped value
+      paymentMethod: // use mapped value
       status: 'placed',
       appliedOffer: appliedOfferId, // Include the applied offer ID
     };

@@ -3,7 +3,6 @@ const Order = require('../models/order');
 const Notification = require('../models/notification.model'); // If you have this model
 const bcrypt = require('bcryptjs');
 const PickupDrop = require('../models/PickupDrop.model'); // <-- Add this line
-// ...existing code...
 
 // ===== Authentication & Onboarding =====
 exports.viewApprovalStatus = async (req, res) => {
