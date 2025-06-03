@@ -2,7 +2,8 @@ const User = require('../models/user.model');
 const Order = require('../models/order');
 const Notification = require('../models/notification.model'); // If you have this model
 const bcrypt = require('bcryptjs');
-const PickupDrop = require('../models/PickupDrop.model'); // <-- Add this line
+const PickupDrop = require('../models/PickupDrop.model');
+// ...existing code...
 
 // ===== Authentication & Onboarding =====
 exports.viewApprovalStatus = async (req, res) => {

@@ -526,7 +526,7 @@ exports.placeNewOrder = async (req, res) => {
       discount: discount,
       finalAmount: finalAmount,
       deliveryAddress: req.body.deliveryAddress,
-      paymentMethod: // use mapped value
+      paymentMethod, // use mapped value
       status: 'placed',
       appliedOffer: appliedOfferId, // Include the applied offer ID
     };
