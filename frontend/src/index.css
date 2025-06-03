@@ -1,0 +1,188 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 24 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 30 100% 92%;
+    --secondary-foreground: 24 100% 40%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 24 100% 63%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 24 100% 50%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 24 100% 50%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 24 100% 63%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 24 100% 50%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-app-background text-app-text;
+    font-family: 'Poppins', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+}
+
+@layer components {
+  /* Mobile app-like container */
+  .app-container {
+    @apply max-w-md w-full mx-auto min-h-screen flex flex-col bg-white shadow-xl;
+  }
+
+  /* Bottom navigation */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 max-w-md mx-auto flex justify-around items-center py-3 px-2 bg-white border-t border-gray-200 z-40;
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center text-xs space-y-1;
+  }
+
+  /* Form controls */
+  .app-input {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-app-primary focus:ring-1 focus:ring-app-primary focus:outline-none;
+  }
+
+  .app-button {
+    @apply w-full px-4 py-3 rounded-xl font-medium transition-all duration-200;
+  }
+
+  .app-button-primary {
+    @apply bg-app-primary text-white hover:bg-app-accent;
+  }
+
+  .app-button-secondary {
+    @apply bg-app-secondary text-app-primary hover:bg-app-secondary/80;
+  }
+
+  .app-button-outline {
+    @apply border border-app-primary text-app-primary hover:bg-app-secondary;
+  }
+
+  /* Card styles */
+  .app-card {
+    @apply bg-white rounded-2xl shadow-sm p-4 border border-gray-100;
+  }
+
+  /* Status badges */
+  .status-badge {
+    @apply text-xs px-2 py-1 rounded-full font-medium;
+  }
+
+  /* Product cards */
+  .product-card {
+    @apply relative bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100;
+  }
+
+  /* Restaurant cards */
+  .restaurant-card {
+    @apply bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100;
+  }
+
+  /* Order cards */
+  .order-card {
+    @apply bg-white rounded-2xl shadow-sm p-4 border border-gray-100 mb-4;
+  }
+
+  /* Smooth scrolling */
+  .scroll-container {
+    @apply overflow-x-auto scrollbar-hide snap-x snap-mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Custom scrollbar */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Bottom sheet */
+  .bottom-sheet {
+    @apply fixed inset-x-0 bottom-0 max-w-md mx-auto z-50 bg-white rounded-t-3xl shadow-lg transform duration-300 ease-in-out;
+  }
+
+  .bottom-sheet-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-40;
+  }
+}
