@@ -317,7 +317,7 @@ exports.getPendingRestaurants = async (req, res) => {
 exports.approveRestaurant = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-    if (!user || user.role !== 'restaurant') return res.status(404).json({ message: 'Restaurant not found' });
+    if (!user || user.role !== 'restaurant' ) return res.status(404).json({ message: 'Restaurant not found' });
     user.isApproved = true;
     await user.save();
     res.json({ message: 'Restaurant approved' });
@@ -470,16 +470,59 @@ exports.assignDeliveryPartner = async (req, res) => {
 
 exports.updateOrderStatus = async (req, res) => {
   try {
-    if (!req.user || req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Only admin can update order status.' });
+    // Enhanced debug logs
+    console.log('updateOrderStatus req.user:', req.user);
+    console.log('updateOrderStatus req.body:', req.body);
+    console.log('updateOrderStatus req.params:', req.params);
+    console.log('updateOrderStatus req.headers:', req.headers);
+
+    // Proper authentication check for production
+    // Check if user exists in req (set by verifyToken middleware)
+    if (!req.user) {
+      return res.status(401).json({ 
+        message: 'Authentication required',
+        error: 'No user found in request'
+      });
     }
+    
+    // Check if user is an admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Only admin can update order status',
+        error: `User role ${req.user.role} is not authorized`
+      });
+    }
+    
     // Allow admin to set any status
     const newStatus = req.body.status;
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
+    
+    // Update the order status
     order.status = newStatus;
+    
+    // Add to status timeline if it doesn't exist already
+    if (!order.statusTimeline) {
+      order.statusTimeline = [];
+    }
+    
+    // Add status change to timeline
+    order.statusTimeline.push({
+      status: newStatus,
+      timestamp: new Date(),
+      changedBy: req.user._id,
+      note: `Status updated by admin ${req.user.name || req.user.email || 'Unknown'}`
+    });
+    
     await order.save();
-    res.json({ message: 'Order status updated', order });
+    return res.json({ 
+      message: 'Order status updated successfully', 
+      order: {
+        _id: order._id,
+        status: order.status,
+        updatedAt: order.updatedAt
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: 'Error updating order status', error: err });
   }

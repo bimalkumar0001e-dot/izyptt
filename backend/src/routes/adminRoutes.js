@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const multer = require('multer');
+const { verifyToken } = require('../middlewares/authMiddleware'); // <-- Add this line
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -50,11 +51,12 @@ router.patch('/restaurants/:id/activate', adminController.activateDeactivateRest
 router.put('/restaurants/:id', adminController.updateRestaurant);
 
 // Order Management
-router.get('/orders', adminController.listAllOrders);
-router.get('/orders/:id', adminController.viewOrderDetails);
-router.patch('/orders/:id/assign-delivery', adminController.assignDeliveryPartner);
-router.patch('/orders/:id/status', adminController.updateOrderStatus);
-router.patch('/orders/:id/cancel', adminController.cancelOrderWithReason);
+router.get('/orders', verifyToken, adminController.listAllOrders);
+router.get('/orders/:id', verifyToken, adminController.viewOrderDetails);
+router.patch('/orders/:id/assign-delivery', verifyToken, adminController.assignDeliveryPartner);
+// Restore the proper verifyToken middleware for production
+router.patch('/orders/:id/status', verifyToken, adminController.updateOrderStatus);
+router.patch('/orders/:id/cancel', verifyToken, adminController.cancelOrderWithReason);
 
 // Product Management
 router.post('/products', upload.single('image'), adminController.createProduct);
@@ -160,8 +162,12 @@ router.delete('/profile-wallpapers/:id', adminController.removeProfileWallpaper)
 router.get('/profile-wallpapers', adminController.getAllProfileWallpapers);
 
 // Admin Profile
-router.get('/profile', (req, res) => {
+router.get('/profile', verifyToken, (req, res) => {
   try {
+    if (!req.user) {
+      console.error('Admin profile error: req.user missing');
+      return res.status(401).json({ message: 'Unauthorized: user not found in request' });
+    }
     // Return the admin user profile
     res.json({
       _id: req.user._id,
@@ -173,7 +179,8 @@ router.get('/profile', (req, res) => {
       isApproved: req.user.isApproved
     });
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching admin profile', error: err });
+    console.error('Error fetching admin profile:', err);
+    res.status(500).json({ message: 'Error fetching admin profile', error: err?.message || err });
   }
 });
 
@@ -188,7 +195,7 @@ router.patch('/return-instructions/:id/activate', adminController.toggleReturnIn
 router.delete('/return-instructions/:id', adminController.deleteReturnInstruction);
 
 // Notifications Management
-router.get('/notifications', adminController.viewAllNotifications);
+router.get('/notifications', verifyToken, adminController.viewAllNotifications); // <-- Add verifyToken
 
 // Minimum Cart Amount Management
 router.post('/min-cart-amount/set', adminController.setMinCartAmount);

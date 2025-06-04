@@ -26,9 +26,17 @@ app.use(cors({
     'http://localhost:5173',
     'https://izypt.com',
     'https://www.izypt.com',
-    'https://izypt-deepak-kumars-projects-78b3af05.vercel.app'
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://izypt-deepak-kumars-projects-78b3af05.vercel.app',
+    // Additional common formats for your domain
+    'http://izypt.com',
+    'https://izypt.vercel.app',
+    'https://izypt-git-main-deepak-kumars-projects.vercel.app'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
 // Serve uploads folder
@@ -60,8 +68,20 @@ mongoose.connect(process.env.DATABASE_URL)
         console.error('MongoDB connection error:', err);
     });
 
-// Start the server
+// Start the server with port handling
 const PORT = process.env.PORT || 5001; // Update default port to 5001
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+
+const startServer = (port) => {
+  const server = app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${port} is busy. Trying port ${port + 1}...`);
+      startServer(port + 1);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+};
+
+startServer(PORT);
