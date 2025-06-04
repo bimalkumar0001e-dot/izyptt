@@ -19,8 +19,13 @@ const app = express();
 
 // CORS middleware - MUST be first
 app.use(cors({
-  // Add multiple origins to support development environments
-  origin: ['http://localhost:8080', 'http://localhost:3000', 'http://localhost:5173'],
+  // Add multiple origins to support development and production environments
+  origin: [
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://izypt.com' // <-- Added production frontend URL
+  ],
   credentials: true
 }));
 
