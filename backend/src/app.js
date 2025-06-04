@@ -24,7 +24,9 @@ app.use(cors({
     'http://localhost:8080',
     'http://localhost:3000',
     'http://localhost:5173',
-    'https://izypt.com' // <-- Added production frontend URL
+    'https://izypt.com',
+    'https://www.izypt.com',
+    'https://izypt-deepak-kumars-projects-78b3af05.vercel.app'
   ],
   credentials: true
 }));
