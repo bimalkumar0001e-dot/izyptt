@@ -657,13 +657,6 @@ const Login: React.FC = () => {
               Register
             </Link>
           </p>
-          <div className="mt-3 text-center text-gray-500 text-sm">
-            <p>Demo Accounts (Password: "[role]123")</p>
-            <p className="text-xs mt-1">
-              admin@example.com | customer@example.com<br/>
-              restaurant@example.com | delivery@example.com
-            </p>
-          </div>
         </div>
       </div>
     </div>

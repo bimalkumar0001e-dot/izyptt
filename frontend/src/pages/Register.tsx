@@ -32,6 +32,7 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [image, setImage] = useState<File | null>(null);
+  const [vehicle, setVehicle] = useState(''); // <-- Add this line
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -118,6 +119,11 @@ const Register: React.FC = () => {
         setError('Please upload an image');
         return;
       }
+      // Require vehicle for delivery partner
+      if (userRole === 'delivery' && !vehicle.trim()) {
+        setError('Vehicle name is required for delivery partners');
+        return;
+      }
       setIsLoading(true);
       try {
         const formData = new FormData();
@@ -127,6 +133,9 @@ const Register: React.FC = () => {
         formData.append('email', email);
         formData.append('password', password);
         formData.append('image', image);
+        if (userRole === 'delivery') {
+          formData.append('vehicle', vehicle); // <-- Add this line
+        }
 
         // Use full backend URL
         const res = await fetch(`${API_BASE}/auth/register`, {
@@ -231,6 +240,22 @@ const Register: React.FC = () => {
             </label>
             <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter your phone number" className="app-input" />
           </div>
+          {/* Show vehicle name field only for delivery partner */}
+          {userRole === 'delivery' && (
+            <div>
+              <label htmlFor="vehicle" className="block text-gray-700 font-medium mb-1">
+                Vehicle Name
+              </label>
+              <Input
+                id="vehicle"
+                type="text"
+                value={vehicle}
+                onChange={(e) => setVehicle(e.target.value)}
+                placeholder="Enter your vehicle name"
+                className="app-input"
+              />
+            </div>
+          )}
           <div>
             <label htmlFor="image" className="block text-gray-700 font-medium mb-1">
               Upload Image

@@ -105,17 +105,34 @@ const OrdersManagement: React.FC = () => {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get('/api/admin/orders');
+      // Verify token before making request
+      const headers = getAuthHeaders();
+      
+      // If no headers were returned (no token), exit early
+      if (!Object.keys(headers).length) {
+        console.error('No auth token available to fetch orders');
+        return;
+      }
+      
+      console.log('Fetching orders with headers:', headers);
+      const res = await axios.get(`${API_BASE}/admin/orders`, { 
+        headers: headers,
+        withCredentials: true
+      });
+      
+      console.log('Orders fetched successfully:', res.data.length || 0, 'orders');
       setOrders(res.data || []);
-    } catch (err) {
-      toast.error('Failed to fetch orders');
+    } catch (err: any) {
+      console.error('Error fetching orders:', err);
+      console.error('Response data:', err.response?.data);
+      toast.error(`Failed to fetch orders: ${err.response?.data?.message || err.message}`);
       setOrders([]);
     }
   };
 
   const fetchDeliveryPartners = async () => {
     try {
-      const res = await axios.get('/api/admin/delivery-boys');
+      const res = await axios.get(`${API_BASE}/admin/delivery-boys`, { headers: getAuthHeaders() });
       setDeliveryPartners(res.data || []);
     } catch (err) {
       toast.error('Failed to fetch delivery partners');
@@ -144,9 +161,11 @@ const OrdersManagement: React.FC = () => {
   const handleAssignDeliveryPartner = async () => {
     if (!selectedOrderId || !selectedDeliveryPartnerId) return;
     try {
-      await axios.patch(`/api/admin/orders/${selectedOrderId}/assign-delivery`, {
-        deliveryPartnerId: selectedDeliveryPartnerId
-      });
+      await axios.patch(
+        `${API_BASE}/admin/orders/${selectedOrderId}/assign-delivery`,
+        { deliveryPartnerId: selectedDeliveryPartnerId },
+        { headers: getAuthHeaders() }
+      );
       toast.success('Delivery partner assigned');
       setAssignDialogOpen(false);
       fetchOrders();
@@ -156,27 +175,74 @@ const OrdersManagement: React.FC = () => {
   };
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('token'); // or sessionStorage, or your auth context
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    
+    // Check if token exists
+    if (!token) {
+      console.warn('No auth token found in localStorage');
+      // Ask user to login again if no token found
+      toast.error('Authentication required. Please log in again.');
+      return {};
+    }
+    
+    // Log token for debugging
+    console.log('Using token for auth:', token.substring(0, 10) + '...');
+    
+    // Return headers with token
+    return { Authorization: `Bearer ${token}` };
   };
 
   const handleUpdateOrderStatus = async () => {
     if (!selectedOrderId || !newStatus) return;
     try {
-      if (newStatus === 'canceled') {
+      if (newStatus.includes('cancel')) {
         await axios.patch(
-          `/api/admin/orders/${selectedOrderId}/cancel`,
+          `${API_BASE}/admin/orders/${selectedOrderId}/cancel`,
           { reason: cancelReason },
           { headers: getAuthHeaders() }
         );
         toast.success('Order canceled');
       } else {
-        await axios.patch(
-          `/api/admin/orders/${selectedOrderId}/status`,
-          { status: newStatus },
-          { headers: getAuthHeaders() }
-        );
-        toast.success('Order status updated');
+        try {
+          // Force a token refresh by getting it directly before the call
+          const token = localStorage.getItem('token');
+          if (!token) {
+            toast.error('No authentication token found. Please log in again.');
+            return;
+          }
+          
+          // Make sure we're using the right API URL for the environment
+          const API_URL = BACKEND_URL + '/api';
+          const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          };
+          
+          console.log('Making request with:');
+          console.log('- URL:', `${API_URL}/admin/orders/${selectedOrderId}/status`);
+          console.log('- Headers:', headers);
+          console.log('- Payload:', { status: newStatus });
+          
+          // Important: use xsrfHeaderName: false and withCredentials: false for cross-domain requests
+          const response = await axios({
+            method: 'PATCH',
+            url: `${API_URL}/admin/orders/${selectedOrderId}/status`,
+            data: { status: newStatus },
+            headers: headers,
+            withCredentials: false,
+            xsrfHeaderName: false
+          });
+          
+          console.log('Status update response:', response.data);
+          toast.success('Order status updated successfully');
+        } catch (err: any) {
+          console.error('Status update error:', err);
+          console.error('Error response:', err.response);
+          toast.error(`Update failed: ${err.response?.data?.message || err.message || 'Unknown error'}`);
+          throw err;
+        }
       }
       setUpdateStatusDialogOpen(false);
       fetchOrders();
@@ -191,7 +257,7 @@ const OrdersManagement: React.FC = () => {
     setOrderDetailsLoading(true);
     setOrderDetails(null);
     try {
-      const res = await axios.get(`/api/admin/orders/${orderId}`);
+      const res = await axios.get(`${API_BASE}/admin/orders/${orderId}`, { headers: getAuthHeaders() });
       setOrderDetails(res.data);
     } catch (err) {
       toast.error('Failed to fetch order details');
