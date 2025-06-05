@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowDown, Truck } from "lucide-react";
 import axios from "axios";
 import { BACKEND_URL } from '@/utils/utils';
+import { BottomNav } from "@/components/BottomNav";
 
 const API_BASE = `${BACKEND_URL}/api`;
 
@@ -165,6 +166,7 @@ const MyPickups: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
+      <BottomNav />
     </div>
   );
 };

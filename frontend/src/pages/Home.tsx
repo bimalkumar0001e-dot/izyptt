@@ -215,7 +215,7 @@ const Home: React.FC = () => {
     const fetchSiteStatus = async () => {
       setStatusLoading(true);
       try {
-        const res = await fetch('http://localhost:5001/api/admin/system-status');
+        const res = await fetch(`${BACKEND_URL}/api/admin/system-status`);
         const data = await res.json();
         setSiteStatus(data.status || 'online');
       } catch {
@@ -274,13 +274,16 @@ const Home: React.FC = () => {
   return (
     <div className="app-container bg-gray-50">
       {/* Maintenance/Offline Banner - always visible on all devices */}
+      {/* REMOVE the following block to remove the uppermost offline message */}
+      {/*
       {isSiteDisabled && (
         <div className="w-full px-2 py-2 bg-yellow-400 text-center text-sm md:text-base font-semibold text-gray-900 z-50 shadow-md fixed top-0 left-0 right-0" style={{letterSpacing: 0.5, lineHeight: 1.3}}>
           {siteStatus === 'maintenance' ? 'The site is currently under maintenance. Some features may be unavailable.' : 'The site is currently offline. Please check back later.'}
         </div>
       )}
+      */}
       {/* Add top margin if banner is visible */}
-      <div className={isSiteDisabled ? 'pt-12' : ''}>
+      <div>
         <AppHeader showCart />
         <div className="flex-1 pb-20">
           {/* Header with Search Bar */}

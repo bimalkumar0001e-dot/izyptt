@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { BACKEND_URL } from '@/utils/utils';
 
 interface Notification {
   _id: string;
@@ -18,7 +19,7 @@ const AdminNotification: React.FC = () => {
     const fetchNotifications = async () => {
       setLoading(true);
       try {
-        const res = await fetch('http://localhost:5001/api/admin/notifications', {
+        const res = await fetch(`${BACKEND_URL}/api/admin/notifications`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

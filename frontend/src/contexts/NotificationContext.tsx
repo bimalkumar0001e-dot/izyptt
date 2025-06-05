@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Notification } from '@/types/notification';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
+import { BACKEND_URL } from '@/utils/utils';
 
 interface NotificationContextProps {
   notifications: Notification[];
@@ -36,9 +37,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       if (user && token) {
         let url = '';
         if (user.role === 'admin') {
-          url = 'http://localhost:5001/api/admin/notifications';
+          url = `${BACKEND_URL}/api/admin/notifications`;
         } else if (user.role === 'restaurant') {
-          url = 'http://localhost:5001/api/restaurants/notifications';
+          url = `${BACKEND_URL}/api/restaurants/notifications`;
         } else {
           setNotifications([]);
           return;

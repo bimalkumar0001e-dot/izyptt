@@ -131,9 +131,9 @@ const OrdersPage: React.FC = () => {
           <Button
             size="sm"
             className="mt-2 sm:mt-0"
-            onClick={() => navigate(`/orders/${orderId}`)}
+            onClick={() => navigate(`/track-order/${orderId}`)}
           >
-            View Details
+            Track Order
           </Button>
         </div>
       </div>
@@ -188,6 +188,7 @@ const OrdersPage: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
+      <BottomNav />
     </div>
   );
 };

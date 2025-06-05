@@ -12,6 +12,7 @@ import { mockOffers } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
 import { ProductCard } from '@/components/ProductCard';
 import { BACKEND_URL } from '@/utils/utils';
+import { BottomNav } from '@/components/BottomNav';
 
 const API_BASE = `${BACKEND_URL}/api`;
 const UPLOADS_BASE = BACKEND_URL;
@@ -124,6 +125,8 @@ const Cart: React.FC = () => {
             Browse Items
           </Button>
         </div>
+        
+        <BottomNav />
       </div>
     );
   }
@@ -215,7 +218,7 @@ const Cart: React.FC = () => {
         )}
       </div>
       
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 max-w-md mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 max-w-md mx-auto mb-16">
         {minCartAmount !== null && minCartActive && cart.subtotal < minCartAmount && (
           <div className="mb-2 text-center text-red-600 font-medium text-sm">
             Minimum cart amount is ₹{minCartAmount}. Please add more items to proceed.
@@ -232,6 +235,8 @@ const Cart: React.FC = () => {
           {isProcessing ? 'Processing...' : 'Proceed to Checkout'}
         </Button>
       </div>
+      
+      <BottomNav />
     </div>
   );
 };
