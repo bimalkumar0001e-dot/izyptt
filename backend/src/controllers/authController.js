@@ -51,7 +51,15 @@ exports.register = async (req, res) => {
             ...(role === 'delivery' ? { vehicle } : {})
         });
         console.log('Temp registration store set for phone:', phone); // Debug
-        await sendOtp(phone);
+
+        // --- CHANGED LOGIC BELOW ---
+        // For restaurant/delivery, generate OTP and return in response (do NOT send SMS)
+        if (role === 'restaurant' || role === 'delivery') {
+            const otp = await sendOtp(phone, role); // role will trigger display-only logic in service
+            return res.status(201).json({ message: 'OTP generated. Please verify.', otp });
+        }
+        // For customer (should not reach here, but fallback)
+        await sendOtp(phone, 'customer');
         return res.status(201).json({ message: 'OTP sent to phone. Please verify.' });
     } catch (error) {
         console.error('Register error:', error);
@@ -62,16 +70,55 @@ exports.register = async (req, res) => {
 
 // Send OTP (for login/resend)
 exports.sendOtp = async (req, res) => {
-    const { phone } = req.body;
+    const { phone, role } = req.body;
     try {
         // Validate phone number: must be exactly 10 digits, all numeric
         if (!/^[0-9]{10}$/.test(phone)) {
             return res.status(400).json({ message: 'Invalid phone number. Please enter a valid 10-digit Indian mobile number.' });
         }
-        // Get OTP from service
-        const otp = await sendOtp(phone);
-        // Return OTP in response for development/testing only
-        res.status(200).json({ message: 'OTP sent successfully', otp });
+        let userRole = role;
+        if (!userRole) {
+            const user = await User.findOne({ phone });
+            userRole = user ? user.role : 'customer';
+        }
+
+        // Special handling for customer: check if already verified
+        if (userRole === 'customer') {
+            const user = await User.findOne({ phone, role: 'customer' });
+            if (user && user.isVerified) {
+                const otp = await sendOtp(phone, 'display_only');
+                return res.status(200).json({ message: 'OTP (for returning customer)', otp });
+            } else {
+                const otp = await sendOtp(phone, 'customer');
+                return res.status(200).json({ message: 'OTP sent successfully', otp: process.env.NODE_ENV === 'development' ? otp : undefined });
+            }
+        }
+
+        // --- Role-based login gating for restaurant/delivery ---
+        if (userRole === 'restaurant' || userRole === 'delivery') {
+            const user = await User.findOne({ phone, role: userRole });
+            if (!user) {
+                return res.status(404).json({ message: 'Your number is not registered yet. Please register first.' });
+            }
+            if (!user.isApproved) {
+                return res.status(403).json({ message: 'Your request has not been approved by the admin yet.' });
+            }
+            if (user.status === 'inactive' || user.status === 'blocked') {
+                return res.status(403).json({ message: 'Your account is blocked' });
+            }
+            // Only allow login if approved and active
+            const otp = await sendOtp(phone, userRole);
+            return res.status(200).json({ message: 'OTP (for login)', otp });
+        }
+
+        // Admin login
+        if (userRole === 'admin') {
+            const otp = await sendOtp(phone, 'admin');
+            return res.status(200).json({ message: 'OTP (for admin)', otp });
+        }
+
+        // Fallback (should not reach here)
+        return res.status(400).json({ message: 'Invalid role or login flow.' });
     } catch (error) {
         console.error('Error sending OTP:', error);
         res.status(500).json({ message: 'Error sending OTP', error: error.message });
@@ -91,7 +138,7 @@ exports.resendOtp = async (req, res) => {
 
 // Verify OTP (for admin/customer login, and restaurant/delivery verification)
 exports.verifyOtp = async (req, res) => {
-    const { phone, otp, name } = req.body;
+    const { phone, otp, name, role } = req.body;
     try {
         const isValid = await verifyOtp(phone, otp);
         if (!isValid) {
@@ -159,40 +206,42 @@ exports.verifyOtp = async (req, res) => {
             });
         } 
         // Restaurant/Delivery OTP login (not registration)
-        else {
-            // Try to find restaurant or delivery user
-            let user = await User.findOne({ phone, role: { $in: ['restaurant', 'delivery'] } });
-            if (user) {
-                // Block login if not approved or blocked/inactive
-                if (user.status === 'inactive' || user.status === 'blocked') {
-                    return res.status(403).json({ message: 'Your account is blocked' });
-                }
-                if (!user.isApproved) {
-                    return res.status(403).json({ message: 'Your register request is pending, waiting for admin to approve it.' });
-                }
-                user.isVerified = true;
-                user.status = 'active';
-                await user.save();
-                const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-                return res.status(200).json({
-                    message: 'OTP verified, logged in as ' + user.role,
-                    token,
-                    user: {
-                        id: user._id,
-                        name: user.name,
-                        email: user.email,
-                        phone: user.phone,
-                        role: user.role,
-                        isVerified: user.isVerified,
-                        isApproved: user.isApproved,
-                        status: user.status,
-                        restaurantDetails: user.restaurantDetails,
-                        deliveryDetails: user.deliveryDetails
-                    }
-                });
+        else if (role === 'restaurant' || role === 'delivery') {
+            // Defensive: fallback to checking all roles if role is missing
+            let user = await User.findOne({ phone, role: role || { $in: ['restaurant', 'delivery'] } });
+            if (!user) {
+                return res.status(404).json({ message: 'Your number is not registered yet. Please register first.' });
             }
-            // Customer OTP login (existing logic)
-            user = await User.findOne({ phone, role: 'customer' });
+            if (!user.isApproved) {
+                return res.status(403).json({ message: 'Your request has not been approved by the admin yet.' });
+            }
+            if (user.status === 'inactive' || user.status === 'blocked') {
+                return res.status(403).json({ message: 'Your account is blocked' });
+            }
+            user.isVerified = true;
+            user.status = 'active';
+            await user.save();
+            const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+            return res.status(200).json({
+                message: 'OTP verified, logged in as ' + user.role,
+                token,
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone,
+                    role: user.role,
+                    isVerified: user.isVerified,
+                    isApproved: user.isApproved,
+                    status: user.status,
+                    restaurantDetails: user.restaurantDetails,
+                    deliveryDetails: user.deliveryDetails
+                }
+            });
+        }
+        // Customer OTP login (existing logic, only if role is customer or fallback)
+        else {
+            let user = await User.findOne({ phone, role: 'customer' });
             if (!user) {
                 user = new User({
                     name: name || 'Customer',
@@ -201,15 +250,12 @@ exports.verifyOtp = async (req, res) => {
                     isVerified: true,
                     isApproved: true,
                     status: 'active'
-                    // Do NOT set email at all here!
                 });
                 await user.save();
             } else {
-                // Block login if status is inactive or blocked
                 if (user.status === 'inactive' || user.status === 'blocked') {
                     return res.status(403).json({ message: 'Your account is blocked' });
                 }
-                // Update name if changed
                 if (name && user.name !== name) {
                     user.name = name;
                     await user.save();
@@ -233,7 +279,8 @@ exports.verifyOtp = async (req, res) => {
         }
     } catch (error) {
         console.error('Verify OTP error:', error); // Debug
-        res.status(500).json({ message: 'Error verifying OTP', error: error.message });
+        // Add error stack for debugging
+        res.status(500).json({ message: 'Error verifying OTP', error: error.message, stack: error.stack });
     }
 };
 

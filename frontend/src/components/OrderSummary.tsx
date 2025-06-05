@@ -71,12 +71,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-      <h3 className="text-lg font-semibold mb-3">Order Summary</h3>
-      
       <div className="space-y-2 border-b border-gray-100 pb-3">
         <div className="flex justify-between">
           <span className="text-gray-600">Subtotal</span>
-          <span>₹{cart.subtotal.toFixed(2)}</span>
+          <span className="text-gray-600">₹{cart.subtotal.toFixed(2)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">Delivery Fee</span>
@@ -116,11 +114,11 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       </div>
       
       <div className="flex justify-between mt-3 font-semibold text-lg">
-        <span>Total</span>
+        <span className="text-black">Total</span>
         <span>
           {adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null
             ? <span className="text-gray-400">Loading...</span>
-            : <>₹{total.toFixed(2)}</>
+            : <span className="font-bold text-app-primary">₹{total.toFixed(2)}</span>
           }
         </span>
       </div>

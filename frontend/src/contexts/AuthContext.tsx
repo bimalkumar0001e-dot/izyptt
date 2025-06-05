@@ -214,12 +214,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const sendOtp = async (phone: string): Promise<{ message: string; otp?: string }> => {
+  const sendOtp = async (phone: string, role?: UserRole): Promise<{ message: string; otp?: string }> => {
     try {
       const res = await fetch(`${API_BASE}/auth/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, role }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to send OTP");
@@ -231,10 +231,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const verifyOtp = async (phone: string, otp: string, name?: string) => {
+  const verifyOtp = async (phone: string, otp: string, name?: string, role?: UserRole) => {
     try {
       const body: any = { phone, otp };
       if (name) body.name = name;
+      if (role) body.role = role; // Always send role if provided
       const res = await fetch(`${API_BASE}/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

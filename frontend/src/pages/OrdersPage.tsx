@@ -91,7 +91,7 @@ const OrdersPage: React.FC = () => {
     // Use createdAt or fallback to empty string
     const createdAt = (order as any).createdAt || '';
     // Use id for navigation
-    const orderId = order.id || '';
+    const orderId = order.id || order._id || '';
 
     return (
       <div

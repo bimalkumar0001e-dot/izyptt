@@ -61,7 +61,7 @@ const Register: React.FC = () => {
           password: 'tempPass123'
         });
       }
-      const res = await sendOtp(phone);
+      const res = await sendOtp(phone, userRole);
       if (res && res.otp) setLastOtp(res.otp);
       setShowOtpScreen(true);
       setError('');
@@ -134,7 +134,7 @@ const Register: React.FC = () => {
         formData.append('password', password);
         formData.append('image', image);
         if (userRole === 'delivery') {
-          formData.append('vehicle', vehicle); // <-- Add this line
+          formData.append('vehicle', vehicle);
         }
 
         // Use full backend URL
@@ -149,6 +149,8 @@ const Register: React.FC = () => {
           throw new Error('Server error. Please try again.');
         }
         if (!res.ok) throw new Error((data as any).message || 'Registration failed');
+        // --- Set OTP from backend response for non-customer roles ---
+        if ((data as any).otp) setLastOtp((data as any).otp);
         setShowOtpScreen(true);
         setError('');
       } catch (error: any) {
@@ -168,10 +170,14 @@ const Register: React.FC = () => {
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-bold text-app-primary">Verify Your Number</h1>
             <p className="text-gray-600 mt-2">
-              Enter the 6-digit code sent to <span className="font-medium">{phone}</span>
+              {userRole === 'customer'
+                ? <>Enter the 6-digit code sent to <span className="font-medium">{phone}</span></>
+                : <>Enter the 6-digit code shown below</>
+              }
             </p>
-            {lastOtp && (
-              <p className="text-gray-500 mt-2 text-sm">OTP: <span className="font-mono font-bold">{lastOtp}</span></p>
+            {/* Show OTP for non-customer roles */}
+            {userRole !== 'customer' && lastOtp && (
+              <p className="text-gray-500 mt-2 text-sm">OTP: <span className="text-lg font-mono font-bold">{lastOtp}</span></p>
             )}
           </div>
           <form onSubmit={(e) => { e.preventDefault(); handleVerifyOTP(); }} className="space-y-6">

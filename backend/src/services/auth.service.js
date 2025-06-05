@@ -21,11 +21,19 @@ exports.verifyOTP = async (phone, otp) => {
   return true;
 };
 
-exports.sendOtp = async (phone) => {
+exports.sendOtp = async (phone, role = 'customer') => {
   // Generate a 6-digit OTP
   const otp = await exports.generateOTP(phone);
-  // Send only the numeric OTP to Fast2SMS (OTP route requires only numbers)
-  await sendSMS(phone, otp);
-  // Optionally log or return the OTP for debugging
+  if (role === 'customer') {
+    // Only send SMS for new/unverified customers
+    await sendSMS(phone, otp);
+  } else if (role === 'display_only') {
+    // For returning verified customers, do NOT send SMS, just return OTP
+    // No action needed
+  } else if (role === 'restaurant' || role === 'delivery') {
+    // For restaurant/delivery registration, do NOT send SMS, just return OTP
+    // No action needed
+  }
+  // For admin, do NOT send SMS, just return OTP
   return otp;
 };

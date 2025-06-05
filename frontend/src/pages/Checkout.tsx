@@ -26,7 +26,7 @@ type PaymentMethod = 'cash' | 'upi' | 'online';
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { cart, clearCart } = useCart();
   
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('address');
@@ -41,6 +41,7 @@ const Checkout: React.FC = () => {
   
   // Redirect if not authenticated or blocked/inactive
   useEffect(() => {
+    if (isLoading) return; // Wait for auth state to load
     if (!isAuthenticated || (user && (String(user.status) === 'inactive' || String(user.status) === 'blocked'))) {
       navigate('/login');
       return;
@@ -59,7 +60,7 @@ const Checkout: React.FC = () => {
         setSelectedAddressId((user.address[0].id || user.address[0]._id)?.toString());
       }
     }
-  }, [isAuthenticated, cart.items.length, user?.address, user?.status, navigate]);
+  }, [isAuthenticated, isLoading, cart.items.length, user?.address, user?.status, navigate]);
 
   // Fetch active payment methods from backend
   useEffect(() => {
@@ -440,7 +441,7 @@ const Checkout: React.FC = () => {
               <img
                 src={
                   paymentMethodModal.image.startsWith('/uploads/')
-                    ? `http://localhost:5001${paymentMethodModal.image}`
+                    ? `${BACKEND_URL}${paymentMethodModal.image}`
                     : paymentMethodModal.image
                 }
                 alt={paymentMethodModal.name}

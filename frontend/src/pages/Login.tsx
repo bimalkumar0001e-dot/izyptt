@@ -58,7 +58,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const res = await sendOtp(phone);
+      const res = await sendOtp(phone, 'admin');
       if (res && res.otp) setLastOtp(res.otp);
       setShowOtpScreen(true);
       setError('');
@@ -76,7 +76,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const data = await verifyOtp(phone, otp, name);
+      const data = await verifyOtp(phone, otp, name, 'admin'); // Pass role
       if (data.user && data.user.role === 'admin') {
         navigate('/admin/dashboard');
       }
@@ -111,7 +111,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const res = await sendOtp(phone);
+      const res = await sendOtp(phone, 'customer');
       if (res && res.otp) setLastOtp(res.otp);
       setShowOtpScreen(true);
       setError('');
@@ -129,9 +129,9 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const data = await verifyOtp(phone, otp, name);
+      const data = await verifyOtp(phone, otp, name, 'customer'); // Pass role for consistency
       if (data.user && data.user.role === 'customer') {
-        navigate('/home'); // Changed from '/orders' to '/home'
+        navigate('/home');
       }
     } catch (error: any) {
       setOtpError(error.message || 'Invalid or expired OTP. Please try again.');
@@ -152,7 +152,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const res = await sendOtp(phone);
+      const res = await sendOtp(phone, 'delivery');
       if (res && res.otp) setLastOtp(res.otp);
       setDeliveryShowOtpScreen(true);
       setError('');
@@ -170,7 +170,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const data = await verifyOtp(phone, otp, name);
+      const data = await verifyOtp(phone, otp, name, 'delivery'); // Pass role
       if (data.user && data.user.role === 'delivery') {
         navigate('/delivery/dashboard');
       }
@@ -195,7 +195,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const res = await sendOtp(phone);
+      const res = await sendOtp(phone, 'restaurant');
       if (res && res.otp) setLastOtp(res.otp);
       setRestaurantShowOtpScreen(true);
       setError('');
@@ -213,7 +213,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const data = await verifyOtp(phone, otp, name);
+      const data = await verifyOtp(phone, otp, name, 'restaurant'); // Pass role
       if (data.user && data.user.role === 'restaurant') {
         navigate('/restaurant/dashboard');
       }
@@ -400,7 +400,8 @@ const Login: React.FC = () => {
       
       <div className="flex-1 p-4 flex flex-col justify-center">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-app-primary">Welcome Back!</h1>
+          <img src="/izypt-logo.png" alt="Izypt Logo" style={{ width: 90, height: 90, margin: '0 auto 16px auto' }} />
+          <h1 className="text-2xl font-bold text-black">Bihar's Own Instant App</h1> 
           <p className="text-gray-600">Login to your account</p>
         </div>
         
