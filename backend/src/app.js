@@ -26,8 +26,10 @@ app.use(cors({
     'http://localhost:5173',
     'https://izypt.com',
     'https://www.izypt.com',
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
+    'http://izypt.com',
+    'http://www.izypt.com',
+    'https://app.izypt.com',
+    'http://app.izypt.com',
     'https://izypt-deepak-kumars-projects-78b3af05.vercel.app',
     // Additional common formats for your domain
     'http://izypt.com',
