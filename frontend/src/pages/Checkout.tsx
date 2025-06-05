@@ -54,9 +54,9 @@ const Checkout: React.FC = () => {
     if (user?.address && user.address.length > 0) {
       const defaultAddress = user.address.find((addr: any) => addr.isDefault);
       if (defaultAddress) {
-        setSelectedAddressId(defaultAddress.id.toString());
+        setSelectedAddressId((defaultAddress.id || defaultAddress._id)?.toString());
       } else if (user.address[0]) {
-        setSelectedAddressId(user.address[0].id.toString());
+        setSelectedAddressId((user.address[0].id || user.address[0]._id)?.toString());
       }
     }
   }, [isAuthenticated, cart.items.length, user?.address, user?.status, navigate]);
