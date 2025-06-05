@@ -27,7 +27,7 @@ const statusMap: Record<string, string> = {
 const DeliveryOrderDetail: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,10 +38,14 @@ const DeliveryOrderDetail: React.FC = () => {
   const token = localStorage.getItem('token');
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'delivery') {
+    if (!isLoading && (!isAuthenticated || user?.role !== 'delivery')) {
       navigate('/login');
-      return;
     }
+  }, [isLoading, isAuthenticated, user, navigate]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated || user?.role !== 'delivery') return;
     const fetchOrder = async () => {
       setLoading(true);
       setError(null);
@@ -62,7 +66,7 @@ const DeliveryOrderDetail: React.FC = () => {
       setLoading(false);
     };
     if (id && token) fetchOrder();
-  }, [id, token, isAuthenticated, user, navigate]);
+  }, [id, token, isAuthenticated, user, isLoading]);
 
   const handleOpenStatusDialog = () => {
     setSelectedStatus('');
@@ -99,6 +103,9 @@ const DeliveryOrderDetail: React.FC = () => {
     setStatusLoading(false);
   };
 
+  if (isLoading) {
+    return <div className="bg-white p-8 rounded-xl text-center border border-gray-100 mt-8">Loading...</div>;
+  }
   if (!isAuthenticated || user?.role !== 'delivery') {
     return null;
   }

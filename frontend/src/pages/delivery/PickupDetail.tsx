@@ -37,17 +37,21 @@ const API_BASE = `${BACKEND_URL}/api`;
 const PickupDetail: React.FC = () => {
   const navigate = useNavigate();
   const { pickupId } = useParams<{ pickupId: string }>();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   const [pickup, setPickup] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'delivery') {
+    if (!isLoading && (!isAuthenticated || user?.role !== 'delivery')) {
       navigate('/login');
-      return;
     }
+  }, [isLoading, isAuthenticated, user, navigate]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated || user?.role !== 'delivery') return;
     const fetchPickup = async () => {
       setLoading(true);
       setError(null);
@@ -69,7 +73,7 @@ const PickupDetail: React.FC = () => {
       setLoading(false);
     };
     fetchPickup();
-  }, [pickupId, isAuthenticated, user, navigate]);
+  }, [pickupId, isAuthenticated, user, isLoading]);
 
   // Update status dialog state
   const [updateStatusDialogOpen, setUpdateStatusDialogOpen] = useState(false);

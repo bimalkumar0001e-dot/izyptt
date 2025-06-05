@@ -13,7 +13,7 @@ const API_BASE = `${BACKEND_URL}/api`;
 
 const DeliveryOrdersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,12 +21,12 @@ const DeliveryOrdersPage: React.FC = () => {
   // Get token from localStorage (fallback if not in context)
   const token = localStorage.getItem('token');
 
-  // Redirect if not authenticated or not delivery partner
+  // Only redirect if auth check is finished
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'delivery') {
+    if (!isLoading && (!isAuthenticated || user?.role !== 'delivery')) {
       navigate('/login');
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isLoading, isAuthenticated, user, navigate]);
 
   // Fetch orders assigned to this delivery partner from backend
   useEffect(() => {
@@ -304,6 +304,10 @@ const DeliveryOrdersPage: React.FC = () => {
     }
   };
 
+  // Show loading spinner while auth is loading
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
   if (!isAuthenticated || user?.role !== 'delivery') {
     return null;
   }

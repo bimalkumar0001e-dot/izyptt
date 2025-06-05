@@ -15,7 +15,7 @@ const API_BASE = `${BACKEND_URL}/api`;
 
 const AssignedPickups: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { unreadCount } = useNotifications();
   const [searchQuery, setSearchQuery] = useState('');
   const [pickups, setPickups] = useState<any[]>([]);
@@ -58,12 +58,17 @@ const AssignedPickups: React.FC = () => {
   const activeOrders = pickups.filter(isActive);
   const pastOrders = pickups.filter(isPast);
 
-  // Redirect if not authenticated or not delivery partner
+  // Only redirect if auth check is finished
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'delivery') {
+    if (!isLoading && (!isAuthenticated || user?.role !== 'delivery')) {
       navigate('/login');
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isLoading, isAuthenticated, user, navigate]);
+
+  // Show loading spinner while auth is loading
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
 
   // Handle accepting a pickup
   const handleAcceptOrder = async (pickupId: string) => {

@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { toast } from '@/components/ui/sonner';
 import { DeliveryBottomNav } from '@/components/delivery/DeliveryBottomNav';
+import { BACKEND_URL } from '@/utils/utils';
 
 const DeliveryProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const DeliveryProfile: React.FC = () => {
   const { unreadCount } = useNotifications();
   const [editProfileDialogOpen, setEditProfileDialogOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Edit profile form state
   const [editForm, setEditForm] = useState({
@@ -32,6 +34,32 @@ const DeliveryProfile: React.FC = () => {
     email: user?.email || '',
     phone: user?.phone || '',
   });
+  
+  // Update form when user data changes
+  useEffect(() => {
+    if (user) {
+      setEditForm({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [user]);
+  
+  // Check authentication
+  useEffect(() => {
+    // Give auth context time to initialize
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      if (!isAuthenticated && !isLoading) {
+        navigate('/login');
+      } else if (user && user.role !== 'delivery' && !isLoading) {
+        navigate('/login');
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, user, navigate, isLoading]);
   
   // Handle form input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,12 +69,6 @@ const DeliveryProfile: React.FC = () => {
       [name]: value
     }));
   };
-  
-  // Redirect if not authenticated or not delivery partner
-  if (!isAuthenticated || user?.role !== 'delivery') {
-    navigate('/login');
-    return null;
-  }
   
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +105,7 @@ const DeliveryProfile: React.FC = () => {
     const fetchDeliveredOrders = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5001/api/delivery/orders', {
+        const res = await fetch(`${BACKEND_URL}/api/delivery/orders`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -109,6 +131,21 @@ const DeliveryProfile: React.FC = () => {
     avgRating: 4.8,
     onTimeRate: 98
   };
+  
+  // If still loading auth status, show a loading indicator
+  if (isLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-app-primary"></div>
+      </div>
+    );
+  }
+
+  // If not authenticated or not a delivery partner after loading, don't render anything
+  // The useEffect will handle the navigation
+  if (!isAuthenticated || (user && user.role !== 'delivery')) {
+    return null;
+  }
   
   return (
     <div className="app-container">

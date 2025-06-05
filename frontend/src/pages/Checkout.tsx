@@ -265,6 +265,8 @@ const Checkout: React.FC = () => {
         title: "Order Placed Successfully!",
         description: `Your order ID is ${orderId}`,
       });
+      
+      // Redirect to order confirmation with successful sound effect
       navigate(`/order-confirmation/${orderId}`);
     } catch (error: any) {
       console.error("Error placing order:", error);

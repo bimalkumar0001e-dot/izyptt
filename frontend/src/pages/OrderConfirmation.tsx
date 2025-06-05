@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Order } from '@/types/order';
 import { BACKEND_URL } from '@/utils/utils';
+import { playNotificationSound } from '@/utils/soundUtils';
+import { showConfetti, showSimpleConfetti } from '@/utils/confettiUtils';
 
 const API_BASE = `${BACKEND_URL}/api`;
 
@@ -13,11 +15,34 @@ const OrderConfirmation: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [soundPlayed, setSoundPlayed] = useState(false);
+  const [animationPlayed, setAnimationPlayed] = useState(false);
 
   const [order, setOrder] = useState<Order | null>(null);
   const [adminDeliveryFee, setAdminDeliveryFee] = useState<number | null>(null);
   const [adminHandlingCharge, setAdminHandlingCharge] = useState<number | null>(null);
   const [adminGstTax, setAdminGstTax] = useState<number | null>(null);
+
+  // Play sound effect and show confetti when component mounts
+  useEffect(() => {
+    if (!soundPlayed) {
+      playNotificationSound('/sounds/order-success.mp3');
+      setSoundPlayed(true);
+    }
+    
+    if (!animationPlayed) {
+      // Try the regular confetti first, fall back to simple if it fails
+      try {
+        const cleanup = showConfetti();
+        if (!cleanup) {
+          showSimpleConfetti();
+        }
+      } catch (error) {
+        showSimpleConfetti();
+      }
+      setAnimationPlayed(true);
+    }
+  }, [soundPlayed, animationPlayed]);
 
   useEffect(() => {
     const fetchOrder = async () => {

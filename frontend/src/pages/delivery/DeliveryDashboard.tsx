@@ -20,27 +20,36 @@ const getImageUrl = (imagePath: string) => {
 
 const DeliveryDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, token } = useAuth();
+  const { user, isAuthenticated, token, isLoading } = useAuth();
   const { unreadCount } = useNotifications();
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [orders, setOrders] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState<boolean>(true);
 
-  // Redirect if not authenticated or not delivery partner
-  if (!isAuthenticated || user?.role !== 'delivery') {
-    navigate('/login');
-    return null;
-  }
+  // Only redirect if auth check is finished with a small delay to ensure auth context is fully loaded
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDashboardLoading(false);
+      if (!isLoading && (!isAuthenticated || user?.role !== 'delivery')) {
+        navigate('/login');
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [isLoading, isAuthenticated, user, navigate]);
 
   // Fetch orders assigned to this delivery partner from backend
   useEffect(() => {
+    if (!isAuthenticated || !token) return; // Don't fetch if not authenticated
+    
     const fetchOrders = async () => {
       setLoading(true);
       setError(null); // Clear error before fetching
       try {
-        const res = await fetch('/api/delivery/orders', {
+        const res = await fetch(`${API_BASE}/delivery/orders`, { // Updated to use API_BASE
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -56,7 +65,7 @@ const DeliveryDashboard: React.FC = () => {
       setLoading(false);
     };
     fetchOrders();
-  }, [token, toast]);
+  }, [token, isAuthenticated]);
 
   // Fetch banners for delivery dashboard (same as Home)
   useEffect(() => {
@@ -91,10 +100,24 @@ const DeliveryDashboard: React.FC = () => {
   // Check if user is approved
   const isApproved = user?.isApproved || false;
 
-  // Handle mark as delivered (frontend only, should call backend in real app)
+  // Show loading spinner while dashboard is loading
+  if (dashboardLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-app-primary"></div>
+      </div>
+    );
+  }
+
+  // If not authenticated or not a delivery partner after loading, don't render anything
+  if (!isAuthenticated || (user && user.role !== 'delivery')) {
+    return null;
+  }
+
+  // Handle mark as delivered - updated to use API_BASE
   const handleMarkAsDelivered = async (orderId: string) => {
     try {
-      const res = await fetch(`/api/delivery/orders/${orderId}/status`, {
+      const res = await fetch(`${API_BASE}/delivery/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
