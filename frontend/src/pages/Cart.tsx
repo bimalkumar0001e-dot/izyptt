@@ -146,6 +146,7 @@ const Cart: React.FC = () => {
         <div className="space-y-4 mb-6">
           {cart.items.map((item) => {
             let img = item.product.image || '';
+            // Always use backend domain for /uploads or relative paths
             if (img.startsWith('/uploads')) img = `${UPLOADS_BASE}${img}`;
             else if (img && !img.startsWith('http')) img = `${UPLOADS_BASE}/uploads/${img.replace('uploads/', '')}`;
             else if (!img) img = `${UPLOADS_BASE}/uploads/default-food.jpg`;
@@ -155,7 +156,7 @@ const Cart: React.FC = () => {
                   src={img}
                   alt={item.product.name}
                   className="w-20 h-20 object-cover rounded-md"
-                  onError={e => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
+                  onError={e => { (e.target as HTMLImageElement).src = `${UPLOADS_BASE}/uploads/default-food.jpg`; }}
                 />
                 <div className="ml-3 flex-1">
                   <div className="flex justify-between">
