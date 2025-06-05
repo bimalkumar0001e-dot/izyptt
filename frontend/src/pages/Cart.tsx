@@ -14,7 +14,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { BACKEND_URL } from '@/utils/utils';
 
 const API_BASE = `${BACKEND_URL}/api`;
-const UPLOADS_BASE = "http://localhost:5001";
+const UPLOADS_BASE = BACKEND_URL;
 
 const Cart: React.FC = () => {
   const navigate = useNavigate();

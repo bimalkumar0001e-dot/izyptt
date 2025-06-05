@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { UserRole } from '@/types/user';
 import { toast } from '@/components/ui/use-toast';
 import WallpaperCard from '@/components/wallpaperCard';
+import { BACKEND_URL } from '@/utils/utils';
 
 const roleDashboardMap: Record<UserRole, string> = {
   'admin': '/admin/dashboard',
@@ -41,13 +42,13 @@ const Profile: React.FC = () => {
   const [wallpaper, setWallpaper] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    fetch('http://localhost:5001/api/admin/profile-wallpapers')
+    fetch(`${BACKEND_URL}/api/admin/profile-wallpapers`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0 && data[0].image) {
           const img = data[0].image.startsWith('http')
             ? data[0].image
-            : `http://localhost:5001${data[0].image}`;
+            : `${BACKEND_URL}${data[0].image}`;
           setWallpaper(img);
         } else {
           setWallpaper(null);

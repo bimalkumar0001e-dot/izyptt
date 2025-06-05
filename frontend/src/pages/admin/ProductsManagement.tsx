@@ -17,8 +17,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { MoreHorizontal, Search, Plus, Edit, Eye, Trash2, Check } from 'lucide-react';
+import { BACKEND_URL } from '@/utils/utils';
 
-const API_BASE = "http://localhost:5001/api/admin";
+const API_BASE = `${BACKEND_URL}/api/admin`;
 
 const ProductsManagement: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);

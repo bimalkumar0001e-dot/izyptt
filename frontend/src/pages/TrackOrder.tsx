@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Clock, ArrowDown } from 'lucide-react';
 import { Order } from '@/types/order';
 import { toast } from '@/hooks/use-toast';
+import { BACKEND_URL } from '@/utils/utils';
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
@@ -19,9 +20,10 @@ const TrackOrder: React.FC = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       if (orderId) {
+        setLoading(true);
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:5001/api/customer/orders/${orderId}`, {
+          const res = await fetch(`${BACKEND_URL}/api/customer/orders/${orderId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (!res.ok) throw new Error('Order not found');
@@ -37,8 +39,8 @@ const TrackOrder: React.FC = () => {
     fetchOrder();
   }, [orderId]);
 
-  // Use createdAt or orderDate for time logic
-  const placedTime = order && (order.orderDate ? new Date(order.orderDate) : order.createdAt ? new Date(order.createdAt) : null);
+  // Use orderDate for time logic
+  const placedTime = order && order.orderDate ? new Date(order.orderDate) : null;
   const now = new Date();
   const timeLeft = placedTime ? Math.max(0, FIVE_MINUTES - (now.getTime() - placedTime.getTime())) : 0;
   const minutes = Math.floor(timeLeft / 60000);
@@ -57,7 +59,7 @@ const TrackOrder: React.FC = () => {
     setCancelMsg('');
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5001/api/customer/orders/${orderId}/cancel`, {
+      const res = await fetch(`${BACKEND_URL}/api/customer/orders/${orderId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       });
@@ -161,17 +163,7 @@ const TrackOrder: React.FC = () => {
             <div className="flex items-start justify-between mt-1">
               <span className="text-sm text-gray-500">Delivery Address:</span>
               <span className="text-sm font-medium text-right break-all">
-                {order.deliveryAddress
-                  ? [
-                      order.deliveryAddress.address,
-                      order.deliveryAddress.landmark,
-                      order.deliveryAddress.city,
-                      order.deliveryAddress.state,
-                      order.deliveryAddress.pincode
-                    ]
-                      .filter(Boolean)
-                      .join(', ')
-                  : 'N/A'}
+                {order.deliveryAddress?.fullAddress || 'N/A'}
               </span>
             </div>
             {/* Show delivery time */}
@@ -181,7 +173,7 @@ const TrackOrder: React.FC = () => {
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Order No:</span>
-              <span className="text-sm font-medium text-right break-all">{order.orderNumber || order.id || order._id}</span>
+              <span className="text-sm font-medium text-right break-all">{order.id}</span>
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Total:</span>

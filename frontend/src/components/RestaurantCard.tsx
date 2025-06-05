@@ -7,7 +7,6 @@ import axios from 'axios';
 import { BACKEND_URL } from '@/utils/utils';
 
 const API_BASE = `${BACKEND_URL}/api`;
-const UPLOADS_BASE = BACKEND_URL;
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -23,7 +22,7 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant }) =>
     imageUrl.startsWith('/uploads') ||
     imageUrl.startsWith('/restaurant_delv images')
   ) {
-    imageUrl = `${UPLOADS_BASE}${imageUrl}`;
+    imageUrl = `${BACKEND_URL}${imageUrl}`;
   }
 
   return (

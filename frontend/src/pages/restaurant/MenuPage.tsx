@@ -8,7 +8,11 @@ import { RestaurantBottomNav } from '@/components/restaurant/RestaurantBottomNav
 import { BACKEND_URL } from '@/utils/utils';
 
 const API_BASE = `${BACKEND_URL}/api`;
-const UPLOADS_BASE = "http://localhost:5001"; // Add this line for image URL base
+// Remove hardcoded UPLOADS_BASE, use BACKEND_URL for images
+const getImageUrl = (imagePath: string) => {
+  if (!imagePath) return '';
+  return imagePath.startsWith('http') ? imagePath : `${BACKEND_URL}${imagePath}`;
+};
 
 const MenuPage: React.FC = () => {
   const { user, isAuthenticated, token, isLoading } = useAuth();
@@ -48,7 +52,7 @@ const MenuPage: React.FC = () => {
         // Process product images to ensure they have full URLs
         const processedData = data.map((item: any) => ({
           ...item,
-          image: item.image ? formatImageUrl(item.image) : null
+          image: item.image ? getImageUrl(item.image) : null
         }));
         
         setProducts(processedData);
@@ -60,24 +64,6 @@ const MenuPage: React.FC = () => {
     };
     fetchProducts();
   }, [isAuthenticated, token]);
-
-  // Helper function to format image URLs correctly
-  const formatImageUrl = (imagePath: string) => {
-    if (!imagePath) return '';
-    
-    // If already a full URL, return as is
-    if (imagePath.startsWith('http')) {
-      return imagePath;
-    }
-    
-    // If starts with slash, append to base URL
-    if (imagePath.startsWith('/')) {
-      return `${UPLOADS_BASE}${imagePath}`;
-    }
-    
-    // Otherwise add slash between base and path
-    return `${UPLOADS_BASE}/${imagePath}`;
-  };
 
   // Wait for auth to finish loading before rendering
   if (isLoading) {

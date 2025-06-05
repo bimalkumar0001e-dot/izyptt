@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Eye, Edit, ToggleRight, ToggleLeft, Trash } from 'lucide-react';
+import { BACKEND_URL } from '@/utils/utils';
 
 interface ReturnInstruction {
   _id: string;
@@ -8,7 +9,7 @@ interface ReturnInstruction {
   isActive: boolean;
 }
 
-const API_URL = 'http://localhost:5001/api/admin/return-instructions';
+const API_URL = `${BACKEND_URL}/api/admin/return-instructions`;
 
 const ReturnInstructionManagement: React.FC = () => {
   const [instructions, setInstructions] = useState<ReturnInstruction[]>([]);

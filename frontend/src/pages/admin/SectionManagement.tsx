@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MoreHorizontal, Plus, Trash2, Eye, X } from 'lucide-react';
+import { BACKEND_URL } from '@/utils/utils';
 
-const API_BASE = "http://localhost:5001/api/admin";
+const API_BASE = `${BACKEND_URL}/api/admin`;
 
 const SectionManagement: React.FC = () => {
   const [sections, setSections] = useState<any[]>([]);

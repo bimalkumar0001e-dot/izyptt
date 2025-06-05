@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Cart, Offer } from '@/types/product';
 import { Separator } from '@/components/ui/separator';
+import { BACKEND_URL } from '@/utils/utils';
 
 interface OrderSummaryProps {
   cart: Cart;
@@ -16,7 +17,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   const [adminGstTax, setAdminGstTax] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/admin/delivery-fee')
+    fetch(`${BACKEND_URL}/api/admin/delivery-fee`)
       .then(res => res.json())
       .then((fees) => {
         const activeFee = Array.isArray(fees)
@@ -27,7 +28,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       })
       .catch(() => setAdminDeliveryFee(0));
 
-    fetch('http://localhost:5001/api/admin/handling-charge')
+    fetch(`${BACKEND_URL}/api/admin/handling-charge`)
       .then(res => res.json())
       .then((charges) => {
         const activeCharge = Array.isArray(charges)
@@ -39,7 +40,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       .catch(() => setAdminHandlingCharge(0));
 
     // Fetch GST/tax set by admin
-    fetch('http://localhost:5001/api/admin/gst-taxes')
+    fetch(`${BACKEND_URL}/api/admin/gst-taxes`)
       .then(res => res.json())
       .then((taxes) => {
         const activeTax = Array.isArray(taxes)

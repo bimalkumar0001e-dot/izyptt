@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/order';
 import { formatDistanceToNow } from 'date-fns';
+import { BACKEND_URL } from '@/utils/utils';
 
-const UPLOADS_BASE = "http://localhost:5001"; // Add this at the top, after imports
+const UPLOADS_BASE = BACKEND_URL;
 
 const OrdersPage: React.FC = () => {
   const navigate = useNavigate();

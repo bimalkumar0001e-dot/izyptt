@@ -3,6 +3,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { PackageOpen, Package, MessageCircle, Clock, ArrowLeftRight, Phone, Mail, AlertTriangle, Video, CheckCircle2 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
+import { BACKEND_URL } from '@/utils/utils';
 
 interface ReturnInstruction {
   _id: string;
@@ -11,7 +12,7 @@ interface ReturnInstruction {
   isActive: boolean;
 }
 
-const API_URL = 'http://localhost:5001/api/admin/return-instructions';
+const API_URL = `${BACKEND_URL}/api/admin/return-instructions`;
 
 // Fallback instructions in case the API doesn't return any
 const fallbackInstructions: Partial<ReturnInstruction>[] = [

@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
+import { BACKEND_URL } from '@/utils/utils';
 
-const API_BASE = "http://localhost:5001/api/admin";
+const API_BASE = `${BACKEND_URL}/api/admin`;
 
 const CartManagement: React.FC = () => {
   const [minCart, setMinCart] = useState<{

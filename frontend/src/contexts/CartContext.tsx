@@ -3,8 +3,9 @@ import { Cart, CartItem, Product } from '../types/product';
 import { useToast } from '@/hooks/use-toast';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { BACKEND_URL } from '@/utils/utils';
 
-const API_BASE = 'http://localhost:5001/api';
+const API_BASE = `${BACKEND_URL}/api`;
 
 interface CartContextType {
   cart: Cart;

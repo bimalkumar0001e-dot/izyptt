@@ -1,10 +1,16 @@
 import React from "react";
+import { BACKEND_URL } from '@/utils/utils';
 
 interface WallpaperCardProps {
   image: string;
   alt?: string;
   className?: string;
 }
+
+const getImageUrl = (image: string) => {
+  if (!image) return '';
+  return image.startsWith('http') ? image : `${BACKEND_URL}${image}`;
+};
 
 const WallpaperCard: React.FC<WallpaperCardProps> = ({ image, alt = "Wallpaper", className = "" }) => (
   <div
@@ -13,7 +19,7 @@ const WallpaperCard: React.FC<WallpaperCardProps> = ({ image, alt = "Wallpaper",
   >
     {image ? (
       <img
-        src={image}
+        src={getImageUrl(image)}
         alt={alt}
         className="object-cover w-full h-full"
         style={{ borderRadius: "inherit" }}

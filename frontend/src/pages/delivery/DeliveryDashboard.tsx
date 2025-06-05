@@ -12,7 +12,11 @@ import PromoBannerCarousel from '@/components/PromoBannerCarousel';
 import { BACKEND_URL } from '@/utils/utils';
 
 const API_BASE = `${BACKEND_URL}/api`;
-const UPLOADS_BASE = "http://localhost:5001";
+// Remove hardcoded UPLOADS_BASE, use BACKEND_URL for images
+const getImageUrl = (imagePath: string) => {
+  if (!imagePath) return '';
+  return imagePath.startsWith('http') ? imagePath : `${BACKEND_URL}${imagePath}`;
+};
 
 const DeliveryDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -66,7 +70,7 @@ const DeliveryDashboard: React.FC = () => {
             .map((b: any) => ({
               ...b,
               image: b.image && b.image.startsWith('/uploads')
-                ? `${UPLOADS_BASE}${b.image}`
+                ? `${BACKEND_URL}${b.image}`
                 : b.image
             }))
         );

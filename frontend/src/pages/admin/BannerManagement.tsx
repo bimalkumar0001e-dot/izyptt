@@ -24,8 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
-
-const API_BASE_URL = 'http://localhost:5001';
+import { BACKEND_URL } from '@/utils/utils';
 
 const BannerManagement: React.FC = () => {
   const [banners, setBanners] = useState<any[]>([]);
@@ -51,7 +50,7 @@ const BannerManagement: React.FC = () => {
   // Fetch banners from backend on mount
   useEffect(() => {
     setLoading(true);
-    fetch('http://localhost:5001/api/admin/banners', {
+    fetch(`${BACKEND_URL}/api/admin/banners`, {
       credentials: 'include',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}` // Include auth token if needed
@@ -151,7 +150,7 @@ const BannerManagement: React.FC = () => {
     if (newBanner.link) formData.append('link', newBanner.link);
     formData.append('isActive', String(newBanner.isActive));
     
-    fetch('http://localhost:5001/api/admin/banners', {
+    fetch(`${BACKEND_URL}/api/admin/banners`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -208,7 +207,7 @@ const BannerManagement: React.FC = () => {
   const handleDeleteBanner = () => {
     if (!selectedBanner) return;
     
-    fetch(`http://localhost:5001/api/admin/banners/${selectedBanner.id || selectedBanner._id}`, {
+    fetch(`${BACKEND_URL}/api/admin/banners/${selectedBanner.id || selectedBanner._id}`, {
       method: 'DELETE',
       credentials: 'include',
       headers: {
@@ -248,7 +247,7 @@ const BannerManagement: React.FC = () => {
     const banner = banners.find(b => b.id === id || b._id === id);
     if (!banner) return;
     
-    fetch(`http://localhost:5001/api/admin/banners/${id}/activate`, {
+    fetch(`${BACKEND_URL}/api/admin/banners/${id}/activate`, {
       method: 'PATCH',
       credentials: 'include',
       headers: {
@@ -286,14 +285,7 @@ const BannerManagement: React.FC = () => {
   // Helper function to get complete image URL
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return '';
-    
-    // If the path already includes http/https, return as is
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return imagePath;
-    }
-    
-    // If it's a relative path, prepend the API base URL
-    return `${API_BASE_URL}${imagePath}`;
+    return imagePath.startsWith('http') ? imagePath : `${BACKEND_URL}${imagePath}`;
   };
 
   return (

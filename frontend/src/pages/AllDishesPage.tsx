@@ -6,9 +6,10 @@ import { BottomNav } from "@/components/BottomNav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Filter } from "lucide-react";
+import { BACKEND_URL } from '@/utils/utils';
 
-const API_BASE = "http://localhost:5001/api";
-const UPLOADS_BASE = "http://localhost:5001";
+const API_BASE = `${BACKEND_URL}/api`;
+const UPLOADS_BASE = BACKEND_URL;
 
 const AllDishesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -112,11 +113,11 @@ const AllDishesPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               {filteredProducts.map((product) => (
                 <ProductCard
-                  key={product._id}
+                  key={product._id || product.id}
                   product={{
                     ...product,
-                    id: product._id,
-                    restaurant: product.restaurantName || "Restaurant",
+                    id: product._id || product.id,
+                    restaurant: product.restaurantName || product.restaurant || "Restaurant",
                   }}
                 />
               ))}

@@ -16,8 +16,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MoreHorizontal, Search, Plus, Eye, Trash2, Check } from 'lucide-react';
+import { BACKEND_URL } from '@/utils/utils';
 
-const API_BASE = "http://localhost:5001/api/admin"; // Ensure this matches your backend
+const API_BASE = `${BACKEND_URL}/api/admin`;
 
 interface Wallpaper {
   _id: string;
@@ -54,7 +55,7 @@ const ProfileWallpaperManagment: React.FC = () => {
       ...w,
       image: w.image?.startsWith('http')
         ? w.image
-        : `http://localhost:5001${w.image}`
+        : `${BACKEND_URL}${w.image}`
     }));
     setWallpapers(wallpapersWithFullImage);
     setFilteredWallpapers(wallpapersWithFullImage);

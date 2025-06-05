@@ -5,8 +5,9 @@ import { ArrowDown } from 'lucide-react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import { BACKEND_URL } from '@/utils/utils';
 
-const API_BASE = "http://localhost:5001/api";
+const API_BASE = `${BACKEND_URL}/api`;
 
 // Define the real status progression in order
 const statusSteps = [

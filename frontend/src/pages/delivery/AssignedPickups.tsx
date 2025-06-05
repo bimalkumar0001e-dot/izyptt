@@ -9,8 +9,9 @@ import { useNotifications } from '@/contexts/NotificationContext';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/sonner';
 import { DeliveryBottomNav } from '@/components/delivery/DeliveryBottomNav';
+import { BACKEND_URL } from '@/utils/utils';
 
-const API_BASE = 'http://localhost:5001/api';
+const API_BASE = `${BACKEND_URL}/api`;
 
 const AssignedPickups: React.FC = () => {
   const navigate = useNavigate();

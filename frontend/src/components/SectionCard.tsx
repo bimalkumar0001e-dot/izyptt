@@ -1,10 +1,16 @@
 import React from "react";
+import { BACKEND_URL } from '@/utils/utils';
 
 interface SectionCardProps {
   image: string;
   title: string;
   onClick?: () => void;
 }
+
+const getImageUrl = (image: string) => {
+  if (!image) return '';
+  return image.startsWith('http') ? image : `${BACKEND_URL}${image}`;
+};
 
 const SectionCard: React.FC<SectionCardProps> = ({
   image,
@@ -23,7 +29,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
   >
     <div className="w-32 h-32 bg-white rounded-lg flex items-center justify-center overflow-hidden mb-2 shadow-sm">
       <img
-        src={image}
+        src={getImageUrl(image)}
         alt={title}
         className="object-contain w-full h-full"
         loading="lazy"
