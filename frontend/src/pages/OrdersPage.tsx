@@ -95,65 +95,46 @@ const OrdersPage: React.FC = () => {
 
     return (
       <div
-        className="shadow-lg border border-gray-100 bg-[#ffd6db] overflow-hidden flex flex-col"
+        className="shadow-lg border border-gray-100 bg-[#ffd6db] overflow-hidden flex flex-col w-full max-w-full sm:max-w-md aspect-auto rounded-xl mb-4"
         style={{
-          width: '100%',
-          maxWidth: 500,
-          aspectRatio: '16 / 9',
           margin: '0 auto',
           minHeight: 0,
         }}
       >
         {/* Status badge at the top */}
         <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-          <span
-            className={`inline-block px-4 py-1 text-xs font-bold text-white rounded-full ${statusColor}`}
-            style={{ minWidth: 70, textAlign: 'center' }}
-          >
-            {statusLabel}
-          </span>
-          <span className="text-xs text-gray-400 ml-2 truncate" style={{ maxWidth: 180 }}>{orderNumber}</span>
+          <span className={`px-2 py-1 rounded text-xs font-semibold text-white ${statusColor}`}>{statusLabel}</span>
+          <span className="ml-auto text-xs text-gray-500">{formatDate(createdAt)}</span>
         </div>
-        <div className="flex flex-1 p-4" style={{ minHeight: 0 }}>
-          <div className="w-16 h-16 rounded-xl bg-white overflow-hidden flex-shrink-0">
-            <img
-              src={imgSrc}
-              alt={mainItem?.name || "Order"}
-              className="w-full h-full object-cover"
-              onError={e => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
-            />
-          </div>
-          <div className="ml-4 flex-1 min-w-0 flex flex-col justify-between">
-            <div>
-              <div className="font-extrabold text-lg text-gray-900 truncate">
-                {mainItem ? `${mainItem.quantity}x ${mainItem.name}` : "Order"}
-              </div>
-            </div>
-            {/* Show restaurant name at the bottom left */}
-            <div className="text-xs text-gray-600 mt-2 truncate">{restaurantName}</div>
+        <div className="flex flex-1 p-4 gap-3 items-center min-h-0">
+          <img
+            src={imgSrc}
+            alt={mainItem?.name || 'Product'}
+            className="w-20 h-20 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+            style={{ maxWidth: 80, maxHeight: 80 }}
+          />
+          <div className="flex flex-col flex-1 min-w-0">
+            <div className="font-semibold text-base truncate mb-1">{mainItem?.name || 'Order Item'}</div>
+            <div className="text-xs text-gray-600 truncate">{restaurantName}</div>
+            <div className="text-xs text-gray-500 mt-1">Qty: {mainItem?.quantity || 1}</div>
+            <div className="text-xs text-gray-500 mt-1">Payment: {paymentMethod}</div>
           </div>
         </div>
         {/* Divider */}
         <div className="border-t border-dashed border-gray-300"></div>
         {/* Order Details - fit into a single row with flex and small fonts */}
-        <div className="bg-white px-4 py-3 flex justify-between items-end gap-2" style={{ fontSize: "0.98rem" }}>
-          <div>
-            <div className="font-bold text-[#ff4d4f]" style={{ fontSize: "1.02rem" }}>Order</div>
-            <div className="text-gray-500">Total: <span className="font-bold text-gray-800">₹{total.toFixed(2)}</span></div>
-            <div className="text-gray-500">Payment: <span className="font-bold text-gray-800">{paymentMethod}</span></div>
+        <div className="bg-white px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 text-sm">
+          <div className="flex flex-col">
+            <span className="font-medium">Order #{orderNumber}</span>
+            <span className="text-xs text-gray-500">Total: ₹{total}</span>
           </div>
-          <div className="text-xs text-gray-500 text-right whitespace-nowrap mb-2">
-            {formatDate(createdAt)}
-          </div>
-          <div className="flex flex-col items-end justify-end">
-            <Button
-              className="bg-[#ff4d4f] hover:bg-[#ff6f61] text-white font-bold px-4 py-1 rounded-lg text-sm"
-              onClick={() => navigate(`/track-order/${orderId}`)}
-              style={{ minWidth: 110 }}
-            >
-              Track Order
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            className="mt-2 sm:mt-0"
+            onClick={() => navigate(`/orders/${orderId}`)}
+          >
+            View Details
+          </Button>
         </div>
       </div>
     );
@@ -169,42 +150,37 @@ const OrdersPage: React.FC = () => {
     >
       <AppHeader title="My Orders" showBackButton />
       <div className="flex-1 p-4 pb-24">
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="w-full grid grid-cols-2 mb-4">
-            <TabsTrigger value="active">Active Orders</TabsTrigger>
-            <TabsTrigger value="past">Past Orders</TabsTrigger>
+        {/* Tabs for Active/Past Orders */}
+        <Tabs value={tab} onValueChange={setTab} className="mb-4">
+          <TabsList className="w-full flex">
+            <TabsTrigger value="active" className="flex-1">Active Orders</TabsTrigger>
+            <TabsTrigger value="past" className="flex-1">Past Orders</TabsTrigger>
           </TabsList>
-          
           <TabsContent value="active">
             {loading ? (
-              <div className="flex justify-center py-12">Loading...</div>
-            ) : activeOrders.length === 0 ? (
-              <div className="flex flex-col items-center py-12 text-gray-500">
-                <Truck className="w-12 h-12 mb-2" />
-                <div>No active orders</div>
-                <div className="text-sm text-gray-400 mt-1">Your active orders will appear here</div>
+              <div className="flex justify-center items-center h-40">
+                <span className="text-gray-500">Loading...</span>
               </div>
+            ) : activeOrders.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">No active orders found.</div>
             ) : (
-              <div className="flex flex-col gap-6">
-                {activeOrders.map((order) => (
+              <div className="flex flex-col gap-4">
+                {activeOrders.map(order => (
                   <OrderCard key={order.id} order={order} />
                 ))}
               </div>
             )}
           </TabsContent>
-          
           <TabsContent value="past">
             {loading ? (
-              <div className="flex justify-center py-12">Loading...</div>
-            ) : pastOrders.length === 0 ? (
-              <div className="flex flex-col items-center py-12 text-gray-500">
-                <Truck className="w-12 h-12 mb-2" />
-                <div>No past orders</div>
-                <div className="text-sm text-gray-400 mt-1">Your delivered or cancelled orders will appear here</div>
+              <div className="flex justify-center items-center h-40">
+                <span className="text-gray-500">Loading...</span>
               </div>
+            ) : pastOrders.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">No past orders found.</div>
             ) : (
-              <div className="flex flex-col gap-6">
-                {pastOrders.map((order) => (
+              <div className="flex flex-col gap-4">
+                {pastOrders.map(order => (
                   <OrderCard key={order.id} order={order} />
                 ))}
               </div>
