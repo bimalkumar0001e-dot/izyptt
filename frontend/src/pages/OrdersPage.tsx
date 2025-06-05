@@ -70,15 +70,29 @@ const OrdersPage: React.FC = () => {
       imgSrc = `${UPLOADS_BASE}${imgSrc}`;
     }
 
-    // Get restaurant name if available
-    let restaurantName = "Unknown Restaurant";
-    if (order.restaurant && typeof order.restaurant === 'object' && order.restaurant.name) {
-      restaurantName = order.restaurant.name;
-    } else if (typeof order.restaurant === 'string') {
-      restaurantName = order.restaurant;
+    // Get restaurant name if available, otherwise show 'izypt store'
+    let restaurantName = "izypt store";
+    if ((order as any).restaurant && typeof (order as any).restaurant === 'object' && (order as any).restaurant.name) {
+      restaurantName = (order as any).restaurant.name;
     }
 
-    // Use 16:9 aspect ratio and compact content
+    // Status badge color and label
+    const status = order.status || '';
+    const statusLabel = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    // Only check for 'canceled' (not 'cancelled')
+    const statusColor = status === 'delivered' ? 'bg-green-600' : status === 'canceled' ? 'bg-red-500' : 'bg-indigo-600';
+
+    // Use order.id as fallback for order number and key
+    const orderNumber = (order as any).orderNumber || order.id || '';
+    // Use finalAmount, fallback to totalAmount, then 0
+    const total = (order as any).finalAmount ?? (order as any).totalAmount ?? 0;
+    // Use paymentMethod or fallback
+    const paymentMethod = (order as any).paymentMethod || 'N/A';
+    // Use createdAt or fallback to empty string
+    const createdAt = (order as any).createdAt || '';
+    // Use id for navigation
+    const orderId = order.id || '';
+
     return (
       <div
         className="shadow-lg border border-gray-100 bg-[#ffd6db] overflow-hidden flex flex-col"
@@ -90,6 +104,16 @@ const OrdersPage: React.FC = () => {
           minHeight: 0,
         }}
       >
+        {/* Status badge at the top */}
+        <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+          <span
+            className={`inline-block px-4 py-1 text-xs font-bold text-white rounded-full ${statusColor}`}
+            style={{ minWidth: 70, textAlign: 'center' }}
+          >
+            {statusLabel}
+          </span>
+          <span className="text-xs text-gray-400 ml-2 truncate" style={{ maxWidth: 180 }}>{orderNumber}</span>
+        </div>
         <div className="flex flex-1 p-4" style={{ minHeight: 0 }}>
           <div className="w-16 h-16 rounded-xl bg-white overflow-hidden flex-shrink-0">
             <img
@@ -104,26 +128,6 @@ const OrdersPage: React.FC = () => {
               <div className="font-extrabold text-lg text-gray-900 truncate">
                 {mainItem ? `${mainItem.quantity}x ${mainItem.name}` : "Order"}
               </div>
-              <div className="text-xs text-gray-500 truncate">{order.orderNumber || order.id || order._id}</div>
-              <div className="mt-1">
-                <span
-                  style={{
-                    background: "#4F46E5",
-                    color: "#fff",
-                    borderRadius: "9999px",
-                    padding: "2px 16px",
-                    fontWeight: 700,
-                    fontSize: "0.95rem",
-                    display: "inline-block"
-                  }}
-                >
-                  {order.status
-                    ? order.status
-                        .replace(/_/g, ' ')
-                        .replace(/\b\w/g, l => l.toUpperCase())
-                    : "Status"}
-                </span>
-              </div>
             </div>
             {/* Show restaurant name at the bottom left */}
             <div className="text-xs text-gray-600 mt-2 truncate">{restaurantName}</div>
@@ -135,16 +139,16 @@ const OrdersPage: React.FC = () => {
         <div className="bg-white px-4 py-3 flex justify-between items-end gap-2" style={{ fontSize: "0.98rem" }}>
           <div>
             <div className="font-bold text-[#ff4d4f]" style={{ fontSize: "1.02rem" }}>Order</div>
-            <div className="text-gray-500">Total: <span className="font-bold text-gray-800">₹{(order.total ?? order.finalAmount ?? order.totalAmount ?? 0).toFixed(2)}</span></div>
-            <div className="text-gray-500">Payment: <span className="font-bold text-gray-800">{order.paymentMethod || 'N/A'}</span></div>
+            <div className="text-gray-500">Total: <span className="font-bold text-gray-800">₹{total.toFixed(2)}</span></div>
+            <div className="text-gray-500">Payment: <span className="font-bold text-gray-800">{paymentMethod}</span></div>
           </div>
           <div className="text-xs text-gray-500 text-right whitespace-nowrap mb-2">
-            {formatDate(order.orderDate || order.createdAt)}
+            {formatDate(createdAt)}
           </div>
           <div className="flex flex-col items-end justify-end">
             <Button
               className="bg-[#ff4d4f] hover:bg-[#ff6f61] text-white font-bold px-4 py-1 rounded-lg text-sm"
-              onClick={() => navigate(`/track-order/${order.id || order._id}`)}
+              onClick={() => navigate(`/track-order/${orderId}`)}
               style={{ minWidth: 110 }}
             >
               Track Order
@@ -183,7 +187,7 @@ const OrdersPage: React.FC = () => {
             ) : (
               <div className="flex flex-col gap-6">
                 {activeOrders.map((order) => (
-                  <OrderCard key={order.id || order._id} order={order} />
+                  <OrderCard key={order.id} order={order} />
                 ))}
               </div>
             )}
@@ -201,7 +205,7 @@ const OrdersPage: React.FC = () => {
             ) : (
               <div className="flex flex-col gap-6">
                 {pastOrders.map((order) => (
-                  <OrderCard key={order.id || order._id} order={order} />
+                  <OrderCard key={order.id} order={order} />
                 ))}
               </div>
             )}
