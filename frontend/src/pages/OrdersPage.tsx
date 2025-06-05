@@ -27,7 +27,7 @@ const OrdersPage: React.FC = () => {
         setLoading(true);
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch('http://localhost:5001/api/customer/orders', {
+          const res = await fetch(`${BACKEND_URL}/api/customer/orders`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (!res.ok) throw new Error('Failed to fetch orders');

@@ -29,7 +29,7 @@ const Cart: React.FC = () => {
 
   useEffect(() => {
     // Fetch min cart amount from backend
-    fetch('http://localhost:5001/api/admin/min-cart-amount/view')
+    fetch(`${BACKEND_URL}/api/admin/min-cart-amount/view`)
       .then(res => res.json())
       .then(data => {
         setMinCartAmount(typeof data.amount === 'number' ? data.amount : null);
@@ -144,47 +144,53 @@ const Cart: React.FC = () => {
         </div>
         
         <div className="space-y-4 mb-6">
-          {cart.items.map((item) => (
-            <div key={item._id} className="flex bg-white rounded-lg shadow-sm p-3 border border-gray-100">
-              <img
-                src={item.product.image}
-                alt={item.product.name}
-                className="w-20 h-20 object-cover rounded-md"
-              />
-              
-              <div className="ml-3 flex-1">
-                <div className="flex justify-between">
-                  <h3 className="font-medium">{item.product.name}</h3>
-                  <button 
-                    onClick={() => removeFromCart(item._id)} 
-                    className="text-gray-400 hover:text-red-500"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                {/* Always display restaurant name if available */}
-                {(item.product.restaurant) && (
-                  <p className="text-xs text-gray-500">
-                    {item.product.restaurant}
-                  </p>
-                )}
-                
-                <div className="flex justify-between items-center mt-2">
-                  <p className="font-semibold">
-                    ₹{((item.product.discountedPrice || item.product.price) * item.quantity).toFixed(2)}
-                  </p>
+          {cart.items.map((item) => {
+            let img = item.product.image || '';
+            if (img.startsWith('/uploads')) img = `${UPLOADS_BASE}${img}`;
+            else if (img && !img.startsWith('http')) img = `${UPLOADS_BASE}/uploads/${img.replace('uploads/', '')}`;
+            else if (!img) img = `${UPLOADS_BASE}/uploads/default-food.jpg`;
+            return (
+              <div key={item._id} className="flex bg-white rounded-lg shadow-sm p-3 border border-gray-100">
+                <img
+                  src={img}
+                  alt={item.product.name}
+                  className="w-20 h-20 object-cover rounded-md"
+                  onError={e => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
+                />
+                <div className="ml-3 flex-1">
+                  <div className="flex justify-between">
+                    <h3 className="font-medium">{item.product.name}</h3>
+                    <button 
+                      onClick={() => removeFromCart(item._id)} 
+                      className="text-gray-400 hover:text-red-500"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                   
-                  <ProductQuantitySelector
-                    quantity={item.quantity}
-                    onIncrease={() => updateQuantity(item._id, item.quantity + 1)}
-                    onDecrease={() => updateQuantity(item._id, item.quantity - 1)}
-                    size="sm"
-                  />
+                  {/* Always display restaurant name if available */}
+                  {(item.product.restaurant) && (
+                    <p className="text-xs text-gray-500">
+                      {item.product.restaurant}
+                    </p>
+                  )}
+                  
+                  <div className="flex justify-between items-center mt-2">
+                    <p className="font-semibold">
+                      ₹{((item.product.discountedPrice || item.product.price) * item.quantity).toFixed(2)}
+                    </p>
+                    
+                    <ProductQuantitySelector
+                      quantity={item.quantity}
+                      onIncrease={() => updateQuantity(item._id, item.quantity + 1)}
+                      onDecrease={() => updateQuantity(item._id, item.quantity - 1)}
+                      size="sm"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         
         <OrderSummary cart={cart} appliedOffer={appliedOffer} />
