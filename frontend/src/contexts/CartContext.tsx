@@ -57,9 +57,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             items: res.data.data.cart.items.map((item: any) => {
               // Defensive: ensure product.image is a full URL
               let img = item.product?.image || '';
-              if (img.startsWith('/uploads')) img = `http://localhost:5001${img}`;
-              else if (img && !img.startsWith('http')) img = `http://localhost:5001/uploads/${img.replace('uploads/', '')}`;
-              else if (!img) img = 'https://via.placeholder.com/400x300?text=Food';
+              if (img.startsWith('/uploads')) img = `${BACKEND_URL}${img}`;
+              else if (img && !img.startsWith('http')) img = `${BACKEND_URL}/uploads/${img.replace('uploads/', '')}`;
+              else if (!img) img = `${BACKEND_URL}/uploads/default-food.jpg`;
               return {
                 _id: item._id,
                 product: { ...item.product, image: img },
@@ -123,9 +123,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           items: res.data.data.cart.items.map((item: any) => {
             // Defensive: ensure product.image is a full URL
             let img = item.product?.image || '';
-            if (img.startsWith('/uploads')) img = `http://localhost:5001${img}`;
-            else if (img && !img.startsWith('http')) img = `http://localhost:5001/uploads/${img.replace('uploads/', '')}`;
-            else if (!img) img = 'https://via.placeholder.com/400x300?text=Food';
+            if (img.startsWith('/uploads')) img = `${BACKEND_URL}${img}`;
+            else if (img && !img.startsWith('http')) img = `${BACKEND_URL}/uploads/${img.replace('uploads/', '')}`;
+            else if (!img) img = `${BACKEND_URL}/uploads/default-food.jpg`;
             
             return {
               _id: item._id,
@@ -184,9 +184,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           items: res.data.data.cart.items.map((item: any) => {
             // Defensive: ensure product.image is a full URL
             let img = item.product?.image || '';
-            if (img.startsWith('/uploads')) img = `http://localhost:5001${img}`;
-            else if (img && !img.startsWith('http')) img = `http://localhost:5001/uploads/${img.replace('uploads/', '')}`;
-            else if (!img) img = 'https://via.placeholder.com/400x300?text=Food';
+            if (img.startsWith('/uploads')) img = `${BACKEND_URL}${img}`;
+            else if (img && !img.startsWith('http')) img = `${BACKEND_URL}/uploads/${img.replace('uploads/', '')}`;
+            else if (!img) img = `${BACKEND_URL}/uploads/default-food.jpg`;
             return {
               _id: item._id,
               product: { ...item.product, image: img },
@@ -225,9 +225,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           items: res.data.data.cart.items.map((item: any) => {
             // Defensive: ensure product.image is a full URL
             let img = item.product?.image || '';
-            if (img.startsWith('/uploads')) img = `http://localhost:5001${img}`;
-            else if (img && !img.startsWith('http')) img = `http://localhost:5001/uploads/${img.replace('uploads/', '')}`;
-            else if (!img) img = 'https://via.placeholder.com/400x300?text=Food';
+            if (img.startsWith('/uploads')) img = `${BACKEND_URL}${img}`;
+            else if (img && !img.startsWith('http')) img = `${BACKEND_URL}/uploads/${img.replace('uploads/', '')}`;
+            else if (!img) img = `${BACKEND_URL}/uploads/default-food.jpg`;
             return {
               _id: item._id,
               product: { ...item.product, image: img },
