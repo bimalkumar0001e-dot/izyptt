@@ -38,8 +38,17 @@ app.use(cors({
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Set-Cookie'] // Expose Set-Cookie for frontend
 }));
+
+// If you use cookies for authentication, set them like this in your login/OTP verify endpoints:
+// res.cookie('token', token, {
+//   httpOnly: true,
+//   secure: true,
+//   sameSite: 'None', // Required for cross-site cookies
+//   domain: '.izypt.com', // Allows all subdomains
+// });
 
 // Serve uploads folder
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

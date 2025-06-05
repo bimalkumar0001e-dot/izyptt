@@ -22,10 +22,10 @@ exports.verifyOTP = async (phone, otp) => {
 };
 
 exports.sendOtp = async (phone) => {
-  // For demo, just generate and store OTP, no SMS sending
+  // Generate a 6-digit OTP
   const otp = await exports.generateOTP(phone);
-  const message = `Your OTP for Izypt is ${otp}. Do not share it with anyone.`;
-  await sendSMS(phone, message);
+  // Send only the numeric OTP to Fast2SMS (OTP route requires only numbers)
+  await sendSMS(phone, otp);
   // Optionally log or return the OTP for debugging
   return otp;
 };

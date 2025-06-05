@@ -64,6 +64,10 @@ exports.register = async (req, res) => {
 exports.sendOtp = async (req, res) => {
     const { phone } = req.body;
     try {
+        // Validate phone number: must be exactly 10 digits, all numeric
+        if (!/^[0-9]{10}$/.test(phone)) {
+            return res.status(400).json({ message: 'Invalid phone number. Please enter a valid 10-digit Indian mobile number.' });
+        }
         // Get OTP from service
         const otp = await sendOtp(phone);
         // Return OTP in response for development/testing only
