@@ -71,6 +71,9 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+      <div className="mb-3">
+        <h2 className="text-lg font-semibold text-gray-800">Order Summary</h2>
+      </div>
       <div className="space-y-2 border-b border-gray-100 pb-3">
         <div className="flex justify-between">
           <span className="text-gray-600">Subtotal</span>
@@ -112,7 +115,6 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           </div>
         )}
       </div>
-      
       <div className="flex justify-between mt-3 font-semibold text-lg">
         <span className="text-black">Total</span>
         <span>

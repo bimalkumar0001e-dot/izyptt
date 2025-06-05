@@ -116,8 +116,8 @@ const PickupTrackPage: React.FC = () => {
     <div className="app-container">
       <AppHeader title="Track Pickup" showBackButton />
       <div className="flex-1 p-4 pb-28 flex justify-center items-start">
-        <div className="w-full max-w-md bg-gray-50 border border-gray-200 rounded-2xl shadow-lg p-6 mt-6">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800 text-center">Pickup Status</h2>
+        <div className="w-full max-w-md bg-gradient-to-br from-orange-50 to-pink-50 border border-gray-200 rounded-2xl shadow-lg p-6 mt-6">
+          <h2 className="text-2xl font-bold mb-4 text-orange-600 text-center">Pickup Status</h2>
           {/* Gradient separator */}
           <div
             style={{
@@ -131,33 +131,41 @@ const PickupTrackPage: React.FC = () => {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-base text-gray-500">Pickup Location:</span>
-              <span className="text-base font-semibold text-right text-gray-700">{pickup.pickupAddress}</span>
+              <span className="text-base font-semibold text-orange-700 text-right">{pickup.pickupAddress}</span>
             </div>
             <div className="flex justify-center my-2">
-              <ArrowDown className="text-app-primary w-7 h-7" />
+              <ArrowDown className="text-pink-500 w-7 h-7" />
             </div>
             <div className="flex items-center justify-between">
               <span className="text-base text-gray-500">Drop Location:</span>
-              <span className="text-base font-semibold text-right text-gray-700">{pickup.dropAddress}</span>
+              <span className="text-base font-semibold text-pink-700 text-right">{pickup.dropAddress}</span>
             </div>
           </div>
           <div className="mb-6 flex items-center justify-between">
             <span className="text-base text-gray-500">Task Type:</span>
-            <span className="text-base font-semibold">{pickup.itemType}</span>
+            <span className="text-base font-semibold text-indigo-700">{pickup.itemType}</span>
           </div>
           {/* Status Stepper */}
           <div className="my-8">
             <div className="flex flex-col gap-5">
               {statusSteps.map((step, idx) => (
                 <div key={step} className="flex items-center gap-4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-base shadow
-                    ${idx <= currentStep
-                      ? "bg-gradient-to-br from-orange-400 to-pink-500 text-white"
-                      : "bg-gray-200 text-gray-400"}
+                  <div className={`
+                    w-8 h-8 rounded-full flex items-center justify-center font-bold text-base shadow
+                    ${idx === currentStep
+                      ? "bg-gradient-to-br from-orange-500 to-pink-500 text-white ring-2 ring-pink-400"
+                      : idx < currentStep
+                        ? "bg-gradient-to-br from-orange-400 to-pink-400 text-white"
+                        : "bg-gray-200 text-gray-400"}
                   `}>
                     {idx + 1}
                   </div>
-                  <span className={`font-semibold text-lg ${idx <= currentStep ? "text-orange-500" : "text-gray-400"}`}>
+                  <span className={`
+                    font-semibold text-lg
+                    ${idx === currentStep ? "text-pink-600" : ""}
+                    ${idx < currentStep ? "text-orange-600" : ""}
+                    ${idx > currentStep ? "text-gray-400" : ""}
+                  `}>
                     {statusLabels[step]}
                   </span>
                 </div>
@@ -174,7 +182,7 @@ const PickupTrackPage: React.FC = () => {
           </div>
           <div className="mb-4">
             <span className="text-base text-gray-500">Current Status: </span>
-            <span className="text-base font-bold text-gray-800">{pickup.status}</span>
+            <span className="text-base font-bold text-pink-700">{pickup.status}</span>
           </div>
           {/* Cancel Pickup Button */}
           {pickup.status !== "Delivered" && pickup.status !== "Cancelled" && (
@@ -182,7 +190,7 @@ const PickupTrackPage: React.FC = () => {
               <Button
                 variant="destructive"
                 disabled={cancelling}
-                className="px-8 py-2 rounded-lg text-base font-semibold shadow"
+                className="px-8 py-2 rounded-lg text-base font-semibold shadow bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
                 onClick={handleCancelPickup}
               >
                 {cancelling ? "Cancelling..." : "Cancel Pickup"}

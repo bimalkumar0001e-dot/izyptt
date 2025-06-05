@@ -277,7 +277,7 @@ const Login: React.FC = () => {
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-bold text-app-primary">Customer OTP Login</h1>
             <p className="text-gray-600 mt-2">
-              Enter the 6-digit code sent to <span className="font-medium">{phone}</span>
+              Check your Whatsapp-Enter the 6-digit code sent to <span className="font-medium">{phone}</span>
             </p>
             {lastOtp && (
               <p className="text-gray-500 mt-2 text-sm">OTP: <span className="font-mono font-bold">{lastOtp}</span></p>

@@ -115,27 +115,29 @@ const OrderConfirmation: React.FC = () => {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Check className="w-10 h-10 text-green-600" />
           </div>
-          <h2 className="text-2xl font-semibold">Order Placed Successfully!</h2>
+          <h2 className="text-2xl font-semibold text-green-700">Order Placed Successfully!</h2>
           <p className="text-gray-600 mt-1">
             Your order has been confirmed and is being processed
           </p>
           <div className="mt-4 bg-gray-100 px-4 py-2 rounded-lg inline-block">
-            <p className="font-medium">Order ID: #{order.id ? order.id.substring(0, 8) : ''}</p>
+            <p className="font-medium text-indigo-700">
+              Order ID: <span className="font-bold text-pink-600">#{order.id ? order.id.substring(0, 8) : ''}</span>
+            </p>
           </div>
         </div>
         <div className="mt-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="font-semibold text-lg mb-2">Order Details</h3>
+          <h3 className="font-semibold text-lg mb-2 text-app-primary">Order Details</h3>
           <div className="mb-2 flex justify-between">
             <span className="text-gray-600">Restaurant</span>
-            <span>{order.restaurantName || 'N/A'}</span>
+            <span className="font-semibold text-pink-600">{order.restaurantName || 'N/A'}</span>
           </div>
           <div className="mb-2">
             <span className="text-gray-600 font-medium">Items:</span>
             <ul className="ml-4 mt-1">
               {order.items && order.items.length > 0 ? order.items.map((item, idx) => (
                 <li key={idx} className="flex justify-between text-sm">
-                  <span>{item.name}</span>
-                  <span>Qty: {item.quantity}</span>
+                  <span className="text-indigo-700">{item.name}</span>
+                  <span className="text-gray-700">Qty: <span className="font-semibold">{item.quantity}</span></span>
                 </li>
               )) : <li className="text-gray-400">No items</li>}
             </ul>
@@ -144,11 +146,11 @@ const OrderConfirmation: React.FC = () => {
           <div className="my-4 border-t border-b py-3 space-y-2">
             <div className="flex justify-between">
               <span className="text-gray-600">Subtotal</span>
-              <span>₹{subtotal.toFixed(2)}</span>
+              <span className="font-medium text-blue-700">₹{subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Delivery Fee</span>
-              <span>
+              <span className="font-medium text-orange-600">
                 {adminDeliveryFee === null
                   ? <span className="text-gray-400">Loading...</span>
                   : <>₹{deliveryFeeToShow.toFixed(2)}</>
@@ -159,7 +161,7 @@ const OrderConfirmation: React.FC = () => {
               <span className="text-gray-600">
                 Tax{adminGstTax !== null ? ` (${adminGstTax}%)` : ''}
               </span>
-              <span>
+              <span className="font-medium text-purple-700">
                 {adminGstTax === null
                   ? <span className="text-gray-400">Loading...</span>
                   : <>₹{gstTaxToShow.toFixed(2)}</>
@@ -168,7 +170,7 @@ const OrderConfirmation: React.FC = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Handling Charge</span>
-              <span>
+              <span className="font-medium text-yellow-700">
                 {adminHandlingCharge === null
                   ? <span className="text-gray-400">Loading...</span>
                   : <>₹{handlingChargeToShow.toFixed(2)}</>
@@ -178,13 +180,13 @@ const OrderConfirmation: React.FC = () => {
             {discount > 0 && (
               <div className="flex justify-between">
                 <span className="text-gray-600">Discount</span>
-                <span className="text-green-600">-₹{discount.toFixed(2)}</span>
+                <span className="text-green-600 font-semibold">-₹{discount.toFixed(2)}</span>
               </div>
             )}
           </div>
           <div className="mb-2 flex justify-between font-semibold text-lg">
-            <span>Total Amount</span>
-            <span>
+            <span className="text-gray-700">Total Amount</span>
+            <span className="text-green-700">
               {adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null
                 ? <span className="text-gray-400">Loading...</span>
                 : <>₹{total.toFixed(2)}</>
@@ -193,13 +195,13 @@ const OrderConfirmation: React.FC = () => {
           </div>
           <div className="mb-2 flex justify-between">
             <span className="text-gray-600">Payment Method</span>
-            <span className="capitalize">{order.paymentMethod || 'N/A'}</span>
+            <span className="capitalize font-semibold text-blue-700">{order.paymentMethod || 'N/A'}</span>
           </div>
         </div>
         <div className="flex flex-col space-y-3 mt-8">
           <Button
             onClick={() => navigate(`/track-order/${orderId}`)}
-            className="bg-app-primary hover:bg-app-primary/90"
+            className="bg-gradient-to-r from-pink-500 to-indigo-500 hover:from-pink-600 hover:to-indigo-600 text-white font-bold"
           >
             <Package className="w-5 h-5 mr-2" />
             Track Order
@@ -207,6 +209,7 @@ const OrderConfirmation: React.FC = () => {
           <Button
             variant="outline"
             onClick={() => navigate('/')}
+            className="border-gray-300"
           >
             <Home className="w-5 h-5 mr-2" />
             Continue Shopping

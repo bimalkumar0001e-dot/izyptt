@@ -243,6 +243,14 @@ const PickupDrop: React.FC = () => {
               <div className="flex items-center gap-2 mb-2">
                 <MapPin className="w-5 h-5 text-app-primary" />
                 <h3 className="font-semibold text-base text-app-primary">Pickup Address</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto"
+                  onClick={() => navigate('/addresses/add')}
+                >
+                  + Add New
+                </Button>
               </div>
               <p className="text-xs text-gray-500 mb-2">Where should we pick up your item?</p>
               <div>
@@ -263,19 +271,25 @@ const PickupDrop: React.FC = () => {
                 </Button>
               )}
             </div>
-
             {/* Separator with arrow */}
             <div className="flex flex-col items-center justify-center my-2">
               <Separator className="w-2/3 bg-gray-200" />
               <ArrowDown className="my-2 text-app-primary" size={28} />
               <Separator className="w-2/3 bg-gray-200" />
             </div>
-
             {/* Drop Section */}
             <div className="bg-white rounded-xl shadow border border-gray-100 p-4 mt-6">
               <div className="flex items-center gap-2 mb-2">
                 <MapPin className="w-5 h-5 text-blue-500" />
                 <h3 className="font-semibold text-base text-blue-500">Drop Address</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto"
+                  onClick={() => navigate('/addresses/add')}
+                >
+                  + Add New
+                </Button>
               </div>
               <p className="text-xs text-gray-500 mb-2">Where should we deliver your item?</p>
               <div>

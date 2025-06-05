@@ -39,18 +39,16 @@ const TrackOrder: React.FC = () => {
     fetchOrder();
   }, [orderId]);
 
-  // Use orderDate for time logic
-  const placedTime = order && order.orderDate ? new Date(order.orderDate) : null;
+  // Use order.createdAt for time logic (not orderDate)
+  const placedTime = order && (order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate) : null;
   const now = new Date();
-  const timeLeft = placedTime ? Math.max(0, FIVE_MINUTES - (now.getTime() - placedTime.getTime())) : 0;
-  const minutes = Math.floor(timeLeft / 60000);
-  const seconds = Math.floor((timeLeft % 60000) / 1000);
+  const timeSincePlaced = placedTime ? now.getTime() - placedTime.getTime() : 0;
   const canCancel =
     order &&
     placedTime &&
-    (Date.now() - placedTime.getTime() < FIVE_MINUTES) &&
+    timeSincePlaced < FIVE_MINUTES &&
     order.status &&
-    !['cancelled', 'delivered'].includes(order.status.toLowerCase());
+    !['cancelled', 'canceled', 'delivered'].includes(order.status.toLowerCase());
 
   const handleCancel = async () => {
     if (!orderId) return;
@@ -138,12 +136,12 @@ const TrackOrder: React.FC = () => {
       <AppHeader title="Track Order" showBackButton />
       <div className="flex-1 p-4 pb-28">
         <div
-          className="rounded-xl shadow p-4 mb-6"
+          className="rounded-xl shadow p-4 mb-6 border border-gray-200"
           style={{
             background: "#fff"
           }}
         >
-          <h2 className="text-lg font-semibold mb-2">Order Status</h2>
+          <h2 className="text-lg font-semibold mb-2 text-app-primary">Order Status</h2>
           {/* Gradient separator */}
           <div
             style={{
@@ -157,31 +155,41 @@ const TrackOrder: React.FC = () => {
           <div className="mb-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">Restaurant:</span>
-              <span className="text-sm font-medium text-right">{order.restaurantName || 'N/A'}</span>
+              <span className="text-sm font-semibold text-pink-600 text-right">{order.restaurantName || 'N/A'}</span>
             </div>
             {/* Show complete address */}
             <div className="flex items-start justify-between mt-1">
               <span className="text-sm text-gray-500">Delivery Address:</span>
               <span className="text-sm font-medium text-right break-all">
-                {order.deliveryAddress?.fullAddress || 'N/A'}
+                {/* Show full address with landmark, city, state, pincode */}
+                {order.deliveryAddress?.fullAddress ||
+                  [
+                    order.deliveryAddress?.address,
+                    order.deliveryAddress?.landmark,
+                    order.deliveryAddress?.city,
+                    order.deliveryAddress?.state,
+                    order.deliveryAddress?.pincode
+                  ]
+                    .filter(Boolean)
+                    .join(', ') || 'N/A'}
               </span>
             </div>
             {/* Show delivery time */}
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Delivery Time:</span>
-              <span className="text-sm font-medium text-right">30 minutes</span>
+              <span className="text-sm font-semibold text-indigo-600 text-right">30 minutes</span>
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Order No:</span>
-              <span className="text-sm font-medium text-right break-all">{order.id}</span>
+              <span className="text-sm font-semibold text-indigo-700 text-right break-all">{order.id}</span>
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Total:</span>
-              <span className="text-sm font-medium text-right">₹{(order.total ?? 0).toFixed(2)}</span>
+              <span className="text-sm font-bold text-green-700 text-right">₹{(order.total ?? 0).toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Payment:</span>
-              <span className="text-sm font-medium text-right">{order.paymentMethod || 'N/A'}</span>
+              <span className="text-sm font-semibold text-blue-700 text-right">{order.paymentMethod || 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Items:</span>
@@ -193,13 +201,19 @@ const TrackOrder: React.FC = () => {
             <div className="flex flex-col gap-4">
               {statusSteps.slice(0, 5).map((step, idx) => (
                 <div key={step} className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs
-                    ${idx <= currentStep && !['cancelled','canceled'].includes((order.status || '').toLowerCase()) ? 'bg-app-primary text-white' : 'bg-gray-300 text-gray-500'}
+                  <div className={`
+                    w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs
+                    ${idx <= currentStep && !['cancelled','canceled'].includes((order.status || '').toLowerCase()) ? 'bg-gradient-to-br from-indigo-500 to-pink-500 text-white shadow' : 'bg-gray-300 text-gray-500'}
                   `}>
                     {idx + 1}
                   </div>
                   <div>
-                    <span className={`font-medium ${idx <= currentStep && !['cancelled','canceled'].includes((order.status || '').toLowerCase()) ? 'text-app-primary' : 'text-gray-500'}`}>
+                    <span className={`
+                      font-semibold
+                      ${idx === currentStep && !['cancelled','canceled'].includes((order.status || '').toLowerCase()) ? 'text-pink-600' : ''}
+                      ${idx < currentStep && !['cancelled','canceled'].includes((order.status || '').toLowerCase()) ? 'text-indigo-700' : ''}
+                      ${idx > currentStep || ['cancelled','canceled'].includes((order.status || '').toLowerCase()) ? 'text-gray-500' : ''}
+                    `}>
                       {statusLabels[step]}
                     </span>
                     {['cancelled','canceled'].includes((order.status || '').toLowerCase()) && idx === currentStep && (
@@ -210,17 +224,17 @@ const TrackOrder: React.FC = () => {
               ))}
               {['cancelled','canceled'].includes((order.status || '').toLowerCase()) && (
                 <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-red-500 text-white">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-red-500 text-white shadow">
                     X
                   </div>
-                  <span className="font-medium text-red-500">Cancelled</span>
+                  <span className="font-semibold text-red-500">Cancelled</span>
                 </div>
               )}
             </div>
           </div>
           <div>
             <span className="text-sm text-gray-500">Current Status: </span>
-            <span className="text-sm font-medium">{order.status?.replace('_',' ')}</span>
+            <span className="text-sm font-bold text-pink-700">{order.status?.replace('_',' ')}</span>
           </div>
           {/* Cancel Order Button */}
           <div className="flex flex-col items-end mt-6">
@@ -232,13 +246,19 @@ const TrackOrder: React.FC = () => {
             >
               {cancelling ? 'Cancelling...' : 'Cancel Order'}
             </Button>
-            {!canCancel && placedTime && (Date.now() - placedTime.getTime() >= FIVE_MINUTES) && !['cancelled', 'delivered'].includes((order.status || '').toLowerCase()) && (
-              <span className="mt-2 text-xs text-gray-500">
-                Order can only be cancelled within 5 minutes of placing for a full refund.
+            {/* Always show this message below the button */}
+            <span className="mt-2 text-xs text-gray-500">
+              Order can be cancelled within 5 minutes of order placement.
+            </span>
+            {/* Show message if cancel is not allowed due to time */}
+            {!canCancel && placedTime && (timeSincePlaced >= FIVE_MINUTES) && !['cancelled', 'canceled', 'delivered'].includes((order.status || '').toLowerCase()) && (
+              <span className="mt-1 text-xs text-red-500 font-semibold">
+                You can only cancel your order within 5 minutes of placing it.
               </span>
             )}
-            {['cancelled', 'delivered'].includes((order.status || '').toLowerCase()) && (
-              <span className="mt-2 text-xs text-gray-500">
+            {/* Show message if order is already cancelled or delivered */}
+            {['cancelled', 'canceled', 'delivered'].includes((order.status || '').toLowerCase()) && (
+              <span className="mt-1 text-xs text-gray-500">
                 Order cannot be cancelled at this stage.
               </span>
             )}

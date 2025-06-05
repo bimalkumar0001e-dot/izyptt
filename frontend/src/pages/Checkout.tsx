@@ -336,8 +336,15 @@ const Checkout: React.FC = () => {
             <Separator />
             
             <div>
-              <h2 className="text-lg font-semibold mb-3">Order Summary</h2>
               <OrderSummary cart={cart} appliedOffer={appliedOffer} />
+            </div>
+
+            {/* Cancellation Policy Section */}
+            <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 mt-4">
+              <h3 className="text-base font-semibold mb-1">Cancellation Policy</h3>
+              <p className="text-gray-600 text-sm">
+                Orders cannot be cancelled once packed for delivery. In case of unexpected delays, a refund will be provided, if applicable. For more details, please refer to our Return and Replacement Policy.
+              </p>
             </div>
             
             <Button 
