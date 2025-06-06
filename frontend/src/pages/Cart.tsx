@@ -197,6 +197,13 @@ const Cart: React.FC = () => {
           })}
         </div>
         
+        {/* --- Minimum Cart Amount Message (moved above OrderSummary) --- */}
+        {minCartAmount !== null && minCartActive && cart.subtotal < minCartAmount && (
+          <div className="mb-2 text-center text-red-600 font-medium text-sm">
+            Minimum cart amount is ₹{minCartAmount}. Please add more items to proceed.
+          </div>
+        )}
+
         <OrderSummary cart={cart} appliedOffer={appliedOffer} />
 
         {/* --- Product Suggestions Row --- */}
@@ -219,11 +226,6 @@ const Cart: React.FC = () => {
       </div>
       
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 max-w-md mx-auto mb-16">
-        {minCartAmount !== null && minCartActive && cart.subtotal < minCartAmount && (
-          <div className="mb-2 text-center text-red-600 font-medium text-sm">
-            Minimum cart amount is ₹{minCartAmount}. Please add more items to proceed.
-          </div>
-        )}
         <Button 
           className="app-button app-button-primary w-full"
           onClick={handleCheckout}
