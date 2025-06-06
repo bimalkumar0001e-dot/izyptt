@@ -1,18 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
-const multer = require('multer');
-const { verifyToken } = require('../middlewares/authMiddleware'); // <-- Add this line
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-const upload = multer({ storage: storage });
+const { verifyToken } = require('../middlewares/authMiddleware');
+const upload = require('../middlewares/upload'); // Use new upload middleware
 
 // Dashboard & System
 router.get('/dashboard', adminController.getDashboardStatistics);

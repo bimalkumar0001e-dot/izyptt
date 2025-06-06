@@ -557,7 +557,9 @@ exports.createProduct = async (req, res) => {
     }
 
     const { name, price, description, category, stock, restaurant, returnPolicy } = req.body;
+    // Use unique filename from multer middleware
     const image = req.file ? `/uploads/${req.file.filename}` : undefined;
+
     // Only require name, price, description, category, stock, image, returnPolicy
     if (!name || !price || !description || !category || !stock || !image || !returnPolicy) {
       return res.status(400).json({ message: 'All fields except Restaurant ID are required. Return policy is mandatory.' });
@@ -573,7 +575,8 @@ exports.createProduct = async (req, res) => {
       image,
       stock,
       returnPolicy,
-      isAvailable
+      isAvailable,
+      restaurant: restaurant || undefined
     });
     await product.save();
     res.status(201).json({ message: 'Product created', product });
@@ -1124,7 +1127,6 @@ exports.enablePaymentMethodForCustomer = async (req, res) => {
 exports.createBanner = async (req, res) => {
   try {
     const bannerData = req.body;
-    
     // Handle file upload if exists
     if (req.file) {
       // Store image path - adjust the path as needed for your front-end access
@@ -1132,7 +1134,6 @@ exports.createBanner = async (req, res) => {
     } else if (!bannerData.image) {
       return res.status(400).json({ message: 'Banner image is required' });
     }
-    
     const banner = new Banner(bannerData);
     await banner.save();
     res.status(201).json({ message: 'Banner created', banner });
@@ -1417,19 +1418,19 @@ exports.updateRestaurant = async (req, res) => {
 // Create new section
 exports.createSection = async (req, res) => {
   try {
-    // Accept form-data: name, description, image (file)
     const { name, description } = req.body;
     if (!name || !description) {
-      return res.status(400).json({ message: 'Section name and description are required' });
+      return res.status(400).json({ message: 'Name and description are required' });
     }
-    if (!req.file) {
+    let image = req.file ? `/uploads/${req.file.filename}` : undefined;
+    if (!image) {
       return res.status(400).json({ message: 'Section image is required' });
     }
-    const exists = await Section.findOne({ name });
-    if (exists) return res.status(400).json({ message: 'Section already exists' });
-
-    const image = `/uploads/${req.file.filename}`;
-    const section = new Section({ name, description, image });
+    const section = new Section({
+      name,
+      description,
+      image
+    });
     await section.save();
     res.status(201).json({ message: 'Section created', section });
   } catch (err) {
