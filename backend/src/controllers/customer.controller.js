@@ -64,6 +64,11 @@ exports.addNewAddress = async (req, res) => {
       state // may be undefined
     } = req.body;
 
+    // Pincode validation
+    if (pincode !== "852127") {
+      return res.status(400).json({ message: "we are currently active at 852127 only" });
+    }
+
     // If isDefault is true, unset isDefault on all other addresses
     if (isDefault) {
       req.user.addresses.forEach(addr => addr.isDefault = false);

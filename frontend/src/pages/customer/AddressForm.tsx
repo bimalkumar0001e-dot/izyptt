@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserAddress } from '@/types/user';
+import { BottomNav } from '@/components/BottomNav';
 
 const AddressForm: React.FC = () => {
   const navigate = useNavigate();
@@ -49,8 +50,8 @@ const AddressForm: React.FC = () => {
       setError('Please fill all required fields');
       return;
     }
-    if (pincode.length !== 6 || !/^\d+$/.test(pincode)) {
-      setError('Please enter a valid 6-digit pincode');
+    if (pincode !== '852127') {
+      setError('Sorry, we are currently available only at pincode 852127');
       return;
     }
     setIsLoading(true);
@@ -83,6 +84,10 @@ const AddressForm: React.FC = () => {
         title={isEditing ? 'Edit Address' : 'Add New Address'} 
         showBackButton 
       />
+      {/* Info box for service availability */}
+      <div className="mx-4 mt-4 mb-2 rounded-lg bg-orange-500 text-white px-4 py-3 text-sm font-medium shadow">
+        we are currently available at 852127 only!
+      </div>
       <div className="flex-1 p-4 pb-16">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -171,6 +176,7 @@ const AddressForm: React.FC = () => {
           </Button>
         </form>
       </div>
+      <BottomNav />
     </div>
   );
 };

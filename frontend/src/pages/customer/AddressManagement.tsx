@@ -5,6 +5,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserAddress } from '@/types/user';
+import { BottomNav } from '@/components/BottomNav';
 
 const AddressManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const AddressManagement: React.FC = () => {
   return (
     <div className="app-container">
       <AppHeader title="Manage Addresses" showBackButton />
-      <div className="flex-1 p-4 pb-28">
+      <div className="flex-1 p-4 pb-40 relative">
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-1">Your Saved Addresses</h2>
           <p className="text-gray-600 text-sm">
@@ -115,16 +116,18 @@ const AddressManagement: React.FC = () => {
             <p className="text-gray-600 mb-4">Add an address to save time during checkout</p>
           </div>
         )}
+        {/* Place the Add New Address button inside the scrollable area, at the bottom, styled to match the card layout */}
+        <div className="sticky bottom-20 mt-8">
+          <Button
+            className="w-full bg-app-primary hover:bg-app-primary/90 rounded-xl shadow font-semibold text-base"
+            onClick={() => navigate('/addresses/add')}
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Add New Address
+          </Button>
+        </div>
       </div>
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-10">
-        <Button
-          className="w-full bg-app-primary hover:bg-app-primary/90"
-          onClick={() => navigate('/addresses/add')}
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Add New Address
-        </Button>
-      </div>
+      <BottomNav />
     </div>
   );
 };
