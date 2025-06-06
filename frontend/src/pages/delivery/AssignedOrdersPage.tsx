@@ -205,7 +205,7 @@ const DeliveryOrdersPage: React.FC = () => {
         >
           View Details
         </button>
-        {/* Disable Picked and On Way buttons if status is not preparing, packed, placed, pending, picked */}
+        {/* Disable Picked and On Way buttons if status is not preparing, packed, placed, pending, picked,packing also */}
         <button
           onClick={async (e) => {
             e.stopPropagation();
@@ -228,7 +228,7 @@ const DeliveryOrdersPage: React.FC = () => {
           }}
           className="flex-1 bg-blue-500 text-white text-sm font-medium rounded-md py-2 hover:bg-blue-600 transition"
           disabled={
-            !['preparing', 'packed', 'placed', 'pending', 'picked'].includes(
+            !['preparing', 'packed', 'placed', 'pending', 'picked', 'packing'].includes(
               (order.status || '').toLowerCase()
             )
           }
@@ -257,7 +257,7 @@ const DeliveryOrdersPage: React.FC = () => {
           }}
           className="flex-1 bg-yellow-500 text-white text-sm font-medium rounded-md py-2 hover:bg-yellow-600 transition"
           disabled={
-            !['preparing', 'packed', 'placed', 'pending', 'picked'].includes(
+            !['preparing', 'packed', 'placed', 'pending', 'picked', 'packing'].includes(
               (order.status || '').toLowerCase()
             )
           }

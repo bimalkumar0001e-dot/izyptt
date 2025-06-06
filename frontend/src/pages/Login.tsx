@@ -653,7 +653,7 @@ const Login: React.FC = () => {
         
         <div className="mt-4 text-center">
           <p className="text-gray-600">
-            Don't have an account?{' '}
+            Customers can login directly. Only others need to Register!{' '}
             <Link to="/register" className="text-app-primary font-medium">
               Register
             </Link>
