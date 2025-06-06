@@ -9,11 +9,17 @@ import { BottomNav } from '@/components/BottomNav';
 
 const AddressManagement: React.FC = () => {
   const navigate = useNavigate();
-  const { user, fetchAddresses, addAddress, updateAddress, deleteAddress, isAuthenticated } = useAuth();
+  const { user, fetchAddresses, addAddress, updateAddress, deleteAddress, isAuthenticated, isLoading } = useAuth();
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'customer') {
+    // Wait for auth to finish loading
+    if (isLoading) return;
+    if (isAuthenticated === false) {
+      navigate('/login');
+      return;
+    }
+    if (user && user.role !== 'customer') {
       navigate('/login');
       return;
     }
@@ -21,7 +27,16 @@ const AddressManagement: React.FC = () => {
       setAddresses(user?.address || []);
     });
     // eslint-disable-next-line
-  }, [user?.address, isAuthenticated]);
+  }, [user, isAuthenticated, isLoading]);
+
+  // Show loading spinner while auth is loading
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <span className="text-lg text-gray-500">Loading...</span>
+      </div>
+    );
+  }
 
   const handleSetDefault = async (addressId: string) => {
     const updatedAddresses = addresses.map(addr => ({
