@@ -171,11 +171,12 @@ const BannerManagement: React.FC = () => {
           ...newBanner,
           id: data.banner._id,
           _id: data.banner._id,
-          image: data.banner.image // Use the image path returned from the server
+          // Use the image path returned from the server, not the preview URL
+          image: data.banner.image
         };
         setBanners([...banners, newBannerWithId]);
         setIsCreateDialogOpen(false);
-        
+
         // Reset the form
         setNewBanner({
           title: '',
@@ -188,7 +189,7 @@ const BannerManagement: React.FC = () => {
         });
         setSelectedFile(null);
         setPreviewUrl('');
-        
+
         toast({
           title: "Success",
           description: "Banner created successfully"
@@ -285,6 +286,7 @@ const BannerManagement: React.FC = () => {
   // Helper function to get complete image URL
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return '';
+    // Always use backend URL for non-absolute paths
     return imagePath.startsWith('http') ? imagePath : `${BACKEND_URL}${imagePath}`;
   };
 

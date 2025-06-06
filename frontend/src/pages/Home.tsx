@@ -179,9 +179,9 @@ const Home: React.FC = () => {
             .filter((b: any) => b.isActive)
             .map((b: any) => ({
               ...b,
-              image: b.image && b.image.startsWith('/uploads')
-                ? `${UPLOADS_BASE}${b.image}`
-                : b.image
+              image: b.image && b.image.startsWith('http')
+                ? b.image
+                : `${UPLOADS_BASE}${b.image}`
             }))
         );
       } catch {

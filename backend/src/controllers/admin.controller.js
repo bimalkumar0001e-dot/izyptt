@@ -413,7 +413,9 @@ exports.verifyPopularRestaurant = async (req, res) => {
 // ===== Order Management =====
 exports.listAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find().populate('customer restaurant deliveryPartner');
+    const orders = await Order.find()
+      .populate('customer restaurant deliveryPartner')
+      .sort({ createdAt: -1 }); // Sort by latest first
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching orders', error: err });
@@ -847,7 +849,8 @@ exports.viewAllPickups = async (req, res) => {
   try {
     const pickups = await PickupDrop.find()
       .populate('customer')
-      .populate('deliveryBoy'); // <-- Add this line
+      .populate('deliveryBoy')
+      .sort({ createdAt: -1 }); // Latest first
     res.json(pickups);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching pickups', error: err });

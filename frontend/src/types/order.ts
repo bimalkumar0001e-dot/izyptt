@@ -1,4 +1,3 @@
-
 export type OrderStatus = 
   | 'pending'
   | 'confirmed'
@@ -46,11 +45,14 @@ export interface Order {
   statusUpdates: OrderStatusUpdate[];
   deliveryAddress: {
     fullAddress: string;
+    address?: string; // Add address for compatibility
     landmark?: string;
     city: string;
+    state?: string; // Add state for compatibility
     pincode: string;
   };
   orderDate: Date;
   deliveryDate?: Date;
   isAssigned: boolean;
+  createdAt?: Date; // Add createdAt for compatibility
 }

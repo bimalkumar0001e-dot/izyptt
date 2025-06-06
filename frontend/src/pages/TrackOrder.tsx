@@ -7,6 +7,7 @@ import { Order } from '@/types/order';
 import { toast } from '@/hooks/use-toast';
 import { BACKEND_URL } from '@/utils/utils';
 
+const API_BASE = `${BACKEND_URL}/api`;
 const FIVE_MINUTES = 5 * 60 * 1000;
 
 const TrackOrder: React.FC = () => {
@@ -16,6 +17,9 @@ const TrackOrder: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [cancelMsg, setCancelMsg] = useState('');
+  const [adminDeliveryFee, setAdminDeliveryFee] = useState<number | null>(null);
+  const [adminHandlingCharge, setAdminHandlingCharge] = useState<number | null>(null);
+  const [adminGstTax, setAdminGstTax] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -38,6 +42,64 @@ const TrackOrder: React.FC = () => {
     };
     fetchOrder();
   }, [orderId]);
+
+  // Fetch admin fees/taxes for breakdown (same as OrderConfirmation)
+  useEffect(() => {
+    fetch(`${API_BASE}/admin/delivery-fee`)
+      .then(res => res.json())
+      .then((fees) => {
+        const activeFee = Array.isArray(fees)
+          ? fees.find((fee: any) => fee.isActive)
+          : null;
+        if (activeFee) setAdminDeliveryFee(activeFee.amount);
+        else setAdminDeliveryFee(0);
+      })
+      .catch(() => setAdminDeliveryFee(0));
+
+    fetch(`${API_BASE}/admin/handling-charge`)
+      .then(res => res.json())
+      .then((charges) => {
+        const activeCharge = Array.isArray(charges)
+          ? charges.find((charge: any) => charge.isActive)
+          : null;
+        if (activeCharge) setAdminHandlingCharge(activeCharge.amount);
+        else setAdminHandlingCharge(0);
+      })
+      .catch(() => setAdminHandlingCharge(0));
+
+    fetch(`${API_BASE}/admin/gst-taxes`)
+      .then(res => res.json())
+      .then((taxes) => {
+        const activeTax = Array.isArray(taxes)
+          ? taxes.find((tax: any) => tax.isActive)
+          : null;
+        if (activeTax) setAdminGstTax(activeTax.percentage || activeTax.amount || 0);
+        else setAdminGstTax(0);
+      })
+      .catch(() => setAdminGstTax(0));
+  }, []);
+
+  // Calculate breakdown using admin values and order data (same as OrderConfirmation)
+  let subtotal = 0;
+  let discount = 0;
+  if (order && order.items) {
+    subtotal = order.items.reduce(
+      (sum, item) =>
+        sum +
+        ((item.price ?? 0) * (item.quantity ?? 1)),
+      0
+    );
+    discount = order.discount || 0;
+  }
+  const deliveryFeeToShow = adminDeliveryFee !== null ? adminDeliveryFee : (order?.deliveryFee ?? 0);
+  const handlingChargeToShow = adminHandlingCharge !== null ? adminHandlingCharge : 0;
+  const gstTaxToShow = adminGstTax !== null ? (subtotal * adminGstTax / 100) : (order?.tax ?? 0);
+  const total =
+    subtotal +
+    deliveryFeeToShow +
+    gstTaxToShow +
+    handlingChargeToShow -
+    discount;
 
   // Use order.createdAt for time logic (not orderDate)
   const placedTime = order && (order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate) : null;
@@ -185,7 +247,12 @@ const TrackOrder: React.FC = () => {
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Total:</span>
-              <span className="text-sm font-bold text-green-700 text-right">₹{(order.total ?? 0).toFixed(2)}</span>
+              <span className="text-sm font-bold text-green-700 text-right">
+                {adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null
+                  ? <span className="text-gray-400">Loading...</span>
+                  : <>₹{total.toFixed(2)}</>
+                }
+              </span>
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Payment:</span>

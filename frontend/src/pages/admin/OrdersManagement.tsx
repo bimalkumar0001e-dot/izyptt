@@ -96,11 +96,51 @@ const OrdersManagement: React.FC = () => {
   const [orderDetails, setOrderDetails] = useState<any | null>(null);
   const [orderDetailsLoading, setOrderDetailsLoading] = useState(false);
   
+  // Admin fee/tax state
+  const [adminDeliveryFee, setAdminDeliveryFee] = useState<number | null>(null);
+  const [adminHandlingCharge, setAdminHandlingCharge] = useState<number | null>(null);
+  const [adminGstTax, setAdminGstTax] = useState<number | null>(null);
+
   // Fetch orders and delivery partners from backend
   useEffect(() => {
     fetchOrders();
     fetchDeliveryPartners();
     // eslint-disable-next-line
+  }, []);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/admin/delivery-fee`)
+      .then(res => res.json())
+      .then((fees) => {
+        const activeFee = Array.isArray(fees)
+          ? fees.find((fee: any) => fee.isActive)
+          : null;
+        if (activeFee) setAdminDeliveryFee(activeFee.amount);
+        else setAdminDeliveryFee(0);
+      })
+      .catch(() => setAdminDeliveryFee(0));
+
+    fetch(`${API_BASE}/admin/handling-charge`)
+      .then(res => res.json())
+      .then((charges) => {
+        const activeCharge = Array.isArray(charges)
+          ? charges.find((charge: any) => charge.isActive)
+          : null;
+        if (activeCharge) setAdminHandlingCharge(activeCharge.amount);
+        else setAdminHandlingCharge(0);
+      })
+      .catch(() => setAdminHandlingCharge(0));
+
+    fetch(`${API_BASE}/admin/gst-taxes`)
+      .then(res => res.json())
+      .then((taxes) => {
+        const activeTax = Array.isArray(taxes)
+          ? taxes.find((tax: any) => tax.isActive)
+          : null;
+        if (activeTax) setAdminGstTax(activeTax.percentage || activeTax.amount || 0);
+        else setAdminGstTax(0);
+      })
+      .catch(() => setAdminGstTax(0));
   }, []);
 
   const fetchOrders = async () => {
@@ -361,6 +401,30 @@ const OrdersManagement: React.FC = () => {
     setUpdateStatusDialogOpen(true);
   };
 
+  // Helper to calculate total for an order (same as OrderConfirmation)
+  const calculateOrderTotal = (order: any) => {
+    let subtotal = 0;
+    let discount = 0;
+    if (order && order.items) {
+      subtotal = order.items.reduce(
+        (sum: number, item: any) =>
+          sum + ((item.price ?? 0) * (item.quantity ?? 1)),
+        0
+      );
+      discount = order.discount || 0;
+    }
+    const deliveryFeeToShow = adminDeliveryFee !== null ? adminDeliveryFee : (order?.deliveryFee ?? 0);
+    const handlingChargeToShow = adminHandlingCharge !== null ? adminHandlingCharge : 0;
+    const gstTaxToShow = adminGstTax !== null ? (subtotal * adminGstTax / 100) : (order?.tax ?? 0);
+    const total =
+      subtotal +
+      deliveryFeeToShow +
+      gstTaxToShow +
+      handlingChargeToShow -
+      discount;
+    return total;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -459,7 +523,10 @@ const OrdersManagement: React.FC = () => {
                       </TableCell>
                       {/* Amount */}
                       <TableCell>
-                        ₹{typeof order.finalAmount === 'number' ? order.finalAmount.toFixed(2) : '0.00'}
+                        {adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null
+                          ? <span className="text-gray-400">Loading...</span>
+                          : <>₹{calculateOrderTotal(order).toFixed(2)}</>
+                        }
                       </TableCell>
                       {/* Payment */}
                       <TableCell>
@@ -675,7 +742,10 @@ const OrdersManagement: React.FC = () => {
                   <span className="font-bold">Payment Mode:</span> {orderDetails.paymentMethod}
                 </div>
                 <div className="mb-2">
-                  <span className="font-bold">Total:</span> ₹{(orderDetails.finalAmount ?? orderDetails.totalAmount ?? 0).toFixed(2)}
+                  <span className="font-bold">Total:</span> {adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null
+                    ? <span className="text-gray-400">Loading...</span>
+                    : <>₹{calculateOrderTotal(orderDetails).toFixed(2)}</>
+                  }
                 </div>
                 <div className="mb-2">
                   <span className="font-bold">Items:</span>
