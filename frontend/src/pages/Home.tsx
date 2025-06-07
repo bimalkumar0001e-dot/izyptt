@@ -543,7 +543,7 @@ const Home: React.FC = () => {
                     </div>
                     <CardContent className="p-3">
                       <p className="text-sm font-medium truncate">{order.items && order.items[0] ? order.items[0].name : 'Order'}</p>
-                      <p className="text-xs text-gray-500">Tap to reorder</p>
+                      <p className="text-xs text-gray-500">Delivered</p>
                     </CardContent>
                   </Card>
                 ))

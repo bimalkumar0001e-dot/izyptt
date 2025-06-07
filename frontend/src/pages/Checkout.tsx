@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Plus, MapPin } from 'lucide-react';
+import { Check, Plus, MapPin, Copy } from 'lucide-react';
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -280,6 +280,16 @@ const Checkout: React.FC = () => {
     }
   };
 
+  // Add copy handler for payment details
+  const handleCopyDetails = (details?: string) => {
+    if (!details) return;
+    navigator.clipboard.writeText(details);
+    toast({
+      title: "Copied!",
+      description: "UPI ID copied to clipboard.",
+    });
+  };
+
   return (
     <div className="app-container">
       <AppHeader title="Checkout" showBackButton />
@@ -436,7 +446,7 @@ const Checkout: React.FC = () => {
       </div>
       {/* Payment Method Details Modal */}
       <Dialog open={!!paymentMethodModal} onOpenChange={open => !open && setPaymentMethodModal(null)}>
-        <DialogContent className="max-w-lg w-full"> {/* Increase modal width */}
+        <DialogContent className="max-w-lg w-full">
           <DialogHeader>
             <DialogTitle>
               {paymentMethodModal?.name}
@@ -459,9 +469,17 @@ const Checkout: React.FC = () => {
             </div>
           )}
           {paymentMethodModal?.details && (
-            <div className="mb-2">
-              <strong>Details:</strong>
-              <div className="text-sm text-gray-700 whitespace-pre-line">{paymentMethodModal.details}</div>
+            <div className="mb-2 flex items-center">
+              <strong className="mr-2">Details:</strong>
+              <span className="text-sm text-gray-700 whitespace-pre-line">{paymentMethodModal.details}</span>
+              <button
+                className="ml-2 p-1 rounded hover:bg-gray-200"
+                title="Copy UPI ID"
+                onClick={() => handleCopyDetails(paymentMethodModal.details)}
+                type="button"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
             </div>
           )}
           {paymentMethodModal?.paymentGuide && (

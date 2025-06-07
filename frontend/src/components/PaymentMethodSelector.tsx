@@ -2,6 +2,8 @@ import React from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { PaymentMethod as PaymentMethodType } from '@/types/paymentMethod'; // (create this type if not present)
+import { Copy } from 'lucide-react'; // add this import
+import { useToast } from '@/hooks/use-toast'; // add this import
 
 interface PaymentMethodSelectorProps {
   selectedMethod: string;
@@ -16,6 +18,17 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   paymentMethods,
   onMethodClick
 }) => {
+  const { toast } = useToast();
+
+  const handleCopyDetails = (details?: string) => {
+    if (!details) return;
+    navigator.clipboard.writeText(details);
+    toast({
+      title: "Copied!",
+      description: "UPI ID copied to clipboard.",
+    });
+  };
+
   return (
     <RadioGroup value={selectedMethod} onValueChange={onMethodSelect} className="space-y-3">
       {paymentMethods.map((method) => (
@@ -52,7 +65,20 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
               <div>
                 <p className="font-medium">{method.name}</p>
                 {method.details && (
-                  <p className="text-sm text-gray-600">{method.details}</p>
+                  <div className="flex items-center">
+                    <p className="text-sm text-gray-600">{method.details}</p>
+                    <button
+                      className="ml-2 p-1 rounded hover:bg-gray-200"
+                      title="Copy UPI ID"
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleCopyDetails(method.details);
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
