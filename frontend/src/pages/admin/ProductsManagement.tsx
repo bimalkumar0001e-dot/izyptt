@@ -56,7 +56,9 @@ const ProductsManagement: React.FC = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       const res = await fetch(`${API_BASE}/products`);
-      const data = await res.json();
+      let data = await res.json();
+      // Sort products by createdAt descending
+      data = data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setProducts(data);
       setFilteredProducts(data);
       setPopularProducts(data.filter((p: any) => p.isPopular));
@@ -69,6 +71,7 @@ const ProductsManagement: React.FC = () => {
     const query = e.target.value;
     setSearchQuery(query);
     if (!query.trim()) {
+      // Sort again to ensure order after clearing search
       setFilteredProducts(products);
       return;
     }
@@ -96,7 +99,8 @@ const ProductsManagement: React.FC = () => {
     }
     // Refresh products
     const res = await fetch(`${API_BASE}/products`);
-    const data = await res.json();
+    let data = await res.json();
+    data = data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     setProducts(data);
     setFilteredProducts(data);
     setPopularProducts(data.filter((p: any) => p.isPopular));
@@ -136,7 +140,8 @@ const ProductsManagement: React.FC = () => {
       }
       // Refresh products
       const res2 = await fetch(`${API_BASE}/products`);
-      const data2 = await res2.json();
+      let data2 = await res2.json();
+      data2 = data2.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setProducts(data2);
       setFilteredProducts(data2);
       setPopularProducts(data2.filter((p: any) => p.isPopular));
@@ -200,7 +205,8 @@ const ProductsManagement: React.FC = () => {
       if (!res.ok) throw new Error(data.message || 'Failed to update product');
       // Refresh products
       const res2 = await fetch(`${API_BASE}/products`);
-      const data2 = await res2.json();
+      let data2 = await res2.json();
+      data2 = data2.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setProducts(data2);
       setFilteredProducts(data2);
       setPopularProducts(data2.filter((p: any) => p.isPopular));
@@ -224,7 +230,8 @@ const ProductsManagement: React.FC = () => {
       if (!res.ok) throw new Error(data.message || 'Failed to delete product');
       // Refresh products
       const res2 = await fetch(`${API_BASE}/products`);
-      const data2 = await res2.json();
+      let data2 = await res2.json();
+      data2 = data2.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setProducts(data2);
       setFilteredProducts(data2);
       setPopularProducts(data2.filter((p: any) => p.isPopular));
