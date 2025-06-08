@@ -40,6 +40,8 @@ const SectionManagement: React.FC = () => {
   const [updateSectionImagePreview, setUpdateSectionImagePreview] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState('');
+  const [addProductSearch, setAddProductSearch] = useState('');
+  const [addProductSearchResults, setAddProductSearchResults] = useState<any[]>([]);
 
   // Fetch all sections and all products
   useEffect(() => {
@@ -56,7 +58,9 @@ const SectionManagement: React.FC = () => {
 
   const fetchProducts = async () => {
     const res = await fetch(`${API_BASE}/products`);
-    const data = await res.json();
+    let data = await res.json();
+    // Sort products by createdAt descending
+    data = data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     setProducts(data);
   };
 
@@ -140,9 +144,11 @@ const SectionManagement: React.FC = () => {
         }),
       });
       await res.json();
-      setAddProductDialogOpen(false);
+      // Instead of closing dialog, keep it open and reset product selection
       setSelectedProductId('');
       fetchSections();
+      // Optionally, refresh the product search results
+      handleAddProductSearch();
     } catch (err) {
       // Optionally show error
     } finally {
@@ -217,6 +223,41 @@ const SectionManagement: React.FC = () => {
       setIsUpdating(false);
     }
   };
+
+  // Add Product to Section Dialog: search handler
+  const handleAddProductSearch = () => {
+    if (!addProductSearch.trim()) {
+      setAddProductSearchResults(
+        products.filter(p =>
+          !selectedSection?.products.some((sp: any) => sp._id === p._id)
+        )
+      );
+      return;
+    }
+    const query = addProductSearch.trim().toLowerCase();
+    setAddProductSearchResults(
+      products.filter(p =>
+        !selectedSection?.products.some((sp: any) => sp._id === p._id) &&
+        (
+          p.name.toLowerCase().includes(query) ||
+          (p.description && p.description.toLowerCase().includes(query)) ||
+          (p.category && p.category.toLowerCase().includes(query))
+        )
+      )
+    );
+  };
+
+  // When dialog opens or selectedSection changes, reset search
+  useEffect(() => {
+    if (addProductDialogOpen && selectedSection) {
+      setAddProductSearch('');
+      setAddProductSearchResults(
+        products.filter(p =>
+          !selectedSection?.products.some((sp: any) => sp._id === p._id)
+        )
+      );
+    }
+  }, [addProductDialogOpen, selectedSection, products]);
 
   return (
     <div className="p-6">
@@ -353,21 +394,29 @@ const SectionManagement: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Search products by name, description, category..."
+                value={addProductSearch}
+                onChange={e => setAddProductSearch(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddProductSearch(); } }}
+                className="flex-1"
+              />
+              <Button type="button" onClick={handleAddProductSearch}>
+                Search
+              </Button>
+            </div>
             <select
               className="app-input"
               value={selectedProductId}
               onChange={e => setSelectedProductId(e.target.value)}
             >
               <option value="">Select Product</option>
-              {products
-                .filter(p =>
-                  !selectedSection?.products.some((sp: any) => sp._id === p._id)
-                )
-                .map((product: any) => (
-                  <option key={product._id} value={product._id}>
-                    {product.name}
-                  </option>
-                ))}
+              {addProductSearchResults.map((product: any) => (
+                <option key={product._id} value={product._id}>
+                  {product.name} | {product.category} | {product.description?.slice(0, 30)}
+                </option>
+              ))}
             </select>
             <div className="mt-4 flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={() => setAddProductDialogOpen(false)}>Cancel</Button>
