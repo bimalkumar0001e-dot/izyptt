@@ -15,25 +15,29 @@ const AdminNotification: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/admin/notifications`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setNotifications(data);
-        }
-      } catch (err) {
-        // handle error
+  // Fetch notifications function
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/notifications`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
       }
-      setLoading(false);
-    };
+    } catch (err) {
+      // handle error
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // 30 seconds
+    return () => clearInterval(interval);
   }, [token]);
 
   return (

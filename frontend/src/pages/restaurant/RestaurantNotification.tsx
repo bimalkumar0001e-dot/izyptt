@@ -35,39 +35,34 @@ const RestaurantNotification: React.FC = () => {
     }
   }, [isLoading, isAuthenticated, user, navigate]);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      setLoading(true);
-      try {
-        // Use token from state or localStorage
-        const storedToken = localStorage.getItem('token') || token;
-        
-        if (!storedToken) {
-          console.error('No token available for notifications fetch');
-          setNotifications([]);
-          setLoading(false);
-          return;
-        }
-        
-        const res = await fetch(`${API_BASE}/restaurants/notifications`, {
-          headers: {
-            Authorization: `Bearer ${storedToken}`,
-          },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setNotifications(data);
-        } else {
-          console.error('Error fetching notifications:', res.status);
-          setNotifications([]);
-        }
-      } catch (err) {
-        console.error('Exception fetching notifications:', err);
+  // Fetch notifications function
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const storedToken = localStorage.getItem('token') || token;
+      if (!storedToken) {
+        setNotifications([]);
+        setLoading(false);
+        return;
+      }
+      const res = await fetch(`${API_BASE}/restaurants/notifications`, {
+        headers: {
+          Authorization: `Bearer ${storedToken}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
+      } else {
         setNotifications([]);
       }
-      setLoading(false);
-    };
-    
+    } catch (err) {
+      setNotifications([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     // Only fetch if we have authentication data (either from context or localStorage)
     const storedToken = localStorage.getItem('token') || token;
     const storedUser = localStorage.getItem('user');
@@ -85,6 +80,8 @@ const RestaurantNotification: React.FC = () => {
     // Fetch notifications if we have a token and either context user is restaurant or localStorage user is restaurant
     if (storedToken && (user?.role === 'restaurant' || userRole === 'restaurant')) {
       fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000); // 30 seconds
+      return () => clearInterval(interval);
     }
   }, [token, isAuthenticated, user]);
 
