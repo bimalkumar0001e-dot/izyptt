@@ -34,6 +34,14 @@ const fallbackInstructions: Partial<ReturnInstruction>[] = [
   }
 ];
 
+// Box styles for each instruction type
+const boxStyles = [
+  { bg: "bg-blue-50", border: "border-blue-200", title: "text-blue-700", icon: "text-blue-600" },
+  { bg: "bg-purple-50", border: "border-purple-200", title: "text-purple-700", icon: "text-purple-600" },
+  { bg: "bg-amber-50", border: "border-amber-200", title: "text-amber-700", icon: "text-amber-600" },
+  { bg: "bg-green-50", border: "border-green-200", title: "text-green-700", icon: "text-green-600" },
+];
+
 const ReturnInstructionPage: React.FC = () => {
   const [instructions, setInstructions] = useState<ReturnInstruction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,14 +61,14 @@ const ReturnInstructionPage: React.FC = () => {
       });
   }, []);
 
-  // Helper function to get the appropriate icon for a section
-  const getIconForSection = (title: string) => {
+  // Helper function to get the appropriate icon for a section with custom color
+  const getIconForSection = (title: string, colorClass: string) => {
     const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes('return') && lowerTitle.includes('product')) return <ArrowLeftRight className="w-6 h-6 text-blue-500" />;
-    if (lowerTitle.includes('record') || lowerTitle.includes('video')) return <Video className="w-6 h-6 text-purple-500" />;
-    if (lowerTitle.includes('contact')) return <MessageCircle className="w-6 h-6 text-green-500" />;
-    if (lowerTitle.includes('timely') || lowerTitle.includes('time')) return <Clock className="w-6 h-6 text-amber-500" />;
-    return <Package className="w-6 h-6 text-indigo-500" />;
+    if (lowerTitle.includes('return') && lowerTitle.includes('product')) return <ArrowLeftRight className={`w-6 h-6 ${colorClass}`} />;
+    if (lowerTitle.includes('record') || lowerTitle.includes('video')) return <Video className={`w-6 h-6 ${colorClass}`} />;
+    if (lowerTitle.includes('contact')) return <MessageCircle className={`w-6 h-6 ${colorClass}`} />;
+    if (lowerTitle.includes('timely') || lowerTitle.includes('time')) return <Clock className={`w-6 h-6 ${colorClass}`} />;
+    return <Package className={`w-6 h-6 ${colorClass}`} />;
   };
 
   return (
@@ -85,57 +93,48 @@ const ReturnInstructionPage: React.FC = () => {
             <p className="text-gray-500 mt-2">Please check back later or contact support.</p>
           </div>
         ) : (
-          <div className="space-y-6 pb-8">
-            {instructions.map((instr, index) => (
-              <div 
-                key={instr._id || index} 
-                className="rounded-2xl p-5 bg-white shadow-md border border-gray-100"
-                style={{
-                  background: index % 2 === 0 
-                    ? "linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%)" 
-                    : "linear-gradient(135deg, #ffffff 0%, #fff7f0 100%)"
-                }}
-              >
-                <div className="flex items-start">
-                  {getIconForSection(instr.title)}
-                  <div className="ml-3 flex-1">
-                    <h2 className="font-bold text-xl text-gray-800 mb-3">{instr.title}</h2>
-                    <div className="prose prose-sm max-w-none whitespace-pre-line text-gray-700 leading-relaxed">
-                      {instr.content.split('\n').map((line, i) => (
-                        <p key={i} className="mb-2">{line}</p>
-                      ))}
+          <div className="space-y-8 pb-8">
+            {instructions.map((instr, index) => {
+              const style = boxStyles[index % boxStyles.length];
+              return (
+                <div 
+                  key={instr._id || index} 
+                  className={`rounded-2xl p-5 shadow-lg ${style.bg} border ${style.border} transition-all hover:shadow-xl`}
+                >
+                  <div className="flex items-start">
+                    {getIconForSection(instr.title, style.icon)}
+                    <div className="ml-4 flex-1">
+                      <h2 className={`font-bold text-xl mb-3 ${style.title}`}>{instr.title}</h2>
+                      <div className="prose prose-sm max-w-none whitespace-pre-line text-gray-700 leading-relaxed">
+                        {instr.content.split('\n').map((line, i) => (
+                          <p key={i} className="mb-2">{line}</p>
+                        ))}
+                      </div>
+                      
+                      {/* Conditional contact information display with icons */}
+                      {instr.content.includes('WhatsApp') && (
+                        <div className="mt-4 flex items-center p-2 bg-white bg-opacity-50 rounded-lg">
+                          <Phone className="w-5 h-5 text-green-600 mr-2" />
+                          <span className="font-medium text-green-700">Contact via WhatsApp:-9204520826</span>
+                        </div>
+                      )}
+                      
+                      {instr.content.includes('email') && (
+                        <div className="mt-2 flex items-center p-2 bg-white bg-opacity-50 rounded-lg">
+                          <Mail className="w-5 h-5 text-blue-600 mr-2" />
+                          <span className="font-medium text-blue-700">Contact via Email:-izyptcare@gmail.com</span>
+                        </div>
+                      )}
                     </div>
-                    
-                    {/* Conditional contact information display with icons */}
-                    {instr.content.includes('WhatsApp') && (
-                      <div className="mt-3 flex items-center">
-                        <Phone className="w-4 h-4 text-green-600 mr-2" />
-                        <span className="font-medium">Contact via WhatsApp</span>
-                      </div>
-                    )}
-                    
-                    {instr.content.includes('email') && (
-                      <div className="mt-2 flex items-center">
-                        <Mail className="w-4 h-4 text-blue-600 mr-2" />
-                        <span className="font-medium">Contact via Email</span>
-                      </div>
-                    )}
                   </div>
                 </div>
-                
-                {/* Visual timeline indicator */}
-                {index < instructions.length - 1 && (
-                  <div className="flex justify-center mt-4">
-                    <div className="w-1 h-6 bg-gray-200"></div>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
             
             {/* Final note with checkmark */}
-            <div className="bg-green-50 rounded-xl p-4 border border-green-100 flex items-start">
+            <div className="bg-green-50 rounded-xl p-4 border border-green-200 flex items-start shadow-md">
               <CheckCircle2 className="w-6 h-6 text-green-600 mr-3 flex-shrink-0" />
-              <p className="text-green-800 text-sm">
+              <p className="text-green-800 text-sm font-medium">
                 Following these instructions carefully will help us process your return or exchange request smoothly. Thank you for your cooperation!
               </p>
             </div>

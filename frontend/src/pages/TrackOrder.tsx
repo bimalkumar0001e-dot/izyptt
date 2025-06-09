@@ -114,7 +114,7 @@ const TrackOrder: React.FC = () => {
 
   const handleCancel = async () => {
     if (!orderId) return;
-    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+    if (!window.confirm('Are you sure you want to cancel this order? It may disable cod on your future orders!')) return;
     setCancelling(true);
     setCancelMsg('');
     try {
