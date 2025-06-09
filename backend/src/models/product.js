@@ -16,6 +16,11 @@ const productSchema = new mongoose.Schema({
         required: true,
         min: 0
     },
+    maxPrice: {
+        type: Number,
+        required: true,
+        min: 0
+    },
     category: {
         type: String,
         required: true,

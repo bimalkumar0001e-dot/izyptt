@@ -556,13 +556,13 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ message: 'Only one image file is allowed.' });
     }
 
-    const { name, price, description, category, stock, restaurant, returnPolicy } = req.body;
+    const { name, price, maxPrice, description, category, stock, restaurant, returnPolicy } = req.body;
     // Use unique filename from multer middleware
     const image = req.file ? `/uploads/${req.file.filename}` : undefined;
 
-    // Only require name, price, description, category, stock, image, returnPolicy
-    if (!name || !price || !description || !category || !stock || !image || !returnPolicy) {
-      return res.status(400).json({ message: 'All fields except Restaurant ID are required. Return policy is mandatory.' });
+    // Only require name, price, maxPrice, description, category, stock, image, returnPolicy
+    if (!name || !price || !maxPrice || !description || !category || !stock || !image || !returnPolicy) {
+      return res.status(400).json({ message: 'All fields except Restaurant ID are required. Return policy and max price are mandatory.' });
     }
     // Fix the isAvailable conversion
     const isAvailable = req.body.isAvailable === 'true' || req.body.isAvailable === true;
@@ -570,6 +570,7 @@ exports.createProduct = async (req, res) => {
     const product = new Product({
       name,
       price,
+      maxPrice,
       description,
       category,
       image,
@@ -612,6 +613,7 @@ exports.updateProduct = async (req, res) => {
     // Use strict undefined check for updates
     if (req.body.name !== undefined) product.name = req.body.name;
     if (req.body.price !== undefined) product.price = req.body.price;
+    if (req.body.maxPrice !== undefined) product.maxPrice = req.body.maxPrice;
     if (req.body.description !== undefined) product.description = req.body.description;
     if (req.body.category !== undefined) product.category = req.body.category;
     if (req.body.stock !== undefined) product.stock = req.body.stock;

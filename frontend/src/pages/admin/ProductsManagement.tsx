@@ -31,6 +31,7 @@ const ProductsManagement: React.FC = () => {
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: '',
+    maxPrice: '',
     category: '',
     description: '',
     stock: '',
@@ -113,7 +114,7 @@ const ProductsManagement: React.FC = () => {
     setIsAdding(true);
     try {
       // Validate required fields except restaurant
-      if (!newProduct.name || !newProduct.price || !newProduct.category || !newProduct.description || !newProduct.stock || !newProduct.image || !newProduct.returnPolicy) {
+      if (!newProduct.name || !newProduct.price || !newProduct.maxPrice || !newProduct.category || !newProduct.description || !newProduct.stock || !newProduct.image || !newProduct.returnPolicy) {
         setAddError('Please fill all required fields. Restaurant ID is optional.');
         setIsAdding(false);
         return;
@@ -121,6 +122,7 @@ const ProductsManagement: React.FC = () => {
       const formData = new FormData();
       formData.append('name', newProduct.name);
       formData.append('price', newProduct.price);
+      formData.append('maxPrice', newProduct.maxPrice);
       formData.append('category', newProduct.category);
       formData.append('description', newProduct.description);
       formData.append('stock', newProduct.stock);
@@ -147,7 +149,7 @@ const ProductsManagement: React.FC = () => {
       setPopularProducts(data2.filter((p: any) => p.isPopular));
       setAddDialogOpen(false);
       setNewProduct({
-        name: '', price: '', category: '', description: '', stock: '', restaurant: '', isAvailable: true, image: null, returnPolicy: ''
+        name: '', price: '', maxPrice: '', category: '', description: '', stock: '', restaurant: '', isAvailable: true, image: null, returnPolicy: ''
       });
     } catch (err: any) {
       setAddError(err.message || 'Failed to add product');
@@ -171,7 +173,8 @@ const ProductsManagement: React.FC = () => {
     setEditProduct({
       ...data,
       image: '', // Don't prefill file input
-      returnPolicy: data.returnPolicy || '', // <-- Add this line
+      returnPolicy: data.returnPolicy || '',
+      maxPrice: data.maxPrice || '',
     });
     setEditDialogOpen(true);
     setEditError('');
@@ -185,6 +188,7 @@ const ProductsManagement: React.FC = () => {
       const formData = new FormData();
       formData.append('name', editProduct.name);
       formData.append('price', editProduct.price);
+      formData.append('maxPrice', editProduct.maxPrice);
       formData.append('category', editProduct.category);
       formData.append('description', editProduct.description);
       formData.append('stock', editProduct.stock);
@@ -295,6 +299,17 @@ const ProductsManagement: React.FC = () => {
                       value={newProduct.price}
                       onChange={e => setNewProduct({ ...newProduct, price: e.target.value })}
                       placeholder="Enter price"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="maxPrice">Max Price (Market Price)</label>
+                    <Input
+                      id="maxPrice"
+                      type="number"
+                      value={newProduct.maxPrice}
+                      onChange={e => setNewProduct({ ...newProduct, maxPrice: e.target.value })}
+                      placeholder="Enter max/market price"
                       required
                     />
                   </div>
@@ -441,6 +456,7 @@ const ProductsManagement: React.FC = () => {
                 <TableHead>Restaurant</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Price</TableHead>
+                <TableHead>Max Price</TableHead>
                 <TableHead>Return Policy</TableHead> {/* <-- Add this line */}
                 <TableHead>Popular</TableHead>
                 <TableHead>Status</TableHead>
@@ -465,6 +481,7 @@ const ProductsManagement: React.FC = () => {
                   <TableCell>{product.restaurant}</TableCell>
                   <TableCell>{product.category}</TableCell>
                   <TableCell>₹{product.price}</TableCell>
+                  <TableCell>₹{product.maxPrice}</TableCell>
                   <TableCell>{product.returnPolicy}</TableCell> {/* <-- Add this line */}
                   <TableCell>
                     <Switch 
@@ -575,6 +592,16 @@ const ProductsManagement: React.FC = () => {
                     type="number"
                     value={editProduct.price}
                     onChange={e => setEditProduct({ ...editProduct, price: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="edit-maxPrice">Max Price (Market Price)</label>
+                  <Input
+                    id="edit-maxPrice"
+                    type="number"
+                    value={editProduct.maxPrice}
+                    onChange={e => setEditProduct({ ...editProduct, maxPrice: e.target.value })}
                     required
                   />
                 </div>

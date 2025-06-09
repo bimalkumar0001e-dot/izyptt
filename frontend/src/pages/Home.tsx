@@ -290,7 +290,7 @@ const Home: React.FC = () => {
           <div className="p-4 bg-gradient-to-r from-app-primary to-app-accent text-white rounded-b-lg shadow-md">
             <div className="flex items-center mb-3">
               <MapPin className="w-5 h-5 mr-2" />
-              <p className="text-sm font-medium">Deliver to: <span className="font-bold">{user?.address?.[0]?.city || 'Patna, Bihar'}</span></p>
+              <p className="text-sm font-medium">Deliver to: <span className="font-bold">{user?.address?.[0]?.city || 'Sb Pur, Bihar'}</span></p>
             </div>
             <form onSubmit={handleSearch} className="flex gap-2">
               <Input

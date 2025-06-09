@@ -16,6 +16,45 @@ interface Notification {
 
 const API_BASE = `${BACKEND_URL}/api`;
 
+const notificationTypeStyles: Record<string, { bg: string; border: string; title: string; time: string }> = {
+  order: {
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    title: "text-blue-700",
+    time: "text-blue-400"
+  },
+  delivery: {
+    bg: "bg-yellow-50",
+    border: "border-yellow-200",
+    title: "text-yellow-700",
+    time: "text-yellow-500"
+  },
+  system: {
+    bg: "bg-purple-50",
+    border: "border-purple-200",
+    title: "text-purple-700",
+    time: "text-purple-400"
+  },
+  promo: {
+    bg: "bg-green-50",
+    border: "border-green-200",
+    title: "text-green-700",
+    time: "text-green-500"
+  },
+  support: {
+    bg: "bg-pink-50",
+    border: "border-pink-200",
+    title: "text-pink-700",
+    time: "text-pink-400"
+  },
+  default: {
+    bg: "bg-gray-50",
+    border: "border-gray-200",
+    title: "text-gray-700",
+    time: "text-gray-400"
+  }
+};
+
 const RestaurantNotification: React.FC = () => {
   const { user, token, isAuthenticated, isLoading } = useAuth();
   const { unreadCount } = useNotifications();
@@ -147,23 +186,31 @@ const RestaurantNotification: React.FC = () => {
             <div className="text-center text-gray-500 py-8">No notifications found.</div>
           ) : (
             <ul className="space-y-4">
-              {notifications.map(n => (
-                <li
-                  key={n._id}
-                  className={`p-3 rounded-lg border ${n.read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'} shadow-sm`}
-                  style={{ fontWeight: n.read ? 'normal' : 'bold' }}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-sm text-gray-600 mb-1 capitalize">{n.type} notification</div>
-                      <div className="font-medium">{n.message}</div>
+              {notifications.map(n => {
+                const style = notificationTypeStyles[n.type] || notificationTypeStyles.default;
+                return (
+                  <li
+                    key={n._id}
+                    className={`p-4 rounded-xl border ${style.bg} ${style.border} shadow-sm flex flex-col gap-1`}
+                    style={{ fontWeight: n.read ? 'normal' : 'bold' }}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className={`text-base font-semibold ${style.title} capitalize`}>
+                        {n.type === 'order' && 'Order Notification'}
+                        {n.type === 'delivery' && 'Delivery Notification'}
+                        {n.type === 'system' && 'System Notification'}
+                        {n.type === 'promo' && 'Promo Notification'}
+                        {n.type === 'support' && 'Support Notification'}
+                        {!['order','delivery','system','promo','support'].includes(n.type) && 'Notification'}
+                      </span>
+                      <span className={`text-xs font-semibold ${style.time}`}>
+                        {new Date(n.createdAt).toLocaleString()}
+                      </span>
                     </div>
-                    <div className="text-xs text-gray-400 ml-3 whitespace-nowrap">
-                      {new Date(n.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                </li>
-              ))}
+                    <div className="mt-1 text-gray-700 text-sm">{n.message}</div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

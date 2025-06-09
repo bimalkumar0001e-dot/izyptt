@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Store, Truck, Coins, Settings } from 'lucide-react';
+import { ArrowLeft, Users, Store, Truck, Coins, Settings, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from '@/utils/toast';
 import axios from 'axios';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -27,49 +28,7 @@ const AdminDashboard: React.FC = () => {
   const [isStoreOpen, setIsStoreOpen] = useState(true);
   const [statusLoading, setStatusLoading] = useState(true);
   const [statusUpdating, setStatusUpdating] = useState(false);
-
-
-
-
-
-//   Add a Notification Icon Button
-// Place the notification icon (bell) in your dashboard header, and wrap it with a button or clickable element.
-//   import { Bell } from 'lucide-react'; // or your icon library
-// import { useNotifications } from '@/contexts/NotificationContext';
-
-// // Inside your AdminDashboard component:
-// const { unreadCount } = useNotifications();
-
-  
-  // Add this to your header (replace your current bell icon if you have one):
-
-
-{/* <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
-  <div className="flex items-center">
-    <button 
-      onClick={() => navigate('/admin')} 
-      className="mr-2 p-1 rounded-full hover:bg-gray-100"
-    >
-      <ArrowLeft className="w-6 h-6" />
-    </button>
-    <h1 className="text-lg font-semibold">Admin Dashboard</h1>
-  </div>
-  <button
-    onClick={() => navigate('/admin/notifications')}
-    className="relative p-2 rounded-full hover:bg-gray-100"
-    aria-label="View notifications"
-  >
-    <Bell className="w-6 h-6" />
-    {unreadCount > 0 && (
-      <span className="absolute top-0 right-0 inline-block w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
-    )}
-  </button>
-</header> */}
-
-
-
-// Now, when the admin clicks the notification icon (bell) on the dashboard, they will be navigated to the admin notification page.
-
+  const { unreadCount } = useNotifications();
 
   // Dashboard statistics state
   const [dashboardStats, setDashboardStats] = useState<{
@@ -174,6 +133,17 @@ const AdminDashboard: React.FC = () => {
           </button>
           <h1 className="text-lg font-semibold">Admin Dashboard</h1>
         </div>
+        {/* Notification bell icon */}
+        <button
+          onClick={() => navigate('/admin/notifications')}
+          className="relative p-2 rounded-full hover:bg-gray-100"
+          aria-label="View notifications"
+        >
+          <Bell className="w-6 h-6" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+          )}
+        </button>
       </header>
       
       <div className="p-4 pb-16">

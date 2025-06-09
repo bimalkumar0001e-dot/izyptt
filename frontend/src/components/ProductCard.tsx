@@ -30,7 +30,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, hideAddToCart
   return (
     <div
       className="product-card cursor-pointer flex flex-col"
-      style={{ height: 340, minHeight: 340, maxHeight: 340 }} // <-- fixed height
+      style={{ height: 340, minHeight: 340, maxHeight: 340 }}
       onClick={handleClick}
     >
       <div className="relative w-full h-40 bg-white flex items-center justify-center rounded-t-xl">
@@ -43,7 +43,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, hideAddToCart
             console.log("Image failed to load:", product.image);
           }}
         />
-        {/* Veg/Non-Veg icon based on category */}
+        {/* Veg/Non-Veg icon */}
         <span 
           className={`absolute top-2 right-2 w-5 h-5 rounded-full ${
             isNonVeg ? 'bg-red-500' : 'bg-green-500'
@@ -57,6 +57,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, hideAddToCart
         <h3 className="font-medium text-gray-900">{product.name}</h3>
         <div className="flex items-center justify-between mt-2">
           <div>
+            {/* Show max price above real price */}
+            {typeof product.maxPrice === 'number' && (
+              <div className="text-xs text-gray-500 line-through mb-0.5">
+                ₹{product.maxPrice.toFixed(2)}
+              </div>
+            )}
             <p className="font-semibold">
               ₹{typeof product.price === 'number' ? product.price.toFixed(2) : 'N/A'}
             </p>
