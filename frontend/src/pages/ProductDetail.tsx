@@ -231,7 +231,7 @@ const ProductDetail: React.FC = () => {
         {isSiteDisabled && (
           <div className="p-3 mb-2 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-center font-semibold text-base">
             {siteStatus === 'offline'
-              ? 'We are Offline: The website is currently offline. Please check back later.'
+              ? 'We are Offline, not accepting orders currently. Please check back later.'
               : 'Maintenance Mode: We are performing scheduled maintenance. Please try again soon.'}
           </div>
         )}
