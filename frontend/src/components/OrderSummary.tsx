@@ -12,7 +12,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   cart,
   appliedOffer
 }) => {
-  const [adminDeliveryFee, setAdminDeliveryFee] = useState<number | null>(null);
+  const [adminDeliveryFees, setAdminDeliveryFees] = useState<any[] | null>(null);
   const [adminHandlingCharge, setAdminHandlingCharge] = useState<number | null>(null);
   const [adminGstTax, setAdminGstTax] = useState<number | null>(null);
 
@@ -20,13 +20,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
     fetch(`${BACKEND_URL}/api/admin/delivery-fee`)
       .then(res => res.json())
       .then((fees) => {
-        const activeFee = Array.isArray(fees)
-          ? fees.find((fee: any) => fee.isActive)
-          : null;
-        if (activeFee) setAdminDeliveryFee(activeFee.amount);
-        else setAdminDeliveryFee(0);
+        // Save all delivery fees for range selection
+        setAdminDeliveryFees(Array.isArray(fees) ? fees.filter((fee: any) => fee.isActive) : []);
       })
-      .catch(() => setAdminDeliveryFee(0));
+      .catch(() => setAdminDeliveryFees([]));
 
     fetch(`${BACKEND_URL}/api/admin/handling-charge`)
       .then(res => res.json())
@@ -52,10 +49,24 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       .catch(() => setAdminGstTax(0));
   }, []);
 
+  // Select delivery fee based on cart subtotal and fee ranges
+  function getDeliveryFee(subtotal: number): number {
+    if (!adminDeliveryFees) return 0;
+    // Sort by minSubtotal ascending to ensure correct match for overlapping ranges
+    const sortedFees = [...adminDeliveryFees].sort(
+      (a, b) => (a.minSubtotal ?? 0) - (b.minSubtotal ?? 0)
+    );
+    const fee = sortedFees.find((fee: any) => {
+      const min = typeof fee.minSubtotal === 'number' ? fee.minSubtotal : 0;
+      const max = typeof fee.maxSubtotal === 'number' ? fee.maxSubtotal : Infinity;
+      return subtotal >= min && subtotal <= max;
+    });
+    return fee ? fee.amount : 0;
+  }
+
   const offerDiscount = appliedOffer ? calculateOfferDiscount(cart.subtotal, appliedOffer) : 0;
-  const deliveryFeeToShow = adminDeliveryFee !== null ? adminDeliveryFee : cart.deliveryFee;
+  const deliveryFeeToShow = adminDeliveryFees !== null ? getDeliveryFee(cart.subtotal) : cart.deliveryFee;
   const handlingChargeToShow = adminHandlingCharge !== null ? adminHandlingCharge : 0;
-  // GST/tax: use adminGstTax as percentage (e.g. 5 for 5%)
   const gstTaxToShow = adminGstTax !== null ? (cart.subtotal * adminGstTax / 100) : cart.tax;
   const total = cart.subtotal + deliveryFeeToShow + gstTaxToShow + handlingChargeToShow - offerDiscount;
 
@@ -82,7 +93,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
         <div className="flex justify-between">
           <span className="text-gray-600">Delivery Fee</span>
           <span>
-            {adminDeliveryFee === null
+            {adminDeliveryFees === null
               ? <span className="text-gray-400">Loading...</span>
               : <>₹{deliveryFeeToShow.toFixed(2)}</>
             }
@@ -118,7 +129,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       <div className="flex justify-between mt-3 font-semibold text-lg">
         <span className="text-black">Total</span>
         <span>
-          {adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null
+          {adminDeliveryFees === null || adminHandlingCharge === null || adminGstTax === null
             ? <span className="text-gray-400">Loading...</span>
             : <span className="font-bold text-app-primary">₹{total.toFixed(2)}</span>
           }

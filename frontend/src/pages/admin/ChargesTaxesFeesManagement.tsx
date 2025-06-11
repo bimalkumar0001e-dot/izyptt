@@ -39,13 +39,23 @@ const ChargesTaxesFeesManagement: React.FC = () => {
 
   // --- Actions ---
   const handleEditDeliveryFee = async (fee: any) => {
-    const value = prompt("Enter new delivery fee amount (₹):", fee.amount);
-    if (value === null) return;
-    const amount = Number(value);
+    const amountValue = prompt("Enter new delivery fee amount (₹):", fee.amount);
+    if (amountValue === null) return;
+    const amount = Number(amountValue);
     if (isNaN(amount) || amount < 0) return toast.error("Invalid amount");
+
+    const minValue = prompt("Enter minimum subtotal for this fee (₹):", fee.minSubtotal ?? 0);
+    if (minValue === null) return;
+    const minSubtotal = Number(minValue);
+    if (isNaN(minSubtotal) || minSubtotal < 0) return toast.error("Invalid min subtotal");
+
+    const maxValue = prompt("Enter maximum subtotal for this fee (₹, leave blank for no upper limit):", fee.maxSubtotal ?? "");
+    const maxSubtotal = maxValue === null || maxValue === "" ? undefined : Number(maxValue);
+    if (maxValue !== "" && maxValue !== null && (isNaN(maxSubtotal!) || maxSubtotal! < minSubtotal)) return toast.error("Invalid max subtotal");
+
     setActionLoading(fee._id);
     try {
-      await axios.put(`/api/admin/delivery-fee/${fee._id}`, { amount });
+      await axios.put(`/api/admin/delivery-fee/${fee._id}`, { amount, minSubtotal, maxSubtotal });
       toast.success("Delivery fee updated");
       fetchAll();
     } catch {
@@ -170,14 +180,50 @@ const ChargesTaxesFeesManagement: React.FC = () => {
     }
   };
 
+  // Add new delivery fee
+  const handleAddDeliveryFee = async () => {
+    const amountValue = prompt("Enter delivery fee amount (₹):");
+    if (amountValue === null) return;
+    const amount = Number(amountValue);
+    if (isNaN(amount) || amount < 0) return toast.error("Invalid amount");
+
+    const minValue = prompt("Enter minimum subtotal for this fee (₹):", "0");
+    if (minValue === null) return;
+    const minSubtotal = Number(minValue);
+    if (isNaN(minSubtotal) || minSubtotal < 0) return toast.error("Invalid min subtotal");
+
+    const maxValue = prompt("Enter maximum subtotal for this fee (₹, leave blank for no upper limit):", "");
+    const maxSubtotal = maxValue === null || maxValue === "" ? undefined : Number(maxValue);
+    if (maxValue !== "" && maxValue !== null && (isNaN(maxSubtotal!) || maxSubtotal! < minSubtotal)) return toast.error("Invalid max subtotal");
+
+    setActionLoading("add");
+    try {
+      await axios.post(`/api/admin/delivery-fee`, { amount, minSubtotal, maxSubtotal });
+      toast.success("Delivery fee added");
+      fetchAll();
+    } catch {
+      toast.error("Failed to add delivery fee");
+    } finally {
+      setActionLoading("");
+    }
+  };
+
   return (
     <div className="p-4">
       <h1 className="text-lg font-semibold mb-4">Charges, Fees & Taxes Management</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Delivery Fees */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Delivery Fees</CardTitle>
+            <Button
+              size="sm"
+              variant="default"
+              onClick={handleAddDeliveryFee}
+              disabled={actionLoading === "add"}
+            >
+              Add New
+            </Button>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -188,7 +234,13 @@ const ChargesTaxesFeesManagement: React.FC = () => {
               <ul className="space-y-2">
                 {deliveryFees.map((fee) => (
                   <li key={fee._id} className="flex justify-between items-center border-b pb-1">
-                    <span>₹{fee.amount}</span>
+                    <span>
+                      ₹{fee.amount}
+                      <span className="text-xs text-gray-500 ml-2">
+                        (₹{fee.minSubtotal ?? 0}
+                        {typeof fee.maxSubtotal === "number" ? ` - ₹${fee.maxSubtotal}` : " & above"})
+                      </span>
+                    </span>
                     <div className="flex items-center gap-2">
                       <span className={`text-xs ${fee.isActive ? "text-green-600" : "text-red-500"}`}>
                         {fee.isActive ? "Active" : "Inactive"}

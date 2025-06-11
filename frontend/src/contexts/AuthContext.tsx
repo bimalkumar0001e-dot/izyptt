@@ -35,6 +35,17 @@ interface AuthProviderProps {
 
 const API_BASE = `${BACKEND_URL}/api`;
 
+// Helper to decode JWT and check expiry
+function isTokenExpired(token: string): boolean {
+  if (!token) return true;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Try to load user/token from localStorage on initial load
   const [user, setUser] = useState<any>(() => {
@@ -43,6 +54,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   });
   const [token, setToken] = useState<string | null>(() => {
     return localStorage.getItem("token");
+  });
+  const [refreshToken, setRefreshToken] = useState<string | null>(() => {
+    return localStorage.getItem("refreshToken");
   });
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return !!localStorage.getItem("token");
@@ -57,56 +71,41 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // On mount, check for token and fetch profile if present
   useEffect(() => {
     const initializeAuth = async () => {
-      const storedToken = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
-      
-      console.log('Initializing auth - Token exists:', !!storedToken, 'User exists:', !!storedUser);
-      
-      if (storedToken && storedUser) {
+      let token = localStorage.getItem("token");
+      let refreshToken = localStorage.getItem("refreshToken");
+      if (token && isTokenExpired(token) && refreshToken) {
+        // Try to refresh token
         try {
-          setToken(storedToken);
-          const userData = JSON.parse(storedUser);
-          
-          // Set initial state from localStorage immediately
-          setAuthState({
-            user: userData,
-            isAuthenticated: true,
-            isLoading: false,
+          const res = await fetch(`${API_BASE}/auth/refresh-token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: refreshToken }),
           });
-          setUser(userData);
-          setIsAuthenticated(true);
-          
-          // Then verify with backend (but don't block UI)
-          fetchProfile().catch(err => {
-            console.error('Error fetching profile during init:', err);
-            // Don't log out immediately on profile fetch failure during initialization
-            // This allows the app to work offline with cached credentials
-          });
-        } catch (error) {
-          console.error('Error parsing stored user data:', error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setAuthState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-          });
-          setUser(null);
-          setToken(null);
-          setIsAuthenticated(false);
+          const data = await res.json();
+          if (res.ok && data.token) {
+            localStorage.setItem("token", data.token);
+            setToken(data.token);
+            token = data.token;
+          } else {
+            // Refresh failed, logout
+            logout();
+            return;
+          }
+        } catch {
+          logout();
+          return;
         }
-      } else {
-        setAuthState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
-        setUser(null);
-        setToken(null);
-        setIsAuthenticated(false);
       }
+      if (token) {
+        setToken(token);
+        setIsAuthenticated(true);
+        await fetchProfile();
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+      setAuthState((prev) => ({ ...prev, isLoading: false }));
     };
-
     initializeAuth();
   }, []);
 
@@ -122,18 +121,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // eslint-disable-next-line
   }, [authState.user?.status]);
 
-  // Save user/token to localStorage on change
+  // Save user/token/refreshToken to localStorage on change
   useEffect(() => {
     if (user && token) {
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("token", token);
+      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
       setIsAuthenticated(true);
     } else {
       localStorage.removeItem("user");
       localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
       setIsAuthenticated(false);
     }
-  }, [user, token]);
+  }, [user, token, refreshToken]);
 
   const login = async (email: string, password: string) => {
     setAuthState((prev) => ({ ...prev, isLoading: true }));
@@ -160,6 +161,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         showToast('Your account is blocked', 'error');
         throw new Error('Your account is blocked');
       }
+      if (data.refreshToken) {
+        setRefreshToken(data.refreshToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
       localStorage.setItem("token", data.token);
       setToken(data.token); // Update token state
       // Fetch latest profile from backend after login
@@ -180,9 +185,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = () => {
     setUser(null);
     setToken(null);
+    setRefreshToken(null);
     setIsAuthenticated(false);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     // Clear token state
     setAuthState({
       user: null,
@@ -235,7 +242,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const body: any = { phone, otp };
       if (name) body.name = name;
-      if (role) body.role = role; // Always send role if provided
+      if (role) body.role = role;
       const res = await fetch(`${API_BASE}/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -243,7 +250,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Invalid OTP");
-      // If backend returns token and user, store them
+      if (data.refreshToken) {
+        setRefreshToken(data.refreshToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
       if (data.token && data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("token", data.token);
