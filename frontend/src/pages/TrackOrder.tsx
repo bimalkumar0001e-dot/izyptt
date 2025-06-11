@@ -170,6 +170,7 @@ const TrackOrder: React.FC = () => {
   const statusSteps = [
     'placed',
     'preparing',
+    'packing',
     'picked',
     'on_the_way',
     'delivered',
@@ -179,6 +180,7 @@ const TrackOrder: React.FC = () => {
   const statusLabels: Record<string, string> = {
     placed: 'Order Placed',
     preparing: 'Preparing',
+    packing: 'Packing',
     picked: 'Picked',
     on_the_way: 'On the Way',
     delivered: 'Delivered',
@@ -266,7 +268,7 @@ const TrackOrder: React.FC = () => {
           {/* Status Stepper */}
           <div className="my-6">
             <div className="flex flex-col gap-4">
-              {statusSteps.slice(0, 5).map((step, idx) => (
+              {statusSteps.slice(0, 6).map((step, idx) => (
                 <div key={step} className="flex items-center gap-3">
                   <div className={`
                     w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs
