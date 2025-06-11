@@ -142,7 +142,7 @@ const OrderConfirmation: React.FC = () => {
           </div>
           <h2 className="text-2xl font-semibold text-green-700">Order Placed Successfully!</h2>
           <p className="text-gray-600 mt-1">
-            Your order has been confirmed and is being processed
+            Your order has been placed and is being reviewed.
           </p>
           <div className="mt-4 bg-gray-100 px-4 py-2 rounded-lg inline-block">
             <p className="font-medium text-indigo-700">
