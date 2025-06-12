@@ -64,10 +64,43 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
     return fee ? fee.amount : 0;
   }
 
+  // GST calculation logic (Popular Dishes section)
+  const [popularProductIds, setPopularProductIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Fetch popular dish product IDs from backend
+    fetch(`${BACKEND_URL}/api/admin/popular-dishes`)
+      .then(res => res.json())
+      .then((popularDishes) => {
+        setPopularProductIds(new Set((popularDishes || []).map((p: any) => p._id || p.id)));
+      })
+      .catch(() => setPopularProductIds(new Set()));
+  }, []);
+
+  function getGstEligibleSubtotal(): number {
+    if (!cart.items || cart.items.length === 0) return 0;
+    let gstEligibleSubtotal = 0;
+    let allItemsArePopular = true;
+    for (const item of cart.items) {
+      const productId = item.product?._id || item.product?.id;
+      if (productId && popularProductIds.has(String(productId))) {
+        const price = item.product.discountedPrice || item.product.price;
+        gstEligibleSubtotal += price * item.quantity;
+      } else {
+        allItemsArePopular = false;
+      }
+    }
+    if (allItemsArePopular && cart.items.length > 0) {
+      return cart.subtotal;
+    }
+    return gstEligibleSubtotal;
+  }
+
   const offerDiscount = appliedOffer ? calculateOfferDiscount(cart.subtotal, appliedOffer) : 0;
   const deliveryFeeToShow = adminDeliveryFees !== null ? getDeliveryFee(cart.subtotal) : cart.deliveryFee;
   const handlingChargeToShow = adminHandlingCharge !== null ? adminHandlingCharge : 0;
-  const gstTaxToShow = adminGstTax !== null ? (cart.subtotal * adminGstTax / 100) : cart.tax;
+  const gstEligibleSubtotal = getGstEligibleSubtotal();
+  const gstTaxToShow = adminGstTax !== null ? (gstEligibleSubtotal * adminGstTax / 100) : cart.tax;
   const total = cart.subtotal + deliveryFeeToShow + gstTaxToShow + handlingChargeToShow - offerDiscount;
 
   function calculateOfferDiscount(subtotal: number, offer: Offer): number {

@@ -99,7 +99,7 @@ const OrderConfirmation: React.FC = () => {
       .catch(() => setAdminGstTax(0));
   }, []);
 
-  // Calculate breakdown using admin values and order data
+  // Calculate breakdown using order data (use stored values if present)
   let subtotal = 0;
   let discount = 0;
   if (order && order.items) {
@@ -111,9 +111,10 @@ const OrderConfirmation: React.FC = () => {
     );
     discount = order.discount || 0;
   }
-  const deliveryFeeToShow = adminDeliveryFee !== null ? adminDeliveryFee : (order?.deliveryFee ?? 0);
-  const handlingChargeToShow = adminHandlingCharge !== null ? adminHandlingCharge : 0;
-  const gstTaxToShow = adminGstTax !== null ? (subtotal * adminGstTax / 100) : (order?.tax ?? 0);
+  // Use values from order if present, else fallback to admin values
+  const deliveryFeeToShow = order?.deliveryFee !== undefined ? order.deliveryFee : (adminDeliveryFee !== null ? adminDeliveryFee : (order?.deliveryFee ?? 0));
+  const handlingChargeToShow = order?.handlingCharge !== undefined ? order.handlingCharge : (adminHandlingCharge !== null ? adminHandlingCharge : 0);
+  const gstTaxToShow = order?.taxAmount !== undefined ? order.taxAmount : (adminGstTax !== null ? (subtotal * adminGstTax / 100) : (order?.tax ?? 0));
   const total =
     subtotal +
     deliveryFeeToShow +
@@ -176,7 +177,7 @@ const OrderConfirmation: React.FC = () => {
             <div className="flex justify-between">
               <span className="text-gray-600">Delivery Fee</span>
               <span className="font-medium text-orange-600">
-                {adminDeliveryFee === null
+                {order?.deliveryFee === undefined && adminDeliveryFee === null
                   ? <span className="text-gray-400">Loading...</span>
                   : <>₹{deliveryFeeToShow.toFixed(2)}</>
                 }
@@ -184,10 +185,10 @@ const OrderConfirmation: React.FC = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">
-                Tax{adminGstTax !== null ? ` (${adminGstTax}%)` : ''}
+                Tax{order?.taxAmount !== undefined ? '' : (adminGstTax !== null ? ` (${adminGstTax}%)` : '')}
               </span>
               <span className="font-medium text-purple-700">
-                {adminGstTax === null
+                {order?.taxAmount === undefined && adminGstTax === null
                   ? <span className="text-gray-400">Loading...</span>
                   : <>₹{gstTaxToShow.toFixed(2)}</>
                 }
@@ -196,7 +197,7 @@ const OrderConfirmation: React.FC = () => {
             <div className="flex justify-between">
               <span className="text-gray-600">Handling Charge</span>
               <span className="font-medium text-yellow-700">
-                {adminHandlingCharge === null
+                {order?.handlingCharge === undefined && adminHandlingCharge === null
                   ? <span className="text-gray-400">Loading...</span>
                   : <>₹{handlingChargeToShow.toFixed(2)}</>
                 }
@@ -212,7 +213,7 @@ const OrderConfirmation: React.FC = () => {
           <div className="mb-2 flex justify-between font-semibold text-lg">
             <span className="text-gray-700">Total Amount</span>
             <span className="text-green-700">
-              {adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null
+              {order?.deliveryFee === undefined && (adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null)
                 ? <span className="text-gray-400">Loading...</span>
                 : <>₹{total.toFixed(2)}</>
               }

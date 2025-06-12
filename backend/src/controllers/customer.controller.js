@@ -428,9 +428,15 @@ exports.placeNewOrder = async (req, res) => {
     const cart = await Cart.findOne({ customer: req.user.id }).populate('items.product');
     if (!cart || cart.items.length === 0) return res.status(400).json({ message: 'Cart is empty' });
 
-    // Calculate totals and extract restaurant from first valid product
+    // --- Get all popular dish product IDs ---
+    const Product = require('../models/product');
+    const popularProducts = await Product.find({ isPopular: true }).select('_id');
+    const popularProductIds = new Set(popularProducts.map(p => String(p._id)));
+
     let totalAmount = 0;
     let restaurant = null;
+    let gstEligibleSubtotal = 0;
+    let allItemsArePopular = true;
     const items = cart.items.map(item => {
       const productDoc = item.product;
       const price = item.price || (productDoc && productDoc.price) || 0;
@@ -440,6 +446,12 @@ exports.placeNewOrder = async (req, res) => {
       // Set restaurant from first valid product
       if (!restaurant && productDoc && productDoc.restaurant) {
         restaurant = productDoc.restaurant.toString();
+      }
+      // GST eligibility logic (Popular Dishes section)
+      if (productDoc && popularProductIds.has(String(productDoc._id))) {
+        gstEligibleSubtotal += total;
+      } else {
+        allItemsArePopular = false;
       }
       return {
         product: productDoc && productDoc._id ? productDoc._id : item.product,
@@ -452,7 +464,6 @@ exports.placeNewOrder = async (req, res) => {
 
     // Apply offer discount if applicable
     let appliedOfferId = null;
-    let finalAmount = totalAmount;
     let discount = 0;
     
     if (req.body.appliedOffer) {
@@ -506,6 +517,54 @@ exports.placeNewOrder = async (req, res) => {
       }
     }
 
+    // --- Calculate delivery fee, handling charge, GST/tax as per frontend logic ---
+    // Fetch all delivery fees, handling charges, and GST/tax
+    const DeliveryFee = require('../models/deliveryFee.model');
+    const HandlingCharge = require('../models/handlingCharge.model');
+    const GstTax = require('../models/gstTax.model');
+
+    const deliveryFees = await DeliveryFee.find({ isActive: true });
+    const handlingCharges = await HandlingCharge.find({ isActive: true });
+    const gstTaxes = await GstTax.find({ isActive: true });
+
+    // Delivery fee: select by subtotal range
+    let deliveryFee = 0;
+    if (deliveryFees.length > 0) {
+      // Sort by minSubtotal ascending
+      const sortedFees = [...deliveryFees].sort(
+        (a, b) => (a.minSubtotal ?? 0) - (b.minSubtotal ?? 0)
+      );
+      const fee = sortedFees.find(fee => {
+        const min = typeof fee.minSubtotal === 'number' ? fee.minSubtotal : 0;
+        const max = typeof fee.maxSubtotal === 'number' ? fee.maxSubtotal : Infinity;
+        return totalAmount >= min && totalAmount <= max;
+      });
+      deliveryFee = fee ? fee.amount : 0;
+    }
+
+    // Handling charge: use first active
+    let handlingCharge = 0;
+    if (handlingCharges.length > 0) {
+      handlingCharge = handlingCharges[0].amount || 0;
+    }
+
+    // GST/tax: use first active percentage
+    let gstTaxPercent = 0;
+    if (gstTaxes.length > 0) {
+      gstTaxPercent = gstTaxes[0].percentage || gstTaxes[0].amount || 0;
+    }
+    // GST calculation logic (Popular Dishes section)
+    let gstBase = 0;
+    if (allItemsArePopular && cart.items.length > 0) {
+      gstBase = totalAmount;
+    } else if (gstEligibleSubtotal > 0) {
+      gstBase = gstEligibleSubtotal;
+    }
+    const taxAmount = (gstBase * gstTaxPercent) / 100;
+
+    // Calculate final amount
+    let finalAmount = totalAmount + deliveryFee + handlingCharge + taxAmount - discount;
+
     // Map frontend payment method code to allowed enum values
     let paymentMethod = req.body.paymentMethod;
     // Add mapping logic here
@@ -530,6 +589,9 @@ exports.placeNewOrder = async (req, res) => {
       totalAmount,
       discount: discount,
       finalAmount: finalAmount,
+      deliveryFee, // <-- store calculated delivery fee
+      handlingCharge, // <-- store calculated handling charge
+      taxAmount, // <-- store calculated tax
       deliveryAddress: req.body.deliveryAddress,
       paymentMethod, // use mapped value
       status: 'placed',
@@ -618,6 +680,10 @@ exports.placeNewOrder = async (req, res) => {
       deliveryAddress: order.deliveryAddress,
       status: order.status,
       createdAt: order.createdAt,
+      // Add these fields for frontend
+      deliveryFee: order.deliveryFee,
+      handlingCharge: order.handlingCharge,
+      taxAmount: order.taxAmount,
       ...order.toObject()
     };
 
