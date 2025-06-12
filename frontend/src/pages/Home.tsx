@@ -43,6 +43,8 @@ const Home: React.FC = () => {
   const [showSectionModal, setShowSectionModal] = useState(false);
   const [siteStatus, setSiteStatus] = useState<string>('online');
   const [statusLoading, setStatusLoading] = useState(true);
+  const [sectionProductIndices, setSectionProductIndices] = useState<{ [sectionId: string]: number }>({});
+  const [sectionProductOrders, setSectionProductOrders] = useState<{ [sectionId: string]: any[] }>({});
 
   useEffect(() => {
     // Redirect if not authenticated or blocked/inactive
@@ -226,6 +228,46 @@ const Home: React.FC = () => {
     };
     fetchSiteStatus();
   }, [isAuthenticated, user, navigate, isLoading]);
+
+  useEffect(() => {
+    // Initialize indices when sections change
+    if (sections.length > 0) {
+      const initialIndices: { [sectionId: string]: number } = {};
+      sections.forEach(section => {
+        initialIndices[section._id] = 0;
+      });
+      setSectionProductIndices(initialIndices);
+    }
+  }, [sections]);
+
+  useEffect(() => {
+    // Initialize product orders when sections change
+    if (sections.length > 0) {
+      const initialOrders: { [sectionId: string]: any[] } = {};
+      sections.forEach(section => {
+        initialOrders[section._id] = section.products ? [...section.products] : [];
+      });
+      setSectionProductOrders(initialOrders);
+    }
+  }, [sections]);
+
+  useEffect(() => {
+    if (sections.length === 0) return;
+    const interval = setInterval(() => {
+      setSectionProductOrders(prev => {
+        const updated: { [sectionId: string]: any[] } = { ...prev };
+        sections.forEach(section => {
+          const arr = prev[section._id] || [];
+          if (arr.length > 1) {
+            // Shift left: first element moves to end
+            updated[section._id] = [...arr.slice(1), arr[0]];
+          }
+        });
+        return updated;
+      });
+    }, 3000); // 3 seconds
+    return () => clearInterval(interval);
+  }, [sections]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -416,8 +458,6 @@ const Home: React.FC = () => {
                 <h2 className="font-bold text-lg text-gray-800">Popular Dishes</h2>
                 <span className="bg-app-primary/10 text-app-primary text-xs px-2 py-1 rounded-full">Trending</span>
               </div>
-              {/* Remove See All button since all are shown */}
-              {/* <Button ...>See All</Button> */}
             </div>
             {loading ? (
               <div className="grid grid-cols-2 gap-4">
@@ -432,26 +472,29 @@ const Home: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div
+                className="flex gap-3 overflow-x-auto no-scrollbar pb-2"
+                style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
                 {popularDishes.length === 0 ? (
-                  <div className="text-gray-500 col-span-2 text-center py-8">
+                  <div className="text-gray-500 flex items-center justify-center h-32 px-4">
                     <p>No dishes available right now.</p>
-                    <p className="text-sm text-app-primary mt-1">Check back later!</p>
                   </div>
                 ) : (
                   popularDishes
-                    .filter((item) => !!item.restaurant) // Only show if restaurant id exists
+                    .filter((item) => !!item.restaurant)
                     .map((item) => (
-                      <ProductCard
-                        key={item._id}
-                        product={{
-                          ...item,
-                          id: item._id,
-                          restaurant: item.restaurantName
-                        }}
-                        // Disable add to cart if site is disabled
-                        hideAddToCart={isSiteDisabled}
-                      />
+                      <div key={item._id} className="min-w-[180px] max-w-[220px]">
+                        <ProductCard
+                          product={{
+                            ...item,
+                            id: item._id,
+                            restaurant: item.restaurantName
+                          }}
+                          hideAddToCart={isSiteDisabled}
+                        />
+                      </div>
                     ))
                 )}
               </div>
@@ -473,7 +516,7 @@ const Home: React.FC = () => {
                 {section.products.length === 0 ? (
                   <div className="text-gray-400 text-center py-4">No products in this section.</div>
                 ) : (
-                  section.products.map((product: any) => (
+                  (sectionProductOrders[section._id] || section.products).map((product: any) => (
                     <div key={product._id} className="min-w-[180px] max-w-[220px]">
                       <ProductCard
                         product={{
