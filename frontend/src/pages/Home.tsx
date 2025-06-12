@@ -45,6 +45,7 @@ const Home: React.FC = () => {
   const [statusLoading, setStatusLoading] = useState(true);
   const [sectionProductIndices, setSectionProductIndices] = useState<{ [sectionId: string]: number }>({});
   const [sectionProductOrders, setSectionProductOrders] = useState<{ [sectionId: string]: any[] }>({});
+  const [popularDishesOrder, setPopularDishesOrder] = useState<any[]>([]);
 
   useEffect(() => {
     // Redirect if not authenticated or blocked/inactive
@@ -269,6 +270,18 @@ const Home: React.FC = () => {
     return () => clearInterval(interval);
   }, [sections]);
 
+  useEffect(() => {
+    setPopularDishesOrder(popularDishes);
+  }, [popularDishes]);
+
+  useEffect(() => {
+    if (!popularDishesOrder || popularDishesOrder.length <= 1) return;
+    const interval = setInterval(() => {
+      setPopularDishesOrder(prev => prev.length > 1 ? [...prev.slice(1), prev[0]] : prev);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [popularDishesOrder]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -477,12 +490,12 @@ const Home: React.FC = () => {
                 style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
-                {popularDishes.length === 0 ? (
+                {(!popularDishesOrder || popularDishesOrder.length === 0) ? (
                   <div className="text-gray-500 flex items-center justify-center h-32 px-4">
                     <p>No dishes available right now.</p>
                   </div>
                 ) : (
-                  popularDishes
+                  popularDishesOrder
                     .filter((item) => !!item.restaurant)
                     .map((item) => (
                       <div key={item._id} className="min-w-[180px] max-w-[220px]">
