@@ -15,7 +15,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [userRole, setUserRole] = useState<UserRole>('restaurant');
+  const [userRole, setUserRole] = useState<UserRole>('customer');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [showOtpScreen, setShowOtpScreen] = useState(false);
