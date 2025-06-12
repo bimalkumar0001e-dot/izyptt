@@ -87,7 +87,7 @@ const ProductsManagement: React.FC = () => {
   // Toggle popular status
   const handleTogglePopular = async (product: any) => {
     const isAlreadyPopular = !!product.isPopular;
-    if (!isAlreadyPopular && popularProducts.length >= 4) {
+    if (!isAlreadyPopular && popularProducts.length >= 10) {
       setShowPopularDialog(true);
       return;
     }
@@ -405,7 +405,7 @@ const ProductsManagement: React.FC = () => {
         <CardHeader>
           <CardTitle>Popular Dishes</CardTitle>
           <CardDescription>
-            Select up to 4 dishes to be displayed in the Popular Dishes section on the Home page
+            Select up to 10 dishes to be displayed in the Popular Dishes section on the Home page
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -431,12 +431,12 @@ const ProductsManagement: React.FC = () => {
               ))
             ) : (
               <div className="col-span-2 text-center py-8 text-gray-500">
-                No popular dishes selected. Select up to 4 dishes from the list below.
+                No popular dishes selected. Select up to 10 dishes from the list below.
               </div>
             )}
           </div>
           <div className="mt-4 text-right text-sm text-gray-500">
-            {popularProducts.length}/4 popular dishes selected
+            {popularProducts.length}/10 popular dishes selected
           </div>
         </CardContent>
       </Card>
@@ -488,7 +488,7 @@ const ProductsManagement: React.FC = () => {
                       checked={!!product.isPopular}
                       onCheckedChange={() => handleTogglePopular(product)}
                       aria-label="Popular status"
-                      disabled={popularProducts.length >= 4 && !product.isPopular}
+                      disabled={popularProducts.length >= 10 && !product.isPopular}
                     />
                   </TableCell>
                   <TableCell>
@@ -708,7 +708,7 @@ const ProductsManagement: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Popular Dishes Limit Reached</DialogTitle>
             <DialogDescription>
-              You can only have up to 4 popular dishes at a time. Please remove a dish before adding a new one.
+              You can only have up to 10 popular dishes at a time. Please remove a dish before adding a new one.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

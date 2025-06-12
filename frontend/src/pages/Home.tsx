@@ -416,13 +416,8 @@ const Home: React.FC = () => {
                 <h2 className="font-bold text-lg text-gray-800">Popular Dishes</h2>
                 <span className="bg-app-primary/10 text-app-primary text-xs px-2 py-1 rounded-full">Trending</span>
               </div>
-              <Button
-                onClick={handleSeeAllPopular}
-                variant="ghost"
-                className="text-app-primary font-medium text-sm flex items-center"
-              >
-                See All <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
+              {/* Remove See All button since all are shown */}
+              {/* <Button ...>See All</Button> */}
             </div>
             {loading ? (
               <div className="grid grid-cols-2 gap-4">
@@ -437,38 +432,29 @@ const Home: React.FC = () => {
                 ))}
               </div>
             ) : (
-              showAllPopular ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {popularDishesToShow.map((product: any) => (
-                    <ProductCard key={product._id} product={product} />
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {popularDishes.length === 0 ? (
-                    <div className="text-gray-500 col-span-2 text-center py-8">
-                      <p>No dishes available right now.</p>
-                      <p className="text-sm text-app-primary mt-1">Check back later!</p>
-                    </div>
-                  ) : (
-                    popularDishes
-                      .filter((item) => !!item.restaurant) // Only show if restaurant id exists
-                      .slice(0, 4)
-                      .map((item) => (
-                        <ProductCard
-                          key={item._id}
-                          product={{
-                            ...item,
-                            id: item._id,
-                            restaurant: item.restaurantName
-                          }}
-                          // Disable add to cart if site is disabled
-                          hideAddToCart={isSiteDisabled}
-                        />
-                      ))
-                  )}
-                </div>
-              )
+              <div className="grid grid-cols-2 gap-3">
+                {popularDishes.length === 0 ? (
+                  <div className="text-gray-500 col-span-2 text-center py-8">
+                    <p>No dishes available right now.</p>
+                    <p className="text-sm text-app-primary mt-1">Check back later!</p>
+                  </div>
+                ) : (
+                  popularDishes
+                    .filter((item) => !!item.restaurant) // Only show if restaurant id exists
+                    .map((item) => (
+                      <ProductCard
+                        key={item._id}
+                        product={{
+                          ...item,
+                          id: item._id,
+                          restaurant: item.restaurantName
+                        }}
+                        // Disable add to cart if site is disabled
+                        hideAddToCart={isSiteDisabled}
+                      />
+                    ))
+                )}
+              </div>
             )}
           </div>
 

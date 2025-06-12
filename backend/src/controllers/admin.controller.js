@@ -659,7 +659,7 @@ exports.changeProductAvailability = async (req, res) => {
 
 // ===== Popular Dishes Management =====
 
-// Add a product to popular dishes (max 4)
+// Add a product to popular dishes (max 10)
 exports.addProductToPopularDishes = async (req, res) => {
   try {
     const { productId } = req.query;
@@ -667,8 +667,8 @@ exports.addProductToPopularDishes = async (req, res) => {
 
     // Count current popular dishes
     const popularCount = await Product.countDocuments({ isPopular: true });
-    if (popularCount >= 4)
-      return res.status(400).json({ message: 'Maximum 4 popular dishes allowed' });
+    if (popularCount >= 10)
+      return res.status(400).json({ message: 'Maximum 10 popular dishes allowed' });
 
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: 'Product not found' });
