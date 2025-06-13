@@ -198,7 +198,7 @@ const ProductDetail: React.FC = () => {
             {product.restaurant && (
               <div className="flex items-center">
                 <Clock className="w-4 h-4 text-gray-500 mr-1" />
-                <span className="text-gray-500">20-30 min</span>
+                <span className="text-gray-500">25-40 min</span>
               </div>
             )}
           </div>
