@@ -649,7 +649,12 @@ exports.changeProductAvailability = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: 'Product not found' });
-    product.available = req.body.available;
+    // Always use boolean value from request body
+    if (typeof req.body.isAvailable !== 'undefined') {
+      product.isAvailable = Boolean(req.body.isAvailable);
+    } else {
+      return res.status(400).json({ message: 'Missing isAvailable in request body' });
+    }
     await product.save();
     res.json({ message: 'Product availability updated', product });
   } catch (err) {

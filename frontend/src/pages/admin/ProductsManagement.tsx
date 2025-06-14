@@ -492,6 +492,30 @@ const ProductsManagement: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>
+                    <Switch
+                      checked={!!product.isAvailable}
+                      onCheckedChange={async () => {
+                        // Optimistic UI update
+                        setProducts(prev => prev.map(p => p._id === product._id ? { ...p, isAvailable: !p.isAvailable } : p));
+                        setFilteredProducts(prev => prev.map(p => p._id === product._id ? { ...p, isAvailable: !p.isAvailable } : p));
+                        // Call backend
+                        await fetch(`${API_BASE}/products/${product._id}/availability`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ isAvailable: !product.isAvailable })
+                        });
+                        // Refresh products from backend
+                        const res = await fetch(`${API_BASE}/products`);
+                        let data = await res.json();
+                        data = data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                        setProducts(data);
+                        setFilteredProducts(data);
+                        setPopularProducts(data.filter((p) => p.isPopular));
+                      }}
+                      aria-label="Availability status"
+                    />
+                  </TableCell>
+                  <TableCell>
                     <Badge variant={product.isAvailable ? 'default' : 'secondary'}>
                       {product.isAvailable ? 'available' : 'unavailable'}
                     </Badge>
