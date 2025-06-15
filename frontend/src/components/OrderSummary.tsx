@@ -125,19 +125,11 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
     }
   }
 
-  // Show error if addressDistance is missing or invalid
-  const showAddressDistanceError = addressDistance === undefined || addressDistance === null || isNaN(Number(addressDistance));
-
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
       <div className="mb-3">
         <h2 className="text-lg font-semibold text-gray-800">Order Summary</h2>
       </div>
-      {showAddressDistanceError && (
-        <div className="mb-3 p-3 rounded bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
-          Address expired: Please add a new address with distance in km.
-        </div>
-      )}
       <div className="space-y-2 border-b border-gray-100 pb-3">
         <div className="flex justify-between">
           <span className="text-gray-600">Subtotal</span>
