@@ -37,9 +37,12 @@ export interface Order {
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;
-  tax: number;
+  handlingCharge?: number; // Add handlingCharge for compatibility
+  taxAmount?: number; // Add taxAmount for compatibility
+  tax?: number; // Keep for compatibility
   discount: number;
   total: number;
+  finalAmount?: number; // Add finalAmount for compatibility
   paymentMethod: 'cash' | 'upi' | 'online';
   status: OrderStatus;
   statusUpdates: OrderStatusUpdate[];

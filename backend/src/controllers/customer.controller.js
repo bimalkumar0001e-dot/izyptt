@@ -713,9 +713,14 @@ exports.viewAllOrders = async (req, res) => {
             };
           })
         );
+        // Ensure all total fields are present for frontend
         return {
           ...order.toObject(),
           items: itemsWithImages,
+          finalAmount: order.finalAmount,
+          deliveryFee: order.deliveryFee,
+          handlingCharge: order.handlingCharge,
+          taxAmount: order.taxAmount,
         };
       })
     );

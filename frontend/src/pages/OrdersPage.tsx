@@ -126,7 +126,7 @@ const OrdersPage: React.FC = () => {
         <div className="bg-white px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 text-sm">
           <div className="flex flex-col">
             <span className="font-medium">Order #{orderNumber}</span>
-            <span className="text-xs text-gray-500">Total: ₹{total}</span>
+            <span className="text-xs text-gray-500">Total: ₹{Math.ceil(total)}</span>
           </div>
           <Button
             size="sm"

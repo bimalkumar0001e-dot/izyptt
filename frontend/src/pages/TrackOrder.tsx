@@ -250,9 +250,13 @@ const TrackOrder: React.FC = () => {
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Total:</span>
               <span className="text-sm font-bold text-green-700 text-right">
-                {adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null
-                  ? <span className="text-gray-400">Loading...</span>
-                  : <>₹{total.toFixed(2)}</>
+                {typeof order.finalAmount === 'number' && !isNaN(order.finalAmount)
+                  ? <>₹{Math.ceil(order.finalAmount)}</>
+                  : typeof order.total === 'number' && !isNaN(order.total)
+                  ? <>₹{Math.ceil(order.total)}</>
+                  : adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null
+                    ? <span className="text-gray-400">Loading...</span>
+                    : <>₹{Math.ceil(total)}</>
                 }
               </span>
             </div>

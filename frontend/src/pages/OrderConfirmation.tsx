@@ -215,7 +215,7 @@ const OrderConfirmation: React.FC = () => {
             <span className="text-green-700">
               {order?.deliveryFee === undefined && (adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null)
                 ? <span className="text-gray-400">Loading...</span>
-                : <>₹{total.toFixed(2)}</>
+                : <>₹{Math.ceil(total)}</>
               }
             </span>
           </div>
