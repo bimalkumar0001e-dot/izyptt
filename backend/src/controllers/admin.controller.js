@@ -199,7 +199,7 @@ exports.updateSystemStatus = async (req, res) => {
 // User Management - Customers
 exports.getAllCustomers = async (req, res) => {
   try {
-    const customers = await User.find({ role: 'customer' });
+    const customers = await User.find({ role: 'customer' }).sort({ createdAt: -1 }); // Sort by newest first
     res.json(customers);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching customers', error: err });
