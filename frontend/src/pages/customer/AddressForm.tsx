@@ -22,6 +22,7 @@ const AddressForm: React.FC = () => {
   const [isDefault, setIsDefault] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [distance, setDistance] = useState(''); // <-- add distance state
 
   const isEditing = Boolean(addressId);
 
@@ -35,6 +36,7 @@ const AddressForm: React.FC = () => {
         setCity(existingAddress.city);
         setPincode(existingAddress.pincode);
         setIsDefault(existingAddress.isDefault);
+        setDistance(existingAddress.distance?.toString() || ''); // <-- prefill distance
       }
     }
   }, [addressId, user?.address, isEditing]);
@@ -46,12 +48,16 @@ const AddressForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !fullAddress || !city || !pincode) {
+    if (!title || !fullAddress || !city || !pincode || !distance) {
       setError('Please fill all required fields');
       return;
     }
     if (pincode !== '852127') {
       setError('Sorry, we are currently available only at pincode 852127');
+      return;
+    }
+    if (isNaN(Number(distance)) || Number(distance) <= 0) {
+      setError('Distance (in km) is required and must be a positive number');
       return;
     }
     setIsLoading(true);
@@ -64,6 +70,7 @@ const AddressForm: React.FC = () => {
         city,
         pincode,
         isDefault,
+        distance: Number(distance), // <-- send distance
       };
       if (isEditing) {
         await updateAddress(addressId!, addressPayload);
@@ -152,6 +159,22 @@ const AddressForm: React.FC = () => {
                 className="app-input"
               />
             </div>
+          </div>
+          <div>
+            <label htmlFor="distance" className="block text-gray-700 font-medium mb-1">
+              Distance (in km) <span className="text-red-500">*</span>
+            </label>
+            <Input
+              id="distance"
+              type="number"
+              min="0"
+              step="0.01"
+              value={distance}
+              onChange={e => setDistance(e.target.value)}
+              placeholder="Enter estimated distance in km from sharma chowk! "
+              className="app-input"
+              required
+            />
           </div>
           <div className="flex items-center space-x-2 mt-4">
             <Checkbox 

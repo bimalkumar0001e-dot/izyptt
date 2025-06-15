@@ -139,6 +139,10 @@ exports.resendOtp = async (req, res) => {
 // Verify OTP (for admin/customer login, and restaurant/delivery verification)
 exports.verifyOtp = async (req, res) => {
     const { phone, otp, name, role } = req.body;
+    // Add validation for required fields
+    if (!phone || !otp) {
+        return res.status(400).json({ message: 'Phone and OTP are required.' });
+    }
     try {
         const isValid = await verifyOtp(phone, otp);
         if (!isValid) {
@@ -162,6 +166,7 @@ exports.verifyOtp = async (req, res) => {
                 isVerified: true,
                 isApproved: false, // pending admin approval
                 status: 'pending',
+                addresses: [], // <-- Fix: prevent validation error
                 ...(regData.role === 'restaurant'
                   ? { restaurantDetails: { image: regData.imagePath } }
                   : { deliveryDetails: { image: regData.imagePath, vehicleType: regData.vehicle } })
@@ -184,7 +189,8 @@ exports.verifyOtp = async (req, res) => {
                     password: 'adminotp', // <-- Add this line
                     isVerified: true,
                     isApproved: true,
-                    status: 'active'
+                    status: 'active',
+                    addresses: [] // <-- Fix: prevent validation error
                     // Do NOT set email at all here!
                 });
                 await user.save();
@@ -243,19 +249,25 @@ exports.verifyOtp = async (req, res) => {
         else {
             let user = await User.findOne({ phone, role: 'customer' });
             if (!user) {
+                // Only require name for new user
+                if (!name) {
+                    return res.status(400).json({ message: 'Name is required for new customer registration' });
+                }
                 user = new User({
-                    name: name || 'Customer',
+                    name: name,
                     phone,
                     role: 'customer',
                     isVerified: true,
                     isApproved: true,
-                    status: 'active'
+                    status: 'active',
+                    addresses: [] // <-- Fix: prevent validation error for new customer
                 });
                 await user.save();
             } else {
                 if (user.status === 'inactive' || user.status === 'blocked') {
                     return res.status(403).json({ message: 'Your account is blocked' });
                 }
+                // Update name if provided and different
                 if (name && user.name !== name) {
                     user.name = name;
                     await user.save();

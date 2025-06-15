@@ -7,7 +7,8 @@ const addressSchema = new mongoose.Schema({
   city: { type: String, required: true },
   state: { type: String, required: true },
   pincode: { type: String, required: true },
-  isDefault: { type: Boolean, default: false }
+  isDefault: { type: Boolean, default: false },
+  distance: { type: Number } // distance in km
 });
 
 module.exports = addressSchema;

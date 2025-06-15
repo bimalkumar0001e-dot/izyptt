@@ -197,4 +197,14 @@ router.delete('/min-cart-amount', adminController.deleteMinCartAmount);
 // Test Route
 router.get('/test', (req, res) => res.json({ ok: true }));
 
+// Delivery Fee Section Management
+router.get('/delivery-fee-sections', adminController.getAllDeliveryFeeSections);
+router.post('/delivery-fee-sections', adminController.createDeliveryFeeSection);
+router.put('/delivery-fee-sections/:sectionId', adminController.updateDeliveryFeeSection);
+router.delete('/delivery-fee-sections/:sectionId', adminController.deleteDeliveryFeeSection);
+// Fee slab management inside a section
+router.post('/delivery-fee-sections/:sectionId/fees', adminController.addDeliveryFeeSlab);
+router.put('/delivery-fee-sections/:sectionId/fees/:feeId', adminController.updateDeliveryFeeSlab);
+router.delete('/delivery-fee-sections/:sectionId/fees/:feeId', adminController.deleteDeliveryFeeSlab);
+
 module.exports = router;

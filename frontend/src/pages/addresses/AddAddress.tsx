@@ -10,6 +10,7 @@ const AddNewAddress = () => {
   const [pincode, setPincode] = useState("");
   const [isDefault, setIsDefault] = useState(false);
   const [error, setError] = useState("");
+  const [distance, setDistance] = useState(""); // <-- add distance state
 
   const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -25,6 +26,10 @@ const AddNewAddress = () => {
     e.preventDefault();
     if (pincode !== "852127") {
       setError("we are currently active at 852127 only");
+      return;
+    }
+    if (!distance || isNaN(Number(distance))) {
+      setError("Distance (in km) is required and must be a number");
       return;
     }
     // ...submit logic...
@@ -103,6 +108,19 @@ const AddNewAddress = () => {
             </div>
           </div>
           <div>
+            <label htmlFor="distance">Distance (in km) *</label>
+            <input
+              id="distance"
+              type="number"
+              min="0"
+              step="0.01"
+              value={distance}
+              onChange={(e) => setDistance(e.target.value)}
+              required
+              className="input"
+            />
+          </div>
+          <div>
             <label>
               <input
                 type="checkbox"
@@ -119,7 +137,9 @@ const AddNewAddress = () => {
               !title ||
               !fullAddress ||
               !city ||
-              !pincode
+              !pincode ||
+              !distance ||
+              isNaN(Number(distance))
             }
             className="btn btn-primary w-full mt-4"
           >

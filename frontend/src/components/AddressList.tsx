@@ -54,7 +54,14 @@ export const AddressList: React.FC<AddressListProps> = ({
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">{address.title}</p>
+                    <p className="font-medium">
+                      {address.title}
+                      {(address.distance === undefined || address.distance === null || isNaN(Number(address.distance))) && (
+                        <span className="ml-2 text-xs px-2 py-0.5 rounded bg-red-500 text-white">
+                          Expired
+                        </span>
+                      )}
+                    </p>
                     <p className="text-sm text-gray-600 mt-1">{address.fullAddress}</p>
                     {address.landmark && (
                       <p className="text-sm text-gray-600">{address.landmark}</p>

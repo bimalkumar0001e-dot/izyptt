@@ -85,7 +85,7 @@ const userSchema = new mongoose.Schema({
       return this.role === 'customer' || this.role === 'admin'; 
     }
   },
-addresses: [addressSchema], // ✅ Use the imported schema here
+  addresses: { type: [addressSchema], default: [] }, // Always default to empty array
   status: { 
     type: String, 
     enum: ['active', 'inactive', 'blocked', 'pending'], 

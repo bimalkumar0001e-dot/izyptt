@@ -15,6 +15,7 @@ const notificationService = require('../services/notificationService');
 const SystemStatus = require('../models/SystemStatus.model');
 const ReturnInstructions = require('../models/ReturnInstructions.model');
 const MinCartAmount = require('../models/minCartAmount.model');
+const DeliveryFeeSection = require('../models/deliveryFeeSection.model');
 
 
 
@@ -664,7 +665,7 @@ exports.changeProductAvailability = async (req, res) => {
 
 // ===== Popular Dishes Management =====
 
-// Add a product to popular dishes (max 10)
+// Add a product to popular dishes (max 30)
 exports.addProductToPopularDishes = async (req, res) => {
   try {
     const { productId } = req.query;
@@ -672,8 +673,8 @@ exports.addProductToPopularDishes = async (req, res) => {
 
     // Count current popular dishes
     const popularCount = await Product.countDocuments({ isPopular: true });
-    if (popularCount >= 10)
-      return res.status(400).json({ message: 'Maximum 10 popular dishes allowed' });
+    if (popularCount >= 30)
+      return res.status(400).json({ message: 'Maximum 30 popular dishes allowed' });
 
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: 'Product not found' });
@@ -1796,5 +1797,102 @@ exports.deleteMinCartAmount = async (req, res) => {
     res.json({ message: 'Minimum cart amount deleted' });
   } catch (err) {
     res.status(500).json({ message: 'Error deleting minimum cart amount', error: err });
+  }
+};
+
+// ===== Delivery Fee Section Management =====
+// List all delivery fee sections (with slabs)
+exports.getAllDeliveryFeeSections = async (req, res) => {
+  try {
+    const sections = await DeliveryFeeSection.find();
+    res.json(sections);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching delivery fee sections', error: err });
+  }
+};
+
+// Create a new delivery fee section (km)
+exports.createDeliveryFeeSection = async (req, res) => {
+  try {
+    const { km } = req.body;
+    if (typeof km !== 'number' || km <= 0) return res.status(400).json({ message: 'Invalid km' });
+    // Prevent duplicate km
+    const exists = await DeliveryFeeSection.findOne({ km });
+    if (exists) return res.status(400).json({ message: 'Section for this km already exists' });
+    const section = await DeliveryFeeSection.create({ km });
+    res.status(201).json(section);
+  } catch (err) {
+    res.status(500).json({ message: 'Error creating section', error: err });
+  }
+};
+
+// Update a delivery fee section (km or isActive)
+exports.updateDeliveryFeeSection = async (req, res) => {
+  try {
+    const { km, isActive } = req.body;
+    const section = await DeliveryFeeSection.findById(req.params.sectionId);
+    if (!section) return res.status(404).json({ message: 'Section not found' });
+    if (km !== undefined) section.km = km;
+    if (isActive !== undefined) section.isActive = isActive;
+    await section.save();
+    res.json(section);
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating section', error: err });
+  }
+};
+
+// Delete a delivery fee section
+exports.deleteDeliveryFeeSection = async (req, res) => {
+  try {
+    await DeliveryFeeSection.findByIdAndDelete(req.params.sectionId);
+    res.json({ message: 'Section deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting section', error: err });
+  }
+};
+
+// Add a fee slab to a section
+exports.addDeliveryFeeSlab = async (req, res) => {
+  try {
+    const { amount, minSubtotal, maxSubtotal } = req.body;
+    const section = await DeliveryFeeSection.findById(req.params.sectionId);
+    if (!section) return res.status(404).json({ message: 'Section not found' });
+    section.fees.push({ amount, minSubtotal, maxSubtotal });
+    await section.save();
+    res.status(201).json(section);
+  } catch (err) {
+    res.status(500).json({ message: 'Error adding fee slab', error: err });
+  }
+};
+
+// Update a fee slab in a section
+exports.updateDeliveryFeeSlab = async (req, res) => {
+  try {
+    const { amount, minSubtotal, maxSubtotal, isActive } = req.body;
+    const section = await DeliveryFeeSection.findById(req.params.sectionId);
+    if (!section) return res.status(404).json({ message: 'Section not found' });
+    const fee = section.fees.id(req.params.feeId);
+    if (!fee) return res.status(404).json({ message: 'Fee slab not found' });
+    if (amount !== undefined) fee.amount = amount;
+    if (minSubtotal !== undefined) fee.minSubtotal = minSubtotal;
+    if (maxSubtotal !== undefined) fee.maxSubtotal = maxSubtotal;
+    if (isActive !== undefined) fee.isActive = isActive;
+    await section.save();
+    res.json(section);
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating fee slab', error: err });
+  }
+};
+
+// Delete a fee slab from a section
+exports.deleteDeliveryFeeSlab = async (req, res) => {
+  try {
+    const section = await DeliveryFeeSection.findById(req.params.sectionId);
+    if (!section) return res.status(404).json({ message: 'Section not found' });
+    section.fees.id(req.params.feeId).remove();
+    await section.save();
+    res.json(section);
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting fee slab', error: err });
   }
 };

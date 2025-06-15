@@ -6,24 +6,25 @@ import { BACKEND_URL } from '@/utils/utils';
 interface OrderSummaryProps {
   cart: Cart;
   appliedOffer?: Offer;
+  addressDistance?: number; // <-- add this prop
 }
 
 export const OrderSummary: React.FC<OrderSummaryProps> = ({
   cart,
-  appliedOffer
+  appliedOffer,
+  addressDistance
 }) => {
-  const [adminDeliveryFees, setAdminDeliveryFees] = useState<any[] | null>(null);
+  const [deliveryFeeSections, setDeliveryFeeSections] = useState<any[] | null>(null);
   const [adminHandlingCharge, setAdminHandlingCharge] = useState<number | null>(null);
   const [adminGstTax, setAdminGstTax] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch(`${BACKEND_URL}/api/admin/delivery-fee`)
+    fetch(`${BACKEND_URL}/api/admin/delivery-fee-sections`)
       .then(res => res.json())
-      .then((fees) => {
-        // Save all delivery fees for range selection
-        setAdminDeliveryFees(Array.isArray(fees) ? fees.filter((fee: any) => fee.isActive) : []);
+      .then((sections) => {
+        setDeliveryFeeSections(Array.isArray(sections) ? sections.filter((s: any) => s.isActive !== false) : []);
       })
-      .catch(() => setAdminDeliveryFees([]));
+      .catch(() => setDeliveryFeeSections([]));
 
     fetch(`${BACKEND_URL}/api/admin/handling-charge`)
       .then(res => res.json())
@@ -36,7 +37,6 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       })
       .catch(() => setAdminHandlingCharge(0));
 
-    // Fetch GST/tax set by admin
     fetch(`${BACKEND_URL}/api/admin/gst-taxes`)
       .then(res => res.json())
       .then((taxes) => {
@@ -49,17 +49,27 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       .catch(() => setAdminGstTax(0));
   }, []);
 
-  // Select delivery fee based on cart subtotal and fee ranges
-  function getDeliveryFee(subtotal: number): number {
-    if (!adminDeliveryFees) return 0;
-    // Sort by minSubtotal ascending to ensure correct match for overlapping ranges
-    const sortedFees = [...adminDeliveryFees].sort(
+  // --- Delivery Fee Calculation by Distance ---
+  function getDeliveryFeeByDistance(distance: number | undefined, subtotal: number): number {
+    if (!deliveryFeeSections || typeof distance !== 'number') return 0;
+    // Find section with km == distance (or nearest lower if not found)
+    // Prefer exact match, else nearest lower, else lowest km section
+    let section = deliveryFeeSections.find((s: any) => Number(s.km) === Number(distance));
+    if (!section) {
+      // Try nearest lower
+      const sorted = [...deliveryFeeSections].sort((a, b) => a.km - b.km);
+      section = sorted.reverse().find((s: any) => Number(s.km) < Number(distance));
+      if (!section) section = sorted[0]; // fallback to lowest km
+    }
+    if (!section || !Array.isArray(section.fees)) return 0;
+    // Find fee slab by subtotal
+    const sortedFees = [...section.fees].sort(
       (a, b) => (a.minSubtotal ?? 0) - (b.minSubtotal ?? 0)
     );
     const fee = sortedFees.find((fee: any) => {
       const min = typeof fee.minSubtotal === 'number' ? fee.minSubtotal : 0;
       const max = typeof fee.maxSubtotal === 'number' ? fee.maxSubtotal : Infinity;
-      return subtotal >= min && subtotal <= max;
+      return subtotal >= min && subtotal <= max && fee.isActive !== false;
     });
     return fee ? fee.amount : 0;
   }
@@ -97,7 +107,9 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   }
 
   const offerDiscount = appliedOffer ? calculateOfferDiscount(cart.subtotal, appliedOffer) : 0;
-  const deliveryFeeToShow = adminDeliveryFees !== null ? getDeliveryFee(cart.subtotal) : cart.deliveryFee;
+  const deliveryFeeToShow = deliveryFeeSections !== null && typeof addressDistance !== 'undefined'
+    ? getDeliveryFeeByDistance(addressDistance, cart.subtotal)
+    : cart.deliveryFee;
   const handlingChargeToShow = adminHandlingCharge !== null ? adminHandlingCharge : 0;
   const gstEligibleSubtotal = getGstEligibleSubtotal();
   const gstTaxToShow = adminGstTax !== null ? (gstEligibleSubtotal * adminGstTax / 100) : cart.tax;
@@ -113,11 +125,19 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
     }
   }
 
+  // Show error if addressDistance is missing or invalid
+  const showAddressDistanceError = addressDistance === undefined || addressDistance === null || isNaN(Number(addressDistance));
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
       <div className="mb-3">
         <h2 className="text-lg font-semibold text-gray-800">Order Summary</h2>
       </div>
+      {showAddressDistanceError && (
+        <div className="mb-3 p-3 rounded bg-red-50 border border-red-200 text-red-700 text-sm font-medium">
+          Address expired: Please add a new address with distance in km.
+        </div>
+      )}
       <div className="space-y-2 border-b border-gray-100 pb-3">
         <div className="flex justify-between">
           <span className="text-gray-600">Subtotal</span>
@@ -126,7 +146,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
         <div className="flex justify-between">
           <span className="text-gray-600">Delivery Fee</span>
           <span>
-            {adminDeliveryFees === null
+            {deliveryFeeSections === null
               ? <span className="text-gray-400">Loading...</span>
               : <>₹{deliveryFeeToShow.toFixed(2)}</>
             }
@@ -162,7 +182,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       <div className="flex justify-between mt-3 font-semibold text-lg">
         <span className="text-black">Total</span>
         <span>
-          {adminDeliveryFees === null || adminHandlingCharge === null || adminGstTax === null
+          {deliveryFeeSections === null || adminHandlingCharge === null || adminGstTax === null
             ? <span className="text-gray-400">Loading...</span>
             : <span className="font-bold text-app-primary">₹{total.toFixed(2)}</span>
           }

@@ -15,8 +15,11 @@ exports.verifyOTP = async (phone, otp) => {
   }
   const record = otpStore.get(phone);
   if (!record) return false;
+  if (Date.now() > record.expires) {
+    otpStore.delete(phone);
+    return false;
+  }
   if (record.otp !== otp) return false;
-  if (Date.now() > record.expires) return false;
   otpStore.delete(phone); // OTP can only be used once
   return true;
 };

@@ -56,15 +56,22 @@ const DeliveryOrdersPage: React.FC = () => {
   // Filtering logic for new requirements
   const normalizeStatus = (status: string | undefined) => (status ? status.toLowerCase() : '');
 
-  const newOrders = orders.filter(order =>
+  // Sort orders by createdAt descending (most recent first)
+  const sortedOrders = [...orders].sort((a, b) => {
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  const newOrders = sortedOrders.filter(order =>
     ['pending', 'preparing', 'placed'].includes(normalizeStatus(order.status))
   );
 
-  const activeOrders = orders.filter(order =>
+  const activeOrders = sortedOrders.filter(order =>
     !['pending', 'preparing', 'placed', 'delivered', 'cancelled'].includes(normalizeStatus(order.status))
   );
 
-  const pastOrders = orders.filter(order =>
+  const pastOrders = sortedOrders.filter(order =>
     ['delivered', 'cancelled'].includes(normalizeStatus(order.status))
   );
 

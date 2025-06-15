@@ -1,4 +1,3 @@
-
 export type UserRole = 'admin' | 'customer' | 'delivery' | 'restaurant';
 
 export type UserStatus = 'active' | 'pending' | 'suspended';
@@ -35,6 +34,7 @@ export interface UserAddress {
   city: string;
   pincode: string;
   isDefault: boolean;
+  distance: number; // distance in km
 }
 
 export interface AuthState {

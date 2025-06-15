@@ -156,6 +156,10 @@ const Checkout: React.FC = () => {
     });
   };
 
+  // Helper to check if selected address is missing distance
+  const selectedAddress = getSelectedAddress();
+  const isAddressMissingDistance = selectedAddress && (selectedAddress.distance === undefined || selectedAddress.distance === null || isNaN(Number(selectedAddress.distance)));
+
   const handleContinueToPayment = () => {
     if (!selectedAddressId) {
       toast({
@@ -165,7 +169,14 @@ const Checkout: React.FC = () => {
       });
       return;
     }
-    
+    if (isAddressMissingDistance) {
+      toast({
+        title: "Address expired",
+        description: "This address is missing distance data. Please add a new address.",
+        variant: "destructive",
+      });
+      return;
+    }
     setCurrentStep('payment');
   };
 
@@ -194,6 +205,14 @@ const Checkout: React.FC = () => {
       toast({
         title: "Unavailable product in cart",
         description: "One or more products in your cart are currently unavailable. Please remove them to place your order.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (isAddressMissingDistance) {
+      toast({
+        title: "Address expired",
+        description: "This address is missing distance data. Please add a new address.",
         variant: "destructive",
       });
       return;
@@ -234,7 +253,8 @@ const Checkout: React.FC = () => {
           landmark: address.landmark || '',
           city: address.city,
           state: (address as any).state || 'Bihar',
-          pincode: address.pincode
+          pincode: address.pincode,
+          distance: address.distance // <-- include distance
         },
         appliedOffer: appliedOffer ? appliedOffer.code : undefined
       };
@@ -348,7 +368,11 @@ const Checkout: React.FC = () => {
             <Separator />
             
             <div>
-              <OrderSummary cart={cart} appliedOffer={appliedOffer} />
+              <OrderSummary 
+                cart={cart} 
+                appliedOffer={appliedOffer}
+                addressDistance={getSelectedAddress()?.distance}
+              />
             </div>
 
             {/* Cancellation Policy Section */}
@@ -428,8 +452,12 @@ const Checkout: React.FC = () => {
               />
             </div>
             
-            <OrderSummary cart={cart} appliedOffer={appliedOffer} />
-            
+            <OrderSummary 
+              cart={cart} 
+              appliedOffer={appliedOffer}
+              addressDistance={getSelectedAddress()?.distance}
+            />
+
             <Button 
               onClick={handlePlaceOrder}
               disabled={isPlacingOrder || isSiteDisabled || anyUnavailable}

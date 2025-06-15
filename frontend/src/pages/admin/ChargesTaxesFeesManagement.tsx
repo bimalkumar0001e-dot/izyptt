@@ -9,7 +9,7 @@ import { BACKEND_URL } from '@/utils/utils';
 const API_BASE = `${BACKEND_URL}/api`;
 
 const ChargesTaxesFeesManagement: React.FC = () => {
-  const [deliveryFees, setDeliveryFees] = useState<any[]>([]);
+  const [deliveryFeeSections, setDeliveryFeeSections] = useState<any[]>([]);
   const [handlingCharges, setHandlingCharges] = useState<any[]>([]);
   const [gstTaxes, setGstTaxes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,12 +18,12 @@ const ChargesTaxesFeesManagement: React.FC = () => {
   const fetchAll = () => {
     setLoading(true);
     Promise.all([
-      axios.get("/api/admin/delivery-fee"),
+      axios.get("/api/admin/delivery-fee-sections"),
       axios.get("/api/admin/handling-charge"),
       axios.get("/api/admin/gst-taxes"),
     ])
-      .then(([deliveryRes, handlingRes, gstRes]) => {
-        setDeliveryFees(deliveryRes.data || []);
+      .then(([sectionsRes, handlingRes, gstRes]) => {
+        setDeliveryFeeSections(sectionsRes.data || []);
         setHandlingCharges(handlingRes.data || []);
         setGstTaxes(gstRes.data || []);
       })
@@ -37,39 +37,109 @@ const ChargesTaxesFeesManagement: React.FC = () => {
     fetchAll();
   }, []);
 
-  // --- Actions ---
-  const handleEditDeliveryFee = async (fee: any) => {
-    const amountValue = prompt("Enter new delivery fee amount (₹):", fee.amount);
-    if (amountValue === null) return;
-    const amount = Number(amountValue);
-    if (isNaN(amount) || amount < 0) return toast.error("Invalid amount");
-
-    const minValue = prompt("Enter minimum subtotal for this fee (₹):", fee.minSubtotal ?? 0);
-    if (minValue === null) return;
-    const minSubtotal = Number(minValue);
-    if (isNaN(minSubtotal) || minSubtotal < 0) return toast.error("Invalid min subtotal");
-
-    const maxValue = prompt("Enter maximum subtotal for this fee (₹, leave blank for no upper limit):", fee.maxSubtotal ?? "");
-    const maxSubtotal = maxValue === null || maxValue === "" ? undefined : Number(maxValue);
-    if (maxValue !== "" && maxValue !== null && (isNaN(maxSubtotal!) || maxSubtotal! < minSubtotal)) return toast.error("Invalid max subtotal");
-
-    setActionLoading(fee._id);
+  // --- Delivery Fee Section Actions ---
+  const handleAddSection = async () => {
+    const kmValue = prompt("Enter delivery distance (km):");
+    if (kmValue === null) return;
+    const km = Number(kmValue);
+    if (isNaN(km) || km <= 0) return toast.error("Invalid km");
+    setActionLoading("add-section");
     try {
-      await axios.put(`/api/admin/delivery-fee/${fee._id}`, { amount, minSubtotal, maxSubtotal });
-      toast.success("Delivery fee updated");
+      await axios.post(`/api/admin/delivery-fee-sections`, { km });
+      toast.success("Section added");
       fetchAll();
-    } catch {
-      toast.error("Failed to update delivery fee");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to add section");
     } finally {
       setActionLoading("");
     }
   };
 
-  const handleToggleDeliveryFee = async (fee: any) => {
-    setActionLoading(fee._id);
+  const handleEditSection = async (section: any) => {
+    const kmValue = prompt("Edit delivery distance (km):", section.km);
+    if (kmValue === null) return;
+    const km = Number(kmValue);
+    if (isNaN(km) || km <= 0) return toast.error("Invalid km");
+    setActionLoading(section._id);
     try {
-      await axios.patch(`/api/admin/delivery-fee/${fee._id}/activate`);
-      toast.success("Delivery fee status updated");
+      await axios.put(`/api/admin/delivery-fee-sections/${section._id}`, { km });
+      toast.success("Section updated");
+      fetchAll();
+    } catch {
+      toast.error("Failed to update section");
+    } finally {
+      setActionLoading("");
+    }
+  };
+
+  const handleDeleteSection = async (section: any) => {
+    if (!window.confirm("Delete this section and all its fees?")) return;
+    setActionLoading(section._id);
+    try {
+      await axios.delete(`/api/admin/delivery-fee-sections/${section._id}`);
+      toast.success("Section deleted");
+      fetchAll();
+    } catch {
+      toast.error("Failed to delete section");
+    } finally {
+      setActionLoading("");
+    }
+  };
+
+  // --- Fee Slab Actions ---
+  const handleAddFeeSlab = async (section: any) => {
+    const amountValue = prompt("Enter delivery fee amount (₹):");
+    if (amountValue === null) return;
+    const amount = Number(amountValue);
+    if (isNaN(amount) || amount < 0) return toast.error("Invalid amount");
+    const minValue = prompt("Enter minimum subtotal for this fee (₹):", "0");
+    if (minValue === null) return;
+    const minSubtotal = Number(minValue);
+    if (isNaN(minSubtotal) || minSubtotal < 0) return toast.error("Invalid min subtotal");
+    const maxValue = prompt("Enter maximum subtotal for this fee (₹, leave blank for no upper limit):", "");
+    const maxSubtotal = maxValue === null || maxValue === "" ? undefined : Number(maxValue);
+    if (maxValue !== "" && maxValue !== null && (isNaN(maxSubtotal!) || maxSubtotal! < minSubtotal)) return toast.error("Invalid max subtotal");
+    setActionLoading(section._id + "-add-fee");
+    try {
+      await axios.post(`/api/admin/delivery-fee-sections/${section._id}/fees`, { amount, minSubtotal, maxSubtotal });
+      toast.success("Fee slab added");
+      fetchAll();
+    } catch {
+      toast.error("Failed to add fee slab");
+    } finally {
+      setActionLoading("");
+    }
+  };
+
+  const handleEditFeeSlab = async (section: any, fee: any) => {
+    const amountValue = prompt("Edit delivery fee amount (₹):", fee.amount);
+    if (amountValue === null) return;
+    const amount = Number(amountValue);
+    if (isNaN(amount) || amount < 0) return toast.error("Invalid amount");
+    const minValue = prompt("Edit minimum subtotal for this fee (₹):", fee.minSubtotal ?? 0);
+    if (minValue === null) return;
+    const minSubtotal = Number(minValue);
+    if (isNaN(minSubtotal) || minSubtotal < 0) return toast.error("Invalid min subtotal");
+    const maxValue = prompt("Edit maximum subtotal for this fee (₹, leave blank for no upper limit):", fee.maxSubtotal ?? "");
+    const maxSubtotal = maxValue === null || maxValue === "" ? undefined : Number(maxValue);
+    if (maxValue !== "" && maxValue !== null && (isNaN(maxSubtotal!) || maxSubtotal! < minSubtotal)) return toast.error("Invalid max subtotal");
+    setActionLoading(section._id + "-edit-fee-" + fee._id);
+    try {
+      await axios.put(`/api/admin/delivery-fee-sections/${section._id}/fees/${fee._id}`, { amount, minSubtotal, maxSubtotal });
+      toast.success("Fee slab updated");
+      fetchAll();
+    } catch {
+      toast.error("Failed to update fee slab");
+    } finally {
+      setActionLoading("");
+    }
+  };
+
+  const handleToggleFeeSlab = async (section: any, fee: any) => {
+    setActionLoading(section._id + "-toggle-fee-" + fee._id);
+    try {
+      await axios.put(`/api/admin/delivery-fee-sections/${section._id}/fees/${fee._id}`, { isActive: !fee.isActive });
+      toast.success("Fee slab status updated");
       fetchAll();
     } catch {
       toast.error("Failed to update status");
@@ -78,6 +148,21 @@ const ChargesTaxesFeesManagement: React.FC = () => {
     }
   };
 
+  const handleDeleteFeeSlab = async (section: any, fee: any) => {
+    if (!window.confirm("Delete this fee slab?")) return;
+    setActionLoading(section._id + "-delete-fee-" + fee._id);
+    try {
+      await axios.delete(`/api/admin/delivery-fee-sections/${section._id}/fees/${fee._id}`);
+      toast.success("Fee slab deleted");
+      fetchAll();
+    } catch {
+      toast.error("Failed to delete fee slab");
+    } finally {
+      setActionLoading("");
+    }
+  };
+
+  // --- Handling Charges ---
   const handleEditHandlingCharge = async (charge: any) => {
     const value = prompt("Enter new handling charge amount (₹):", charge.amount);
     if (value === null) return;
@@ -108,6 +193,21 @@ const ChargesTaxesFeesManagement: React.FC = () => {
     }
   };
 
+  const handleDeleteHandlingCharge = async (charge: any) => {
+    if (!window.confirm("Are you sure you want to delete this handling charge?")) return;
+    setActionLoading(charge._id);
+    try {
+      await axios.delete(`/api/admin/handling-charge/${charge._id}`);
+      toast.success("Handling charge deleted");
+      fetchAll();
+    } catch {
+      toast.error("Failed to delete handling charge");
+    } finally {
+      setActionLoading("");
+    }
+  };
+
+  // --- GST/Taxes ---
   const handleEditGstTax = async (tax: any) => {
     const value = prompt("Enter new GST percentage:", tax.percentage ?? tax.rate ?? "");
     if (value === null) return;
@@ -138,34 +238,6 @@ const ChargesTaxesFeesManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteDeliveryFee = async (fee: any) => {
-    if (!window.confirm("Are you sure you want to delete this delivery fee?")) return;
-    setActionLoading(fee._id);
-    try {
-      await axios.delete(`/api/admin/delivery-fee/${fee._id}`);
-      toast.success("Delivery fee deleted");
-      fetchAll();
-    } catch {
-      toast.error("Failed to delete delivery fee");
-    } finally {
-      setActionLoading("");
-    }
-  };
-
-  const handleDeleteHandlingCharge = async (charge: any) => {
-    if (!window.confirm("Are you sure you want to delete this handling charge?")) return;
-    setActionLoading(charge._id);
-    try {
-      await axios.delete(`/api/admin/handling-charge/${charge._id}`);
-      toast.success("Handling charge deleted");
-      fetchAll();
-    } catch {
-      toast.error("Failed to delete handling charge");
-    } finally {
-      setActionLoading("");
-    }
-  };
-
   const handleDeleteGstTax = async (tax: any) => {
     if (!window.confirm("Are you sure you want to delete this GST/Tax?")) return;
     setActionLoading(tax._id);
@@ -180,102 +252,57 @@ const ChargesTaxesFeesManagement: React.FC = () => {
     }
   };
 
-  // Add new delivery fee
-  const handleAddDeliveryFee = async () => {
-    const amountValue = prompt("Enter delivery fee amount (₹):");
-    if (amountValue === null) return;
-    const amount = Number(amountValue);
-    if (isNaN(amount) || amount < 0) return toast.error("Invalid amount");
-
-    const minValue = prompt("Enter minimum subtotal for this fee (₹):", "0");
-    if (minValue === null) return;
-    const minSubtotal = Number(minValue);
-    if (isNaN(minSubtotal) || minSubtotal < 0) return toast.error("Invalid min subtotal");
-
-    const maxValue = prompt("Enter maximum subtotal for this fee (₹, leave blank for no upper limit):", "");
-    const maxSubtotal = maxValue === null || maxValue === "" ? undefined : Number(maxValue);
-    if (maxValue !== "" && maxValue !== null && (isNaN(maxSubtotal!) || maxSubtotal! < minSubtotal)) return toast.error("Invalid max subtotal");
-
-    setActionLoading("add");
-    try {
-      await axios.post(`/api/admin/delivery-fee`, { amount, minSubtotal, maxSubtotal });
-      toast.success("Delivery fee added");
-      fetchAll();
-    } catch {
-      toast.error("Failed to add delivery fee");
-    } finally {
-      setActionLoading("");
-    }
-  };
-
   return (
     <div className="p-4">
       <h1 className="text-lg font-semibold mb-4">Charges, Fees & Taxes Management</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Delivery Fees */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Delivery Fees</CardTitle>
-            <Button
-              size="sm"
-              variant="default"
-              onClick={handleAddDeliveryFee}
-              disabled={actionLoading === "add"}
-            >
-              Add New
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="animate-pulse text-gray-400">Loading...</div>
-            ) : deliveryFees.length === 0 ? (
-              <div className="text-gray-400">No delivery fees found.</div>
-            ) : (
-              <ul className="space-y-2">
-                {deliveryFees.map((fee) => (
-                  <li key={fee._id} className="flex justify-between items-center border-b pb-1">
-                    <span>
-                      ₹{fee.amount}
-                      <span className="text-xs text-gray-500 ml-2">
-                        (₹{fee.minSubtotal ?? 0}
-                        {typeof fee.maxSubtotal === "number" ? ` - ₹${fee.maxSubtotal}` : " & above"})
-                      </span>
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs ${fee.isActive ? "text-green-600" : "text-red-500"}`}>
-                        {fee.isActive ? "Active" : "Inactive"}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={actionLoading === fee._id}
-                        onClick={() => handleEditDeliveryFee(fee)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={actionLoading === fee._id}
-                        onClick={() => handleToggleDeliveryFee(fee)}
-                      >
-                        {fee.isActive ? "Deactivate" : "Activate"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={actionLoading === fee._id}
-                        onClick={() => handleDeleteDeliveryFee(fee)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        {/* Delivery Fee Sections */}
+        <div className="md:col-span-2 space-y-4">
+          {loading ? (
+            <div className="animate-pulse text-gray-400">Loading...</div>
+          ) : deliveryFeeSections.length === 0 ? (
+            <div className="text-gray-400">No delivery fee sections found.</div>
+          ) : (
+            deliveryFeeSections.map((section) => (
+              <Card key={section._id}>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Delivery Fees For {section.km} km</CardTitle>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="default" onClick={() => handleAddFeeSlab(section)} disabled={actionLoading === section._id + "-add-fee"}>Add New</Button>
+                    <Button size="sm" variant="outline" onClick={() => handleEditSection(section)} disabled={actionLoading === section._id}>Edit</Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDeleteSection(section)} disabled={actionLoading === section._id}>Delete</Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {section.fees.length === 0 ? (
+                    <div className="text-gray-400">No fee slabs found.</div>
+                  ) : (
+                    <ul className="space-y-2">
+                      {section.fees.map((fee: any) => (
+                        <li key={fee._id} className="flex justify-between items-center border-b pb-1">
+                          <span>
+                            ₹{fee.amount}
+                            <span className="text-xs text-gray-500 ml-2">
+                              (₹{fee.minSubtotal ?? 0}
+                              {typeof fee.maxSubtotal === "number" ? ` - ₹${fee.maxSubtotal}` : " & above"})
+                            </span>
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs ${fee.isActive ? "text-green-600" : "text-red-500"}`}>{fee.isActive ? "Active" : "Inactive"}</span>
+                            <Button size="sm" variant="outline" disabled={actionLoading === section._id + "-edit-fee-" + fee._id} onClick={() => handleEditFeeSlab(section, fee)}>Edit</Button>
+                            <Button size="sm" variant="outline" disabled={actionLoading === section._id + "-toggle-fee-" + fee._id} onClick={() => handleToggleFeeSlab(section, fee)}>{fee.isActive ? "Deactivate" : "Activate"}</Button>
+                            <Button size="sm" variant="destructive" disabled={actionLoading === section._id + "-delete-fee-" + fee._id} onClick={() => handleDeleteFeeSlab(section, fee)}>Delete</Button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
+          <Button className="mt-2" onClick={handleAddSection} disabled={actionLoading === "add-section"}>Add New Section</Button>
+        </div>
         {/* Handling Charges */}
         <Card>
           <CardHeader>
@@ -292,33 +319,10 @@ const ChargesTaxesFeesManagement: React.FC = () => {
                   <li key={charge._id} className="flex justify-between items-center border-b pb-1">
                     <span>₹{charge.amount}</span>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs ${charge.isActive ? "text-green-600" : "text-red-500"}`}>
-                        {charge.isActive ? "Active" : "Inactive"}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={actionLoading === charge._id}
-                        onClick={() => handleEditHandlingCharge(charge)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={actionLoading === charge._id}
-                        onClick={() => handleToggleHandlingCharge(charge)}
-                      >
-                        {charge.isActive ? "Deactivate" : "Activate"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={actionLoading === charge._id}
-                        onClick={() => handleDeleteHandlingCharge(charge)}
-                      >
-                        Delete
-                      </Button>
+                      <span className={`text-xs ${charge.isActive ? "text-green-600" : "text-red-500"}`}>{charge.isActive ? "Active" : "Inactive"}</span>
+                      <Button size="sm" variant="outline" disabled={actionLoading === charge._id} onClick={() => handleEditHandlingCharge(charge)}>Edit</Button>
+                      <Button size="sm" variant="outline" disabled={actionLoading === charge._id} onClick={() => handleToggleHandlingCharge(charge)}>{charge.isActive ? "Deactivate" : "Activate"}</Button>
+                      <Button size="sm" variant="destructive" disabled={actionLoading === charge._id} onClick={() => handleDeleteHandlingCharge(charge)}>Delete</Button>
                     </div>
                   </li>
                 ))}
@@ -326,7 +330,7 @@ const ChargesTaxesFeesManagement: React.FC = () => {
             )}
           </CardContent>
         </Card>
-        {/* GST/Taxes */}
+        {/* GST / Taxes */}
         <Card>
           <CardHeader>
             <CardTitle>GST / Taxes</CardTitle>
@@ -350,38 +354,12 @@ const ChargesTaxesFeesManagement: React.FC = () => {
                           : `₹${tax.amount ?? ""}`}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs ${tax.isActive ? "text-green-600" : "text-red-500"}`}>
-                          {tax.isActive ? "Active" : "Inactive"}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={actionLoading === tax._id}
-                          onClick={() => handleEditGstTax(tax)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={actionLoading === tax._id}
-                          onClick={() => handleToggleGstTax(tax)}
-                        >
-                          {tax.isActive ? "Deactivate" : "Activate"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={actionLoading === tax._id}
-                          onClick={() => handleDeleteGstTax(tax)}
-                        >
-                          Delete
-                        </Button>
+                        <span className={`text-xs ${tax.isActive ? "text-green-600" : "text-red-500"}`}>{tax.isActive ? "Active" : "Inactive"}</span>
+                        <Button size="sm" variant="outline" disabled={actionLoading === tax._id} onClick={() => handleEditGstTax(tax)}>Edit</Button>
+                        <Button size="sm" variant="outline" disabled={actionLoading === tax._id} onClick={() => handleToggleGstTax(tax)}>{tax.isActive ? "Deactivate" : "Activate"}</Button>
+                        <Button size="sm" variant="destructive" disabled={actionLoading === tax._id} onClick={() => handleDeleteGstTax(tax)}>Delete</Button>
                       </div>
                     </div>
-                    {tax.description && (
-                      <span className="text-xs text-gray-500">{tax.description}</span>
-                    )}
                   </li>
                 ))}
               </ul>

@@ -61,7 +61,8 @@ exports.addNewAddress = async (req, res) => {
       city,
       pincode,
       isDefault,
-      state // may be undefined
+      state, // may be undefined
+      distance // <-- add distance
     } = req.body;
 
     // Pincode validation
@@ -74,6 +75,10 @@ exports.addNewAddress = async (req, res) => {
       req.user.addresses.forEach(addr => addr.isDefault = false);
     }
 
+    if (distance === undefined || isNaN(Number(distance))) {
+      return res.status(400).json({ message: "Distance (in km) is required and must be a number" });
+    }
+
     const newAddress = {
       type: 'home', // Always use a valid enum value
       // Optionally, you can add a custom label field if you want to store the title
@@ -83,7 +88,8 @@ exports.addNewAddress = async (req, res) => {
       city,
       state: state || 'Bihar',
       pincode,
-      isDefault: !!isDefault
+      isDefault: !!isDefault,
+      distance: Number(distance), // <-- store distance
     };
 
     req.user.addresses.push(newAddress);
@@ -111,7 +117,8 @@ exports.updateAddress = async (req, res) => {
       city,
       pincode,
       isDefault,
-      state // may be undefined
+      state, // may be undefined
+      distance // <-- add distance
     } = req.body;
 
     if (isDefault) {
@@ -127,7 +134,8 @@ exports.updateAddress = async (req, res) => {
       city: city || req.user.addresses[idx].city,
       state: state || req.user.addresses[idx].state || 'Bihar',
       pincode: pincode || req.user.addresses[idx].pincode,
-      isDefault: !!isDefault
+      isDefault: !!isDefault,
+      distance: distance !== undefined ? Number(distance) : req.user.addresses[idx].distance,
     };
 
     await req.user.save();
@@ -518,28 +526,39 @@ exports.placeNewOrder = async (req, res) => {
     }
 
     // --- Calculate delivery fee, handling charge, GST/tax as per frontend logic ---
-    // Fetch all delivery fees, handling charges, and GST/tax
-    const DeliveryFee = require('../models/deliveryFee.model');
+    // Fetch all delivery fee sections, handling charges, and GST/tax
+    const DeliveryFeeSection = require('../models/deliveryFeeSection.model');
     const HandlingCharge = require('../models/handlingCharge.model');
     const GstTax = require('../models/gstTax.model');
 
-    const deliveryFees = await DeliveryFee.find({ isActive: true });
+    const deliveryFeeSections = await DeliveryFeeSection.find();
     const handlingCharges = await HandlingCharge.find({ isActive: true });
     const gstTaxes = await GstTax.find({ isActive: true });
 
-    // Delivery fee: select by subtotal range
+    // Delivery fee: select by address distance and subtotal
     let deliveryFee = 0;
-    if (deliveryFees.length > 0) {
-      // Sort by minSubtotal ascending
-      const sortedFees = [...deliveryFees].sort(
-        (a, b) => (a.minSubtotal ?? 0) - (b.minSubtotal ?? 0)
-      );
-      const fee = sortedFees.find(fee => {
-        const min = typeof fee.minSubtotal === 'number' ? fee.minSubtotal : 0;
-        const max = typeof fee.maxSubtotal === 'number' ? fee.maxSubtotal : Infinity;
-        return totalAmount >= min && totalAmount <= max;
-      });
-      deliveryFee = fee ? fee.amount : 0;
+    let addressDistance = req.body.deliveryAddress?.distance;
+    if (deliveryFeeSections.length > 0 && typeof addressDistance === 'number') {
+      // Find section with km == distance (or nearest lower)
+      let section = deliveryFeeSections.find(s => Number(s.km) === Number(addressDistance));
+      if (!section) {
+        // Try nearest lower
+        const sorted = [...deliveryFeeSections].sort((a, b) => a.km - b.km);
+        section = sorted.reverse().find(s => Number(s.km) < Number(addressDistance));
+        if (!section) section = sorted[0];
+      }
+      if (section && Array.isArray(section.fees)) {
+        // Find fee slab by subtotal
+        const sortedFees = [...section.fees].sort(
+          (a, b) => (a.minSubtotal ?? 0) - (b.minSubtotal ?? 0)
+        );
+        const fee = sortedFees.find(fee => {
+          const min = typeof fee.minSubtotal === 'number' ? fee.minSubtotal : 0;
+          const max = typeof fee.maxSubtotal === 'number' ? fee.maxSubtotal : Infinity;
+          return totalAmount >= min && totalAmount <= max && fee.isActive !== false;
+        });
+        deliveryFee = fee ? fee.amount : 0;
+      }
     }
 
     // Handling charge: use first active

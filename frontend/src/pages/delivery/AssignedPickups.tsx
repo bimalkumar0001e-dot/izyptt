@@ -50,13 +50,20 @@ const AssignedPickups: React.FC = () => {
   // Fix: Normalize status to lowercase for filtering, and fallback to 'N/A' for missing fields
   const normalizeStatus = (status: string | undefined) => (status ? status.toLowerCase() : 'n/a');
 
+  // Sort pickups by createdAt descending (most recent first)
+  const sortedPickups = [...pickups].sort((a, b) => {
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
+  });
+
   // Filter pickups based on status and search query (case-insensitive, robust)
   const isNew = (order: any) => normalizeStatus(order.status) === 'pending';
   const isActive = (order: any) => !['pending', 'delivered', 'cancelled'].includes(normalizeStatus(order.status));
   const isPast = (order: any) => ['delivered', 'cancelled'].includes(normalizeStatus(order.status));
-  const newOrders = pickups.filter(isNew);
-  const activeOrders = pickups.filter(isActive);
-  const pastOrders = pickups.filter(isPast);
+  const newOrders = sortedPickups.filter(isNew);
+  const activeOrders = sortedPickups.filter(isActive);
+  const pastOrders = sortedPickups.filter(isPast);
 
   // Only redirect if auth check is finished
   useEffect(() => {
