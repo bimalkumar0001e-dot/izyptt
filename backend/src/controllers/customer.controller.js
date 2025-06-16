@@ -617,6 +617,18 @@ exports.placeNewOrder = async (req, res) => {
       appliedOffer: appliedOfferId, // Include the applied offer ID
     };
 
+    // Ensure deliveryAddress.title is set (for old clients or fallback)
+    if (orderData.deliveryAddress && !orderData.deliveryAddress.title) {
+      // Try to get from user's address book
+      const userAddress = req.user.addresses?.find(addr =>
+        addr.fullAddress === orderData.deliveryAddress.address ||
+        addr.fullAddress === orderData.deliveryAddress.fullAddress
+      );
+      if (userAddress && userAddress.title) {
+        orderData.deliveryAddress.title = userAddress.title;
+      }
+    }
+
     // Log for debugging
     console.log('Creating new order with data:', orderData);
 

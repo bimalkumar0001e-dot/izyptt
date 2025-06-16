@@ -53,6 +53,13 @@ const AddressManagement: React.FC = () => {
   const handleDeleteAddress = async (addressId: string) => {
     await deleteAddress(addressId);
   };
+  
+  // Helper function to determine title from address object
+  const getAddressTitle = (address: any): string => {
+    // Use title if it exists, otherwise use type, or fallback to "Address"
+    return address.title || 
+           (address.type ? address.type.charAt(0).toUpperCase() + address.type.slice(1) : "Address");
+  };
 
   return (
     <div className="app-container">
@@ -76,18 +83,40 @@ const AddressManagement: React.FC = () => {
                     <MapPin className={`w-5 h-5 mr-3 mt-0.5 flex-shrink-0 ${address.isDefault ? 'text-app-primary' : 'text-gray-500'}`} />
                     <div>
                       <div className="flex items-center">
-                        <p className="font-medium">{address.title}</p>
+                        <p className="font-medium">{getAddressTitle(address)}</p>
                         {address.isDefault && (
                           <span className="ml-2 text-xs px-2 py-0.5 rounded bg-app-primary text-white">
                             Default
                           </span>
                         )}
+                        {(address.distance === undefined || address.distance === null) && (
+                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-red-500 text-white">
+                            Expired
+                          </span>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{address.fullAddress}</p>
+                      
+                      {/* Display full address */}
+                      <p className="text-sm text-gray-600 mt-1">{address.address || address.fullAddress || "No address specified"}</p>
+                      
+                      {/* Display landmark if available */}
                       {address.landmark && (
-                        <p className="text-sm text-gray-600">{address.landmark}</p>
+                        <p className="text-sm text-gray-600">Landmark: {address.landmark}</p>
                       )}
-                      <p className="text-sm text-gray-600">{address.city}, {address.pincode}</p>
+                      
+                      {/* Location details */}
+                      <p className="text-sm text-gray-600">
+                        {address.city || "City not specified"}, 
+                        {address.state && ` ${address.state},`} 
+                        {address.pincode || "Pincode not specified"}
+                      </p>
+                      
+                      {/* Display distance if available */}
+                      {address.distance !== undefined && address.distance !== null && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          Distance: {address.distance} km
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

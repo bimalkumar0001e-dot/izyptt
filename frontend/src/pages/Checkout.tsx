@@ -310,6 +310,13 @@ const Checkout: React.FC = () => {
     });
   };
 
+  // Helper function to determine title from address object (add this near the top of the component)
+  const getAddressTitle = (address: any): string => {
+    if (!address) return "Address";
+    return address.title || 
+           (address.type ? address.type.charAt(0).toUpperCase() + address.type.slice(1) : "Address");
+  };
+
   return (
     <div className="app-container">
       <AppHeader title="Checkout" showBackButton />
@@ -402,18 +409,25 @@ const Checkout: React.FC = () => {
                   <div className="flex items-start">
                     <MapPin className="w-5 h-5 text-app-primary mr-2 mt-0.5" />
                     <div>
-                      <p className="font-medium">{getSelectedAddress()?.title}</p>
+                      <p className="font-medium">{getSelectedAddress()?.title || getAddressTitle(getSelectedAddress())}</p>
                       <p className="text-sm text-gray-600">
-                        {getSelectedAddress()?.fullAddress}
+                        {getSelectedAddress()?.fullAddress || getSelectedAddress()?.address || "No address specified"}
                       </p>
                       {getSelectedAddress()?.landmark && (
                         <p className="text-sm text-gray-600">
-                          {getSelectedAddress()?.landmark}
+                          Landmark: {getSelectedAddress()?.landmark}
                         </p>
                       )}
                       <p className="text-sm text-gray-600">
-                        {getSelectedAddress()?.city}, {getSelectedAddress()?.pincode}
+                        {getSelectedAddress()?.city || "City not specified"}, 
+                        {(getSelectedAddress() as any)?.state && ` ${(getSelectedAddress() as any).state},`} 
+                        {getSelectedAddress()?.pincode || "Pincode not specified"}
                       </p>
+                      {getSelectedAddress()?.distance !== undefined && getSelectedAddress()?.distance !== null && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          <span className="font-medium">Distance:</span> {getSelectedAddress()?.distance} km
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

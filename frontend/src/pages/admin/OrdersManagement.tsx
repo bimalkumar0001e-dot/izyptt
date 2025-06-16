@@ -523,9 +523,11 @@ const OrdersManagement: React.FC = () => {
                       </TableCell>
                       {/* Amount */}
                       <TableCell>
-                        {adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null
-                          ? <span className="text-gray-400">Loading...</span>
-                          : <>₹{calculateOrderTotal(order).toFixed(2)}</>
+                        {typeof order.finalAmount === 'number' && !isNaN(order.finalAmount)
+                          ? <>₹{Math.ceil(order.finalAmount)}</>
+                          : typeof order.totalAmount === 'number' && !isNaN(order.totalAmount)
+                          ? <>₹{Math.ceil(order.totalAmount)}</>
+                          : <span className="text-gray-400">N/A</span>
                         }
                       </TableCell>
                       {/* Payment */}
