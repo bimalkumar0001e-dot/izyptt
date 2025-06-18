@@ -27,6 +27,8 @@ const RestaurantDashboard: React.FC = () => {
   const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [siteStatus, setSiteStatus] = useState<string>('online');
+  const [statusLoading, setStatusLoading] = useState(true);
 
   // Improve redirect logic to be more tolerant during loading
   useEffect(() => {
@@ -102,6 +104,16 @@ const RestaurantDashboard: React.FC = () => {
     fetchBanners();
   }, [token]);
 
+  // Fetch platform status on mount
+  useEffect(() => {
+    setStatusLoading(true);
+    fetch(`${API_BASE}/admin/system-status`)
+      .then(res => res.json())
+      .then(data => setSiteStatus(data.status || 'online'))
+      .catch(() => setSiteStatus('online'))
+      .finally(() => setStatusLoading(false));
+  }, []);
+
   // Stats
   const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === new Date().toDateString()).length;
   const totalSales = orders
@@ -148,8 +160,19 @@ const RestaurantDashboard: React.FC = () => {
     if (value === 'menu') navigate('/restaurant/menu');
   };
 
+  // Add a helper to check if site is disabled
+  const isSiteDisabled = siteStatus === 'offline' || siteStatus === 'maintenance';
+
   return (
     <div className="app-container">
+      {/* Platform Status Banner */}
+      {isSiteDisabled && (
+        <div className="w-full px-2 py-2 bg-orange-100 border border-orange-300 text-center text-base font-semibold text-orange-800 z-50 shadow-sm rounded-b-xl">
+          {siteStatus === 'offline'
+            ? 'We are Offline, not accepting orders currently. Please check back later!'
+            : 'Maintenance Mode: We are performing scheduled maintenance. Please try again soon.'}
+        </div>
+      )}
       <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
         <div className="flex items-center">
           <button 
