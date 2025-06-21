@@ -57,7 +57,8 @@ exports.getAllOffers = async (req, res) => {
 
 exports.getOfferDetails = async (req, res) => {
   try {
-    const offer = await Offer.findById(req.params.id);
+    // Use custom id field
+    const offer = await Offer.findOne({ id: req.params.id });
     // Auto-deactivate if usageCount reached limitedTo
     if (
       offer &&
@@ -81,7 +82,8 @@ exports.updateOffer = async (req, res) => {
     const updateData = { ...req.body };
     if (req.body.limitedTo !== undefined) updateData.limitedTo = Number(req.body.limitedTo);
     if (req.body.perCustomerLimit !== undefined) updateData.perCustomerLimit = Number(req.body.perCustomerLimit);
-    const offer = await Offer.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    // Use custom id field
+    const offer = await Offer.findOneAndUpdate({ id: req.params.id }, updateData, { new: true });
     if (!offer) return res.status(404).json({ message: 'Offer not found' });
     res.json({ message: 'Offer updated', offer });
   } catch (err) {
@@ -91,7 +93,8 @@ exports.updateOffer = async (req, res) => {
 
 exports.deleteOffer = async (req, res) => {
   try {
-    await Offer.findByIdAndDelete(req.params.id);
+    // Use custom id field
+    await Offer.findOneAndDelete({ id: req.params.id });
     res.json({ message: 'Offer deleted' });
   } catch (err) {
     res.status(500).json({ message: 'Error deleting offer', error: err });
@@ -100,9 +103,10 @@ exports.deleteOffer = async (req, res) => {
 
 exports.activateDeactivateOffer = async (req, res) => {
   try {
-    const offer = await Offer.findById(req.params.id);
+    // Use custom id field
+    const offer = await Offer.findOne({ id: req.params.id });
     if (!offer) return res.status(404).json({ message: 'Offer not found' });
-    offer.isActive = !offer.isActive; // <-- fix: use isActive
+    offer.isActive = !offer.isActive;
     await offer.save();
     res.json({ message: `Offer ${offer.isActive ? 'activated' : 'deactivated'}`, offer });
   } catch (err) {
@@ -115,7 +119,8 @@ exports.canCustomerUseOffer = async (req, res) => {
   try {
     const { offerId, customerId } = req.query;
     if (!offerId || !customerId) return res.status(400).json({ message: 'offerId and customerId required' });
-    const offer = await Offer.findById(offerId);
+    // Use custom id field
+    const offer = await Offer.findOne({ id: offerId });
     if (!offer || !offer.isActive) return res.status(404).json({ message: 'Offer not found or inactive' });
     const usage = offer.customerUsage?.get(customerId) || 0;
     const allowed = usage < (offer.perCustomerLimit || 1);
@@ -127,13 +132,14 @@ exports.canCustomerUseOffer = async (req, res) => {
 
 // --- Call this when customer uses an offer (e.g., in order placement logic) ---
 exports.incrementOfferUsageForCustomer = async (offerId, customerId) => {
-  const offer = await Offer.findById(offerId);
-  if (!offer || !offer.isActive) return false;
-  const usage = offer.customerUsage?.get(customerId) || 0;
-  if (usage >= (offer.perCustomerLimit || 1)) return false;
-  offer.customerUsage.set(customerId, usage + 1);
-  offer.usageCount += 1;
-  // Optionally, deactivate offer globally if usageCount hits limitedTo
+  // Use custom id field
+  const offer = await Offer.findOne({ id: offerId });
+  if (!offer || !offer.isActive) return;
+  offer.usageCount = (offer.usageCount || 0) + 1;
+  if (!offer.customerUsage) offer.customerUsage = new Map();
+  const prev = offer.customerUsage.get(customerId.toString()) || 0;
+  offer.customerUsage.set(customerId.toString(), prev + 1);
+  // Auto-deactivate if usageCount reaches limitedTo
   if (
     offer.limitedTo !== null &&
     offer.limitedTo !== undefined &&
@@ -143,7 +149,6 @@ exports.incrementOfferUsageForCustomer = async (offerId, customerId) => {
     offer.isActive = false;
   }
   await offer.save();
-  return true;
 };
 
 

@@ -635,6 +635,16 @@ exports.placeNewOrder = async (req, res) => {
     const order = new Order(orderData);
     await order.save();
 
+    // Increment offer usage for admin analytics if offer was applied
+    if (req.body.appliedOffer) {
+      // Find offer by code to get its custom id
+      const offer = await Offer.findOne({ code: req.body.appliedOffer });
+      if (offer && offer.id) {
+        const adminController = require('./admin.controller');
+        await adminController.incrementOfferUsageForCustomer(offer.id, req.user.id);
+      }
+    }
+
     cart.items = [];
     if (cart.restaurantId) cart.restaurantId = null;
     if (cart.appliedOffer) cart.appliedOffer = null;
