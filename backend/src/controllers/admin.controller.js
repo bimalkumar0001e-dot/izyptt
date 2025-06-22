@@ -26,6 +26,12 @@ exports.createOffer = async (req, res) => {
     const offerData = { ...req.body };
     if (req.body.limitedTo !== undefined) offerData.limitedTo = Number(req.body.limitedTo);
     if (req.body.perCustomerLimit !== undefined) offerData.perCustomerLimit = Number(req.body.perCustomerLimit);
+    // Handle file upload
+    if (req.file) {
+      offerData.image = `/uploads/${req.file.filename}`;
+    } else {
+      return res.status(400).json({ message: 'Offer image is required' });
+    }
     const offer = new Offer(offerData);
     await offer.save();
     res.status(201).json({ message: 'Offer created', offer });
@@ -79,12 +85,43 @@ exports.getOfferDetails = async (req, res) => {
 
 exports.updateOffer = async (req, res) => {
   try {
-    const updateData = { ...req.body };
-    if (req.body.limitedTo !== undefined) updateData.limitedTo = Number(req.body.limitedTo);
-    if (req.body.perCustomerLimit !== undefined) updateData.perCustomerLimit = Number(req.body.perCustomerLimit);
-    // Use custom id field
-    const offer = await Offer.findOneAndUpdate({ id: req.params.id }, updateData, { new: true });
+    // Find the offer first
+    const offer = await Offer.findOne({ id: req.params.id });
     if (!offer) return res.status(404).json({ message: 'Offer not found' });
+
+    // Update fields from req.body
+    const fields = [
+      'title', 'code', 'description', 'discountType', 'validFrom', 'validTo', 'isActive'
+    ];
+    fields.forEach(field => {
+      if (req.body[field] !== undefined) offer[field] = req.body[field];
+    });
+
+    // Numeric fields
+    const numericFields = [
+      'discountValue', 'minOrderValue', 'maxDiscount', 'limitedTo', 'perCustomerLimit'
+    ];
+    numericFields.forEach(field => {
+      if (req.body[field] !== undefined && req.body[field] !== '') {
+        offer[field] = Number(req.body[field]);
+      }
+    });
+
+    // Dates
+    if (req.body.validFrom) offer.validFrom = new Date(req.body.validFrom);
+    if (req.body.validTo) offer.validTo = new Date(req.body.validTo);
+
+    // Boolean
+    if (req.body.isActive !== undefined) {
+      offer.isActive = req.body.isActive === 'true' || req.body.isActive === true;
+    }
+
+    // Only update image if a new file is uploaded
+    if (req.file) {
+      offer.image = `/uploads/${req.file.filename}`;
+    }
+
+    await offer.save();
     res.json({ message: 'Offer updated', offer });
   } catch (err) {
     res.status(500).json({ message: 'Error updating offer', error: err });

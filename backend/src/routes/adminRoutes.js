@@ -10,10 +10,10 @@ router.get('/system-status', adminController.getSystemStatus);
 router.put('/system-status', adminController.updateSystemStatus);
 
 // Offer Management
-router.post('/offers', adminController.createOffer);
+router.post('/offers', upload.single('image'), adminController.createOffer);
 router.get('/offers', adminController.getAllOffers);
 router.get('/offers/:id', adminController.getOfferDetails);
-router.put('/offers/:id', adminController.updateOffer);
+router.put('/offers/:id', upload.single('image'), adminController.updateOffer);
 router.delete('/offers/:id', adminController.deleteOffer);
 router.patch('/offers/:id/activate', adminController.activateDeactivateOffer);
 router.get('/offers/can-use', adminController.canCustomerUseOffer); // New route to check if a customer can use an offer

@@ -55,6 +55,7 @@ const ManageOffers: React.FC = () => {
   // Modal state
   const [modalType, setModalType] = useState<'create' | 'edit' | 'view' | null>(null);
   const [modalOffer, setModalOffer] = useState<any>(null);
+  const [modalImage, setModalImage] = useState<File | null>(null);
 
   // Fetch offers from backend on mount
   useEffect(() => {
@@ -92,6 +93,7 @@ const ManageOffers: React.FC = () => {
   const openCreateModal = () => {
     setModalType('create');
     setModalOffer({ ...initialOfferState, validFrom: '', validTo: '' });
+    setModalImage(null);
   };
 
   const openEditModal = (offer: any) => {
@@ -101,6 +103,7 @@ const ManageOffers: React.FC = () => {
       validFrom: offer.validFrom ? new Date(offer.validFrom).toISOString().slice(0, 10) : '',
       validTo: offer.validTo ? new Date(offer.validTo).toISOString().slice(0, 10) : '',
     });
+    setModalImage(null);
   };
 
   const openViewModal = (offer: any) => {
@@ -117,17 +120,23 @@ const ManageOffers: React.FC = () => {
   const handleModalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const payload = {
-      ...modalOffer,
-      validFrom: new Date(modalOffer.validFrom),
-      validTo: new Date(modalOffer.validTo),
-    };
     try {
+      const formData = new FormData();
+      Object.entries(modalOffer).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) formData.append(key, value as any);
+      });
+      if (modalImage) {
+        formData.append('image', modalImage);
+      }
       if (modalType === 'create') {
-        await axios.post(`${API_BASE}/admin/offers`, payload);
+        await axios.post(`${API_BASE}/admin/offers`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
         showToast('Offer created successfully', 'success');
       } else if (modalType === 'edit') {
-        await axios.put(`${API_BASE}/admin/offers/${modalOffer.id}`, payload);
+        await axios.put(`${API_BASE}/admin/offers/${modalOffer.id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
         showToast('Offer updated successfully', 'success');
       }
       fetchOffers();
@@ -171,7 +180,12 @@ const ManageOffers: React.FC = () => {
 
   // Modal form fields handler
   const handleModalChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    if (type === 'file') {
+      const file = (e.target as HTMLInputElement).files?.[0] || null;
+      setModalImage(file);
+      return;
+    }
     setModalOffer((prev: any) => ({
       ...prev,
       [name]: ['discountValue', 'minOrderValue', 'maxDiscount', 'perCustomerLimit', 'limitedTo'].includes(name)
@@ -315,6 +329,33 @@ const ManageOffers: React.FC = () => {
       <Modal open={modalType === 'create' || modalType === 'edit'} onClose={closeModal}>
         <form onSubmit={handleModalSubmit} className="space-y-4">
           <h2 className="text-lg font-semibold mb-2">{modalType === 'create' ? 'Create Offer' : 'Edit Offer'}</h2>
+          {/* Image upload */}
+          <div>
+            <label className="block font-medium mb-1">Offer Image<span className="text-red-500">*</span></label>
+            <input
+              type="file"
+              accept="image/*"
+              name="image"
+              onChange={handleModalChange}
+              required={modalType === 'create'}
+            />
+            {/* Preview */}
+            {(modalImage || modalOffer?.image) && (
+              <div className="mt-2">
+                <img
+                  src={
+                    modalImage
+                      ? URL.createObjectURL(modalImage)
+                      : modalOffer?.image?.startsWith('/uploads')
+                        ? `${BACKEND_URL}${modalOffer.image}`
+                        : modalOffer?.image
+                  }
+                  alt="Offer"
+                  className="w-24 h-24 object-cover rounded border"
+                />
+              </div>
+            )}
+          </div>
           <Input name="id" value={modalOffer?.id || ''} onChange={handleModalChange} placeholder="Offer ID (unique, e.g. offer1)" required />
           <Input name="title" value={modalOffer?.title || ''} onChange={handleModalChange} placeholder="Title" required />
           <Input name="code" value={modalOffer?.code || ''} onChange={handleModalChange} placeholder="Code" required />

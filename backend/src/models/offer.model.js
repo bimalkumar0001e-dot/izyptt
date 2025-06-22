@@ -21,6 +21,7 @@ const offerSchema = new mongoose.Schema({
     of: Number,
     default: {}
   }, // customerId -> usage count
+  image: { type: String }, // Offer image path
 }, { timestamps: true });
 
 module.exports = mongoose.model('Offer', offerSchema);

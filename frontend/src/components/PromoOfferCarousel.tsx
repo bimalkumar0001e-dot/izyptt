@@ -20,6 +20,7 @@ interface Offer {
   discountType: string;
   discountValue: number;
   isActive: boolean;
+  image?: string;
 }
 
 const COLORS = [
@@ -102,6 +103,13 @@ const PromoOfferCarousel: React.FC = () => {
               description={offer.description}
               backgroundColor={COLORS[idx % COLORS.length]}
               textColor={TEXT_COLORS[idx % TEXT_COLORS.length]}
+              image={
+                offer.image
+                  ? (offer.image.startsWith('/uploads')
+                      ? `${BACKEND_URL}${offer.image}`
+                      : offer.image)
+                  : ''
+              }
             />
           </CarouselItem>
         ))}

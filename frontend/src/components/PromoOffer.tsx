@@ -1,37 +1,30 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Tag } from 'lucide-react';
 
 interface PromoOfferProps {
-  title: string;
-  description: string;
-  backgroundColor: string;
-  textColor?: string;
+  image: string;
 }
 
-const PromoOffer: React.FC<PromoOfferProps> = ({ 
-  title, 
-  description, 
-  backgroundColor, 
-  textColor = "text-white"
-}) => {
+const PromoOffer: React.FC<PromoOfferProps> = ({ image }) => {
   return (
     <Card 
-      className={`p-4 flex items-center ${backgroundColor} ${textColor} rounded-xl shadow-sm border-0 h-32`}
+      className="p-0 flex items-center justify-center rounded-xl shadow-sm border-0 h-32 overflow-hidden"
       style={{
         boxShadow: '0 4px 24px 0 rgba(30, 41, 59, 0.10)',
-        overflow: 'hidden'
       }}
     >
-      <div className="flex items-center gap-4 w-full">
-        <div className="p-3 bg-white/20 rounded-full flex items-center justify-center">
-          <Tag className="w-6 h-6" />
+      {image ? (
+        <img
+          src={image}
+          alt="Offer"
+          className="w-full h-full object-cover"
+          style={{ minHeight: '100%', minWidth: '100%' }}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500">
+          No Image
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-lg truncate">{title}</h3>
-          <p className="text-sm opacity-90 truncate">{description}</p>
-        </div>
-      </div>
+      )}
     </Card>
   );
 };
