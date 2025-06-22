@@ -266,7 +266,7 @@ const Home: React.FC = () => {
         });
         return updated;
       });
-    }, 15000); // 15 seconds
+    }, 30000); // 30 seconds
     return () => clearInterval(interval);
   }, [sections]);
 
@@ -278,7 +278,7 @@ const Home: React.FC = () => {
     if (!popularDishesOrder || popularDishesOrder.length <= 1) return;
     const interval = setInterval(() => {
       setPopularDishesOrder(prev => prev.length > 1 ? [...prev.slice(1), prev[0]] : prev);
-    }, 15000);
+    }, 30000);
     return () => clearInterval(interval);
   }, [popularDishesOrder]);
 
