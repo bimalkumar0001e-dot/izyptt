@@ -23,7 +23,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
     style={{
       minWidth: 140,
       maxWidth: 200,
-      background: "#23243a", // solid shiny dark color
+      background: "#fff", // changed to white
       boxShadow: "0 4px 16px 0 rgba(40, 40, 80, 0.18)",
     }}
   >
@@ -37,7 +37,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
       />
     </div>
     <div className="text-center">
-      <div className="font-semibold text-white text-base leading-tight">{title}</div>
+      <div className="font-semibold text-gray-900 text-base leading-tight">{title}</div>
     </div>
   </div>
 );
