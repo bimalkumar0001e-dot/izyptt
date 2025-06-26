@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { MoreHorizontal, Search, Plus, Edit, Eye, Trash2, Check } from 'lucide-react';
 import { BACKEND_URL } from '@/utils/utils';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 
 const API_BASE = `${BACKEND_URL}/api/admin`;
 
@@ -248,6 +249,31 @@ const ProductsManagement: React.FC = () => {
     }
   };
 
+  // Drag and drop handler for popular dishes
+  const handlePopularDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+    const reordered = Array.from(popularProducts);
+    const [removed] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, removed);
+    setPopularProducts(reordered);
+
+    // Persist new order to backend
+    try {
+      await fetch(`${API_BASE}/popular-dishes/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productIds: reordered.map((p: any) => p._id) }),
+      });
+      // Optionally, refetch products to ensure order is correct
+      const res = await fetch(`${API_BASE}/products`);
+      let data = await res.json();
+      data = data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setProducts(data);
+      setFilteredProducts(data);
+      setPopularProducts(data.filter((p: any) => p.isPopular));
+    } catch {}
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -409,32 +435,56 @@ const ProductsManagement: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {popularProducts.length > 0 ? (
-              popularProducts.map((product) => (
-                <div key={product._id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage src={product.image} alt={product.name} />
-                      <AvatarFallback>{product.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{product.name}</span>
-                  </div>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    onClick={() => handleTogglePopular(product)}
-                  >
-                    Remove
-                  </Button>
+          <DragDropContext onDragEnd={handlePopularDragEnd}>
+            <Droppable droppableId="popular-dishes-droppable" direction="vertical">
+              {(provided) => (
+                <div
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                >
+                  {popularProducts.length > 0 ? (
+                    popularProducts.map((product, idx) => (
+                      <Draggable key={product._id} draggableId={product._id} index={idx}>
+                        {(dragProvided, dragSnapshot) => (
+                          <div
+                            ref={dragProvided.innerRef}
+                            {...dragProvided.draggableProps}
+                            {...dragProvided.dragHandleProps}
+                            style={{
+                              ...dragProvided.draggableProps.style,
+                              opacity: dragSnapshot.isDragging ? 0.7 : 1,
+                            }}
+                            className="flex items-center justify-between p-3 border rounded-lg bg-white"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <Avatar>
+                                <AvatarImage src={product.image} alt={product.name} />
+                                <AvatarFallback>{product.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">{product.name}</span>
+                            </div>
+                            <Button 
+                              variant="destructive" 
+                              size="sm" 
+                              onClick={() => handleTogglePopular(product)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))
+                  ) : (
+                    <div className="col-span-2 text-center py-8 text-gray-500">
+                      No popular dishes selected. Select up to 30 dishes from the list below.
+                    </div>
+                  )}
+                  {provided.placeholder}
                 </div>
-              ))
-            ) : (
-              <div className="col-span-2 text-center py-8 text-gray-500">
-                No popular dishes selected. Select up to 30 dishes from the list below.
-              </div>
-            )}
-          </div>
+              )}
+            </Droppable>
+          </DragDropContext>
           <div className="mt-4 text-right text-sm text-gray-500">
             {popularProducts.length}/30 popular dishes selected
           </div>

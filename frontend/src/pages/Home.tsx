@@ -137,31 +137,39 @@ const Home: React.FC = () => {
         // Fetch sections and normalize products inside each section
         const resSections = await fetch(`${API_BASE}/customer/sections`);
         let dataSections = await resSections.json();
-        dataSections = (dataSections || []).map((section: any) => ({
-          ...section,
-          products: (section.products || []).map((p: any) => {
-            let restaurantName = p.restaurant && restaurantMap[p.restaurant]
-              ? restaurantMap[p.restaurant]
-              : 'Unknown Restaurant';
-            if (restaurantName === 'Unknown Restaurant' && p.description) {
-              restaurantName = p.description;
+        // Sort sections by position (ascending), fallback to createdAt if missing
+        dataSections = (dataSections || [])
+          .sort((a: any, b: any) => {
+            if (typeof a.position === 'number' && typeof b.position === 'number') {
+              return a.position - b.position;
             }
-            const updatedProduct = {
-              ...p,
-              restaurantName
-            };
-            if (p.image && typeof p.image === 'string') {
-              if (p.image.startsWith('/uploads')) {
-                updatedProduct.image = `${UPLOADS_BASE}${p.image}`;
-              } else if (!p.image.startsWith('http')) {
-                updatedProduct.image = `${UPLOADS_BASE}/uploads/${p.image.replace('uploads/', '')}`;
-              }
-            } else {
-              updatedProduct.image = `${UPLOADS_BASE}/uploads/default-food.jpg`;
-            }
-            return updatedProduct;
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
           })
-        }));
+          .map((section: any) => ({
+            ...section,
+            products: (section.products || []).map((p: any) => {
+              let restaurantName = p.restaurant && restaurantMap[p.restaurant]
+                ? restaurantMap[p.restaurant]
+                : 'Unknown Restaurant';
+              if (restaurantName === 'Unknown Restaurant' && p.description) {
+                restaurantName = p.description;
+              }
+              const updatedProduct = {
+                ...p,
+                restaurantName
+              };
+              if (p.image && typeof p.image === 'string') {
+                if (p.image.startsWith('/uploads')) {
+                  updatedProduct.image = `${UPLOADS_BASE}${p.image}`;
+                } else if (!p.image.startsWith('http')) {
+                  updatedProduct.image = `${UPLOADS_BASE}/uploads/${p.image.replace('uploads/', '')}`;
+                }
+              } else {
+                updatedProduct.image = `${UPLOADS_BASE}/uploads/default-food.jpg`;
+              }
+              return updatedProduct;
+            })
+          }));
         setSections(dataSections);
       } catch (err) {
         setPopularRestaurants([]);

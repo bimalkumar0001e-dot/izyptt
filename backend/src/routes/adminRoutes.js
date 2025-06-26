@@ -108,6 +108,7 @@ router.post('/popular-dishes/add', adminController.addProductToPopularDishes);
 router.post('/popular-dishes/remove', adminController.removeProductFromPopularDishes);
 router.get('/popular-dishes', adminController.getPopularDishes);
 router.get('/popular-dishes/verify', adminController.verifyPopularDish);
+router.post('/popular-dishes/reorder', adminController.reorderPopularDishes); // New route for reordering popular dishes
 
 
 // Popular Restaurants Management
@@ -142,9 +143,11 @@ router.post('/sections', upload.single('image'), adminController.createSection);
 router.put('/sections/:id', upload.single('image'), adminController.updateSection);
 router.delete('/sections/:id', adminController.removeSection);
 router.get('/sections', adminController.viewAllSections);
+router.post('/sections/reorder', adminController.reorderSections); // <-- Add this line
 router.post('/sections/add-product', adminController.addProductToSection);
 router.get('/sections/:sectionId/products', adminController.viewAllProductsOfSection);
 router.post('/sections/remove-product', adminController.removeProductFromSection);
+router.post('/sections/:sectionId/reorder-products', adminController.reorderProductsInSection); // New route for reordering products inside a section
 
 // Profile Wallpaper Management
 router.post('/profile-wallpapers', upload.single('image'), adminController.addProfileWallpaper);

@@ -749,7 +749,7 @@ exports.removeProductFromPopularDishes = async (req, res) => {
 // Get all popular dishes
 exports.getPopularDishes = async (req, res) => {
   try {
-    const products = await Product.find({ isPopular: true });
+    const products = await Product.find({ isPopular: true }).sort({ popularOrder: 1, createdAt: 1 });
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching popular dishes', error: err });
@@ -768,6 +768,27 @@ exports.verifyPopularDish = async (req, res) => {
     res.json({ isPopular: !!product.isPopular });
   } catch (err) {
     res.status(500).json({ message: 'Error verifying popular dish', error: err });
+  }
+};
+
+// Reorder popular dishes
+exports.reorderPopularDishes = async (req, res) => {
+  try {
+    const { productIds } = req.body;
+    if (!Array.isArray(productIds)) {
+      return res.status(400).json({ message: 'productIds must be an array' });
+    }
+    // Find all popular products
+    const products = await Product.find({ isPopular: true });
+    // Set popularOrder for each product
+    await Promise.all(products.map(p => {
+      const idx = productIds.indexOf(p._id.toString());
+      p.popularOrder = idx === -1 ? 9999 : idx;
+      return p.save();
+    }));
+    res.json({ message: 'Popular dishes reordered' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error reordering popular dishes', error: err });
   }
 };
 
@@ -1488,6 +1509,23 @@ exports.createSection = async (req, res) => {
   }
 };
 
+// Reorder sections
+exports.reorderSections = async (req, res) => {
+  try {
+    const { sectionIds } = req.body;
+    if (!Array.isArray(sectionIds)) {
+      return res.status(400).json({ message: 'sectionIds must be an array' });
+    }
+    // Update position for each section
+    await Promise.all(sectionIds.map((id, idx) =>
+      Section.findByIdAndUpdate(id, { position: idx })
+    ));
+    res.json({ message: 'Sections reordered' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error reordering sections', error: err });
+  }
+};
+
 // Remove section
 exports.removeSection = async (req, res) => {
   try {
@@ -1502,10 +1540,10 @@ exports.removeSection = async (req, res) => {
   }
 };
 
-// View all sections
+// View all sections (sorted by position)
 exports.viewAllSections = async (req, res) => {
   try {
-    const sections = await Section.find().populate('products');
+    const sections = await Section.find().populate('products').sort({ position: 1, createdAt: 1 });
     res.json(sections);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching sections', error: err });
@@ -1564,7 +1602,7 @@ exports.removeProductFromSection = async (req, res) => {
 // Public: Get all sections with products (for home page)
 exports.viewAllSectionsPublic = async (req, res) => {
   try {
-    const sections = await Section.find().populate('products');
+    const sections = await Section.find().populate('products').sort({ position: 1, createdAt: 1 });
     res.json(sections);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching sections', error: err });
@@ -1936,5 +1974,25 @@ exports.deleteDeliveryFeeSlab = async (req, res) => {
     res.json(section);
   } catch (err) {
     res.status(500).json({ message: 'Error deleting fee slab', error: err });
+  }
+};
+
+// Reorder products inside a section
+exports.reorderProductsInSection = async (req, res) => {
+  try {
+    const { sectionId } = req.params;
+    const { productIds } = req.body;
+    if (!Array.isArray(productIds)) {
+      return res.status(400).json({ message: 'productIds must be an array' });
+    }
+    const section = await Section.findById(sectionId);
+    if (!section) return res.status(404).json({ message: 'Section not found' });
+    // Only keep products that are in the section
+    const validIds = productIds.filter(id => section.products.map(p => p.toString()).includes(id));
+    section.products = validIds;
+    await section.save();
+    res.json({ message: 'Products reordered in section', section });
+  } catch (err) {
+    res.status(500).json({ message: 'Error reordering products in section', error: err });
   }
 };

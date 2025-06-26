@@ -49,6 +49,11 @@ const productSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    popularOrder: {
+        type: Number,
+        default: 9999,
+        index: true
+    },
     rating: {
         type: Number,
         default: 4.5

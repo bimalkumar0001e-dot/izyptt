@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MoreHorizontal, Plus, Trash2, Eye, X } from 'lucide-react';
 import { BACKEND_URL } from '@/utils/utils';
+import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvided, DraggableStateSnapshot } from 'react-beautiful-dnd';
 
 const API_BASE = `${BACKEND_URL}/api/admin`;
 
@@ -259,6 +260,53 @@ const SectionManagement: React.FC = () => {
     }
   }, [addProductDialogOpen, selectedSection, products]);
 
+  // Drag and drop handler for sections and products
+  const handleDragEnd = async (result: DropResult) => {
+    // Section drag
+    if (result.type === 'section') {
+      if (!result.destination) return;
+      const reordered = Array.from(filteredSections);
+      const [removed] = reordered.splice(result.source.index, 1);
+      reordered.splice(result.destination.index, 0, removed);
+      setFilteredSections(reordered);
+
+      // Persist new order to backend
+      try {
+        await fetch(`${API_BASE}/sections/reorder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sectionIds: reordered.map((s: any) => s._id) }),
+        });
+        fetchSections();
+      } catch {}
+    }
+    // Product drag within a section
+    if (result.type.startsWith('products-')) {
+      const sectionId = result.type.replace('products-', '');
+      const sectionIdx = filteredSections.findIndex(s => s._id === sectionId);
+      if (sectionIdx === -1) return;
+      const section = filteredSections[sectionIdx];
+      const products = Array.from(section.products);
+      const [removed] = products.splice(result.source.index, 1);
+      products.splice(result.destination!.index, 0, removed);
+
+      // Update UI immediately
+      const updatedSections = [...filteredSections];
+      updatedSections[sectionIdx] = { ...section, products };
+      setFilteredSections(updatedSections);
+
+      // Persist new product order to backend
+      try {
+        await fetch(`${API_BASE}/sections/${sectionId}/reorder-products`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productIds: products.map((p: any) => p._id) }),
+        });
+        fetchSections();
+      } catch {}
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -322,67 +370,115 @@ const SectionManagement: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredSections.map(section => (
-          <Card key={section._id}>
-            <CardHeader className="flex flex-row justify-between items-center">
-              <div>
-                <CardTitle className="text-xl">{section.name}</CardTitle>
-                <CardDescription>
-                  {section.products.length} product{section.products.length !== 1 ? 's' : ''}
-                </CardDescription>
-              </div>
-              <div className="flex space-x-2">
-                <Button size="sm" variant="outline" onClick={() => openAddProductDialog(section)}>
-                  + Add Product
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleViewProducts(section)}>
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => openUpdateDialog(section)}
-                >
-                  Update
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => setRemoveSectionId(section._id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {section.products.length === 0 && (
-                  <span className="text-gray-400 text-sm">No products in this section.</span>
-                )}
-                {section.products.map((product: any) => (
-                  <div key={product._id} className="flex items-center border rounded px-2 py-1 bg-gray-50">
-                    <Avatar className="w-6 h-6 mr-2">
-                      <AvatarImage src={product.image} alt={product.name} />
-                      <AvatarFallback>{product.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <span className="mr-2">{product.name}</span>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="text-red-500"
-                      onClick={() => handleRemoveProductFromSection(section._id, product._id)}
-                      title="Remove product"
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="sections-droppable" direction="vertical" type="section">
+          {(provided) => (
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+            >
+              {filteredSections.map((section, idx) => (
+                <Draggable key={section._id} draggableId={section._id} index={idx}>
+                  {(dragProvided, dragSnapshot) => (
+                    <div
+                      ref={dragProvided.innerRef}
+                      {...dragProvided.draggableProps}
+                      {...dragProvided.dragHandleProps}
+                      style={{
+                        ...dragProvided.draggableProps.style,
+                        boxShadow: dragSnapshot.isDragging ? '0 4px 16px rgba(0,0,0,0.12)' : undefined,
+                        background: dragSnapshot.isDragging ? '#f3f4f6' : undefined,
+                      }}
                     >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                      <Card key={section._id}>
+                        <CardHeader className="flex flex-row justify-between items-center">
+                          <div>
+                            <CardTitle className="text-xl">{section.name}</CardTitle>
+                            <CardDescription>
+                              {section.products.length} product{section.products.length !== 1 ? 's' : ''}
+                            </CardDescription>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button size="sm" variant="outline" onClick={() => openAddProductDialog(section)}>
+                              + Add Product
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => handleViewProducts(section)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openUpdateDialog(section)}
+                            >
+                              Update
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => setRemoveSectionId(section._id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <Droppable droppableId={`products-${section._id}`} direction="vertical" type={`products-${section._id}`}>
+                            {(prodProvided) => (
+                              <div
+                                ref={prodProvided.innerRef}
+                                {...prodProvided.droppableProps}
+                                className="flex flex-wrap gap-2"
+                              >
+                                {section.products.length === 0 && (
+                                  <span className="text-gray-400 text-sm">No products in this section.</span>
+                                )}
+                                {section.products.map((product: any, prodIdx: number) => (
+                                  <Draggable key={product._id} draggableId={product._id} index={prodIdx}>
+                                    {(prodDragProvided: DraggableProvided, prodDragSnapshot: DraggableStateSnapshot) => (
+                                      <div
+                                        ref={prodDragProvided.innerRef}
+                                        {...prodDragProvided.draggableProps}
+                                        {...prodDragProvided.dragHandleProps}
+                                        style={{
+                                          ...prodDragProvided.draggableProps.style,
+                                          opacity: prodDragSnapshot.isDragging ? 0.7 : 1,
+                                        }}
+                                        className="flex items-center border rounded px-2 py-1 bg-gray-50"
+                                      >
+                                        <Avatar className="w-6 h-6 mr-2">
+                                          <AvatarImage src={product.image} alt={product.name} />
+                                          <AvatarFallback>{product.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <span className="mr-2">{product.name}</span>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="text-red-500"
+                                          onClick={() => handleRemoveProductFromSection(section._id, product._id)}
+                                          title="Remove product"
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {prodProvided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
 
       {/* Add Product to Section Dialog */}
       <Dialog open={addProductDialogOpen} onOpenChange={setAddProductDialogOpen}>

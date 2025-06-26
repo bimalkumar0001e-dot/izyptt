@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';
@@ -61,7 +61,10 @@ const RestaurantNotification: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const prevNotificationIds = useRef<Set<string>>(new Set());
+  const [soundEnabled, setSoundEnabled] = useState(false);
+
   // Move authentication check to useEffect to prevent premature redirects
   useEffect(() => {
     // Only redirect if auth is finished loading AND we're definitely not authenticated
@@ -82,6 +85,7 @@ const RestaurantNotification: React.FC = () => {
       if (!storedToken) {
         setNotifications([]);
         setLoading(false);
+        prevNotificationIds.current = new Set();
         return;
       }
       const res = await fetch(`${API_BASE}/restaurants/notifications`, {
@@ -92,11 +96,24 @@ const RestaurantNotification: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setNotifications(data);
+        // Detect new notifications
+        const newIds = new Set<string>(data.map((n: any) => n._id));
+        const prevIds = prevNotificationIds.current;
+        const isFirstLoad = prevIds.size === 0;
+        const hasNew = !isFirstLoad && data.some((n: any) => !prevIds.has(n._id));
+        prevNotificationIds.current = newIds;
+        // Play sound if new notification(s) arrived (not on first load)
+        if (hasNew && audioRef.current && soundEnabled) {
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(() => {});
+        }
       } else {
         setNotifications([]);
+        prevNotificationIds.current = new Set();
       }
     } catch (err) {
       setNotifications([]);
+      prevNotificationIds.current = new Set();
     }
     setLoading(false);
   };
@@ -123,6 +140,14 @@ const RestaurantNotification: React.FC = () => {
       return () => clearInterval(interval);
     }
   }, [token, isAuthenticated, user]);
+
+  // One-time user interaction to enable sound
+  const handleEnableSound = () => {
+    if (audioRef.current) {
+      audioRef.current.play().catch(() => {});
+    }
+    setSoundEnabled(true);
+  };
 
   // Show loading state during authentication check
   if (isLoading) {
@@ -152,6 +177,27 @@ const RestaurantNotification: React.FC = () => {
 
   return (
     <div className="app-container">
+      <audio ref={audioRef} src="/notification.mp3" preload="auto" />
+      {!soundEnabled && (
+        <button
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 9999,
+            padding: '12px 20px',
+            background: '#2563eb',
+            color: 'white',
+            borderRadius: 8,
+            border: 'none',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            cursor: 'pointer'
+          }}
+          onClick={handleEnableSound}
+        >
+          Enable Notification Sound
+        </button>
+      )}
       <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
         <div className="flex items-center">
           <button 
