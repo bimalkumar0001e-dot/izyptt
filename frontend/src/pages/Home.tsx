@@ -274,7 +274,7 @@ const Home: React.FC = () => {
         });
         return updated;
       });
-    }, 30000); // 30 seconds
+    }, 60000); // 60 seconds
     return () => clearInterval(interval);
   }, [sections]);
 
