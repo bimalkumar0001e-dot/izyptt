@@ -326,6 +326,19 @@ const Home: React.FC = () => {
     );
   }
 
+  // Helper to filter veg/non-veg
+  const nonVegCategories = ['non-veg', 'nonveg', 'non vegetarian', 'nonvegetarian'];
+  const nonVegDishes = popularDishesOrder.filter(
+    (item) =>
+      typeof item.category === 'string' &&
+      nonVegCategories.includes(item.category.trim().toLowerCase())
+  );
+  const vegDishes = popularDishesOrder.filter(
+    (item) =>
+      typeof item.category === 'string' &&
+      !nonVegCategories.includes(item.category.trim().toLowerCase())
+  );
+
   return (
     <div className="app-container bg-gray-50">
       {/* Maintenance/Offline Banner - always visible on all devices */}
@@ -431,6 +444,99 @@ const Home: React.FC = () => {
             <PromoBannerCarousel banners={banners} />
           </div>
           
+          {/* Popular Dishes - Veg & Non Veg Sections */}
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="font-bold text-lg text-gray-800">Popular Dishes</h2>
+              <span className="bg-app-primary/10 text-app-primary text-xs px-2 py-1 rounded-full">Trending</span>
+            </div>
+            {/* Veg Section */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-semibold text-base text-green-700">Vegetarian Favorites</span>
+                <span className="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
+              </div>
+              {loading ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {[1, 2].map((item) => (
+                    <Card key={item} className="overflow-hidden">
+                      <div className="h-32 bg-gray-200 animate-pulse"></div>
+                      <CardContent className="p-3 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
+                  {vegDishes.length === 0 ? (
+                    <div className="text-gray-500 flex items-center justify-center h-32 px-4">
+                      <p>No veg dishes available right now.</p>
+                    </div>
+                  ) : (
+                    vegDishes.map((item) => (
+                      <div key={item._id} className="min-w-[180px] max-w-[220px]">
+                        <ProductCard
+                          product={{
+                            ...item,
+                            id: item._id,
+                            restaurant: item.restaurantName
+                          }}
+                          hideAddToCart={isSiteDisabled}
+                        />
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            {/* Non Veg Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-semibold text-base text-red-700">Signature Non-Veg Delights</span>
+                <span className="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+              </div>
+              {loading ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {[1, 2].map((item) => (
+                    <Card key={item} className="overflow-hidden">
+                      <div className="h-32 bg-gray-200 animate-pulse"></div>
+                      <CardContent className="p-3 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
+                  {nonVegDishes.length === 0 ? (
+                    <div className="text-gray-500 flex items-center justify-center h-32 px-4">
+                      <p>No non veg dishes available right now.</p>
+                    </div>
+                  ) : (
+                    nonVegDishes.map((item) => (
+                      <div key={item._id} className="min-w-[180px] max-w-[220px]">
+                        <ProductCard
+                          product={{
+                            ...item,
+                            id: item._id,
+                            restaurant: item.restaurantName
+                          }}
+                          hideAddToCart={isSiteDisabled}
+                        />
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          {/* --- END POPULAR DISHES SECTION --- */}
+
           {/* Categories Section */}
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
@@ -462,56 +568,6 @@ const Home: React.FC = () => {
                 );
               })}
             </div>
-          </div>
-
-          {/* Popular Dishes */}
-          <div className="p-4">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <h2 className="font-bold text-lg text-gray-800">Popular Dishes</h2>
-                <span className="bg-app-primary/10 text-app-primary text-xs px-2 py-1 rounded-full">Trending</span>
-              </div>
-            </div>
-            {loading ? (
-              <div className="grid grid-cols-2 gap-4">
-                {[1, 2, 3, 4].map((item) => (
-                  <Card key={item} className="overflow-hidden">
-                    <div className="h-32 bg-gray-200 animate-pulse"></div>
-                    <CardContent className="p-3 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div
-                className="flex gap-3 overflow-x-auto no-scrollbar pb-2"
-                style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              >
-                <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
-                {(!popularDishesOrder || popularDishesOrder.length === 0) ? (
-                  <div className="text-gray-500 flex items-center justify-center h-32 px-4">
-                    <p>No dishes available right now.</p>
-                  </div>
-                ) : (
-                  popularDishesOrder
-                    .filter((item) => !!item.restaurant)
-                    .map((item) => (
-                      <div key={item._id} className="min-w-[180px] max-w-[220px]">
-                        <ProductCard
-                          product={{
-                            ...item,
-                            id: item._id,
-                            restaurant: item.restaurantName
-                          }}
-                          hideAddToCart={isSiteDisabled}
-                        />
-                      </div>
-                    ))
-                )}
-              </div>
-            )}
           </div>
 
           {/* Sections (after popular dishes) */}
