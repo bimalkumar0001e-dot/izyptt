@@ -349,16 +349,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="app-container bg-gray-50">
-      {/* Maintenance/Offline Banner - always visible on all devices */}
-      {/* REMOVE the following block to remove the uppermost offline message */}
-      {/*
-      {isSiteDisabled && (
-        <div className="w-full px-2 py-2 bg-yellow-400 text-center text-sm md:text-base font-semibold text-gray-900 z-50 shadow-md fixed top-0 left-0 right-0" style={{letterSpacing: 0.5, lineHeight: 1.3}}>
-          {siteStatus === 'maintenance' ? 'The site is currently under maintenance. Some features may be unavailable.' : 'The site is currently offline. Please check back later.'}
-        </div>
-      )}
-      */}
-      {/* Add top margin if banner is visible */}
+      {/* Remove the top fixed status banner */}
       <div>
         <AppHeader showCart />
         <div className="flex-1 pb-20">
@@ -385,12 +376,16 @@ const Home: React.FC = () => {
                 <Search className="w-5 h-5" />
               </Button>
             </form>
-            {/* Site status message */}
-            {isSiteDisabled && (
-              <div className="mt-3 p-3 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-center font-semibold text-base">
-                {siteStatus === 'offline'
-                  ? 'We are Offline, not accepting orders currently. Please check back later!'
-                  : 'Maintenance Mode: We are performing scheduled maintenance. Please try again soon.'}
+            {/* Site status message - show for all statuses */}
+            {(siteStatus === 'online' || isSiteDisabled) && (
+              <div className={`mt-3 p-3 rounded-lg border text-center font-semibold text-base
+                ${siteStatus === 'online' ? 'bg-green-50 border-green-200 text-green-700' : ''}
+                ${siteStatus === 'maintenance' ? 'bg-orange-50 border-orange-200 text-orange-700' : ''}
+                ${siteStatus === 'offline' ? 'bg-red-50 border-red-200 text-red-700' : ''}
+              `}>
+                {siteStatus === 'online' && 'We are live. Welcome!'}
+                {siteStatus === 'offline' && 'We are Offline, not accepting orders currently. Please check back later!'}
+                {siteStatus === 'maintenance' && 'Maintenance Mode: We are performing scheduled maintenance. Please try again soon.'}
               </div>
             )}
           </div>

@@ -165,236 +165,243 @@ const RestaurantDashboard: React.FC = () => {
 
   return (
     <div className="app-container">
-      {/* Platform Status Banner */}
-      {isSiteDisabled && (
-        <div className="w-full px-2 py-2 bg-orange-100 border border-orange-300 text-center text-base font-semibold text-orange-800 z-50 shadow-sm rounded-b-xl">
-          {siteStatus === 'offline'
-            ? 'We are Offline, not accepting orders currently. Please check back later!'
-            : 'Maintenance Mode: We are performing scheduled maintenance. Please try again soon.'}
-        </div>
-      )}
-      <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
-        <div className="flex items-center">
-          <button 
-            onClick={() => navigate('/')} 
-            className="mr-2 p-1 rounded-full hover:bg-gray-100"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-semibold">Restaurant Dashboard</h1>
-        </div>
-        <div>
-          <button
-            onClick={() => navigate('/restaurant/notifications')}
-            className="p-2 relative"
-          >
-            <Bell className="w-6 h-6" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-5 h-5 bg-app-primary rounded-full text-white text-xs flex items-center justify-center">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-        </div>
-      </header>
+      {/* Remove the top fixed status banner */}
+      <div>
+        <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
+          <div className="flex items-center">
+            <button 
+              onClick={() => navigate('/')} 
+              className="mr-2 p-1 rounded-full hover:bg-gray-100"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <h1 className="text-lg font-semibold">Restaurant Dashboard</h1>
+          </div>
+          <div>
+            <button
+              onClick={() => navigate('/restaurant/notifications')}
+              className="p-2 relative"
+            >
+              <Bell className="w-6 h-6" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-5 h-5 bg-app-primary rounded-full text-white text-xs flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </header>
 
-      <div className="p-4 pb-24">
-        {!isApproved && (
-          <Card className="mb-6 border-amber-200 bg-amber-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-amber-800 flex items-center gap-2">
-                <AlertCircle className="h-5 w-5" />
-                Account Pending Approval
-              </CardTitle>
-              <CardDescription className="text-amber-700">
-                Your account is awaiting verification. Complete the verification process to start receiving orders.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                <Button
-                  onClick={() => navigate('/restaurant/document-verification')}
-                  className="bg-amber-600 hover:bg-amber-700 text-white"
-                >
-                  Upload Documents
-                </Button>
-                <Button
-                  onClick={() => navigate('/restaurant/approval-status')}
-                  variant="outline"
-                  className="border-amber-300"
-                >
-                  Check Status
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="bg-app-primary text-white p-4 rounded-xl mb-6">
-          <h2 className="text-xl font-semibold">Welcome, {user?.name}</h2>
-          <p className="opacity-90">Restaurant Partner Dashboard</p>
-        </div>
-
-        {/* Banner Section with carousel (same as Home) */}
-        <div className="mx-4 mt-4 rounded-2xl border border-app-primary/40 shadow-sm overflow-hidden">
-          <PromoBannerCarousel banners={banners} />
-        </div>
-        <div className="mb-4" /> {/* Add space below banner section */}
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="menu">Menu</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="mt-4">
-            {/* <div className="grid grid-cols-1 gap-4 mb-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Total Orders</CardDescription>
-                  <CardTitle>{totalOrders}</CardTitle>
-                </CardHeader>
-              </Card>
-            </div> */}
-
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="text-base">Your Performance</CardTitle>
-                <CardDescription>Last 7 days</CardDescription>
+        <div className="p-4 pb-24">
+          {!isApproved && (
+            <Card className="mb-6 border-amber-200 bg-amber-50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-amber-800 flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  Account Pending Approval
+                </CardTitle>
+                <CardDescription className="text-amber-700">
+                  Your account is awaiting verification. Complete the verification process to start receiving orders.
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mb-2">
-                      <Package className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <p className="text-gray-600 text-sm">Order Fulfillment</p>
-                    <p className="text-xl font-semibold">98%</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full mb-2">
-                      <Check className="w-5 h-5 text-green-600" />
-                    </div>
-                    <p className="text-gray-600 text-sm">Rating</p>
-                    <p className="text-xl font-semibold">4.7/5</p>
-                  </div>
+                <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                  <Button
+                    onClick={() => navigate('/restaurant/document-verification')}
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    Upload Documents
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/restaurant/approval-status')}
+                    variant="outline"
+                    className="border-amber-300"
+                  >
+                    Check Status
+                  </Button>
                 </div>
               </CardContent>
             </Card>
+          )}
 
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold">Quick Actions</h2>
-            </div>
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <Button 
-                variant="outline"
-                className="h-20 flex flex-col items-center justify-center"
-                onClick={() => navigate('/restaurant/orders')}
-              >
-                <List className="h-6 w-6 mb-2" />
-                <span>View Orders</span>
-              </Button>
-              <Button 
-                variant="outline"
-                className="h-20 flex flex-col items-center justify-center"
-                onClick={() => navigate('/restaurant/menu')}
-              >
-                <Utensils className="h-6 w-6 mb-2" />
-                <span>View Menu</span>
-              </Button>
-            </div>
-          </TabsContent>
+          <div className="bg-app-primary text-white p-4 rounded-xl mb-6">
+            <h2 className="text-xl font-semibold">Welcome, {user?.name}</h2>
+            <p className="opacity-90">Restaurant Partner Dashboard</p>
+            {/* Site status message - show for all statuses */}
+            {(siteStatus === 'online' || isSiteDisabled) && (
+              <div className={`mt-3 p-3 rounded-lg border text-center font-semibold text-base
+                ${siteStatus === 'online' ? 'bg-green-50 border-green-200 text-green-700' : ''}
+                ${siteStatus === 'maintenance' ? 'bg-orange-50 border-orange-200 text-orange-700' : ''}
+                ${siteStatus === 'offline' ? 'bg-red-50 border-red-200 text-red-700' : ''}
+              `}>
+                {siteStatus === 'online' && 'We are live. Welcome!'}
+                {siteStatus === 'offline' && 'We are Offline, not accepting orders currently. Please check back later!'}
+                {siteStatus === 'maintenance' && 'Maintenance Mode: We are performing scheduled maintenance. Please try again soon.'}
+              </div>
+            )}
+          </div>
 
-          <TabsContent value="orders" className="mt-4">
-            <div className="mb-4 flex justify-between">
-              <h3 className="text-lg font-semibold">Recent Orders</h3>
-              <Button 
-                size="sm" 
-                variant="ghost"
-                onClick={() => navigate('/restaurant/orders')}
-              >
-                View All
-              </Button>
-            </div>
-            <div className="space-y-3 mb-6">
-              {loading ? (
-                <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                  <p className="text-gray-500">Loading...</p>
-                </div>
-              ) : (
-                orders.slice(0, 3).map(order => (
-                  <div 
-                    key={order._id}
-                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
-                    onClick={() => navigate(`/restaurant/orders/${order._id}`)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <p className="font-medium">Order #{order.orderNumber || order._id.substring(0, 8)}</p>
-                        <p className="text-sm text-gray-500">{order.customerName || 'Customer'}</p>
+          {/* Banner Section with carousel (same as Home) */}
+          <div className="mx-4 mt-4 rounded-2xl border border-app-primary/40 shadow-sm overflow-hidden">
+            <PromoBannerCarousel banners={banners} />
+          </div>
+          <div className="mb-4" /> {/* Add space below banner section */}
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="orders">Orders</TabsTrigger>
+              <TabsTrigger value="menu">Menu</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="mt-4">
+              {/* <div className="grid grid-cols-1 gap-4 mb-6">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Total Orders</CardDescription>
+                    <CardTitle>{totalOrders}</CardTitle>
+                  </CardHeader>
+                </Card>
+              </div> */}
+
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="text-base">Your Performance</CardTitle>
+                  <CardDescription>Last 7 days</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mb-2">
+                        <Package className="w-5 h-5 text-blue-600" />
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">₹{order.finalAmount?.toFixed(2) || order.totalAmount?.toFixed(2)}</p>
-                        <p className="text-xs text-blue-600">{order.status.replace('_', ' ').toUpperCase()}</p>
-                      </div>
+                      <p className="text-gray-600 text-sm">Order Fulfillment</p>
+                      <p className="text-xl font-semibold">98%</p>
                     </div>
-                    <div className="text-sm text-gray-600">
-                      {order.items?.map((item: any) => item.name).join(', ')}
-                    </div>
-                  </div>
-                ))
-              )}
-              {!loading && orders.length === 0 && (
-                <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                  <p className="text-gray-500">No recent orders</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="menu" className="mt-4">
-            <div className="mb-4 flex justify-between">
-              <h3 className="text-lg font-semibold">Menu Items</h3>
-              <Button 
-                size="sm" 
-                className="bg-app-primary hover:bg-app-accent text-white flex items-center gap-1"
-                onClick={() => navigate('/restaurant/menu/add')}
-              >
-                <PlusCircle className="w-4 h-4" />
-                Add Item
-              </Button>
-            </div>
-            <div className="space-y-3 mb-6">
-              {loading ? (
-                <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                  <p className="text-gray-500">Loading...</p>
-                </div>
-              ) : (
-                menu.slice(0, 3).map(item => (
-                  <div 
-                    key={item._id}
-                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-gray-500">{item.category}</p>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full mb-2">
+                        <Check className="w-5 h-5 text-green-600" />
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">₹{item.price}</p>
-                      </div>
+                      <p className="text-gray-600 text-sm">Rating</p>
+                      <p className="text-xl font-semibold">4.7/5</p>
                     </div>
                   </div>
-                ))
-              )}
-              {!loading && menu.length === 0 && (
-                <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                  <p className="text-gray-500">No menu items</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-lg font-semibold">Quick Actions</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <Button 
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                  onClick={() => navigate('/restaurant/orders')}
+                >
+                  <List className="h-6 w-6 mb-2" />
+                  <span>View Orders</span>
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                  onClick={() => navigate('/restaurant/menu')}
+                >
+                  <Utensils className="h-6 w-6 mb-2" />
+                  <span>View Menu</span>
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="orders" className="mt-4">
+              <div className="mb-4 flex justify-between">
+                <h3 className="text-lg font-semibold">Recent Orders</h3>
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  onClick={() => navigate('/restaurant/orders')}
+                >
+                  View All
+                </Button>
+              </div>
+              <div className="space-y-3 mb-6">
+                {loading ? (
+                  <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
+                    <p className="text-gray-500">Loading...</p>
+                  </div>
+                ) : (
+                  orders.slice(0, 3).map(order => (
+                    <div 
+                      key={order._id}
+                      className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
+                      onClick={() => navigate(`/restaurant/orders/${order._id}`)}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-medium">Order #{order.orderNumber || order._id.substring(0, 8)}</p>
+                          <p className="text-sm text-gray-500">{order.customerName || 'Customer'}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">₹{order.finalAmount?.toFixed(2) || order.totalAmount?.toFixed(2)}</p>
+                          <p className="text-xs text-blue-600">{order.status.replace('_', ' ').toUpperCase()}</p>
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {order.items?.map((item: any) => item.name).join(', ')}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {!loading && orders.length === 0 && (
+                  <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
+                    <p className="text-gray-500">No recent orders</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="menu" className="mt-4">
+              <div className="mb-4 flex justify-between">
+                <h3 className="text-lg font-semibold">Menu Items</h3>
+                <Button 
+                  size="sm" 
+                  className="bg-app-primary hover:bg-app-accent text-white flex items-center gap-1"
+                  onClick={() => navigate('/restaurant/menu/add')}
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  Add Item
+                </Button>
+              </div>
+              <div className="space-y-3 mb-6">
+                {loading ? (
+                  <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
+                    <p className="text-gray-500">Loading...</p>
+                  </div>
+                ) : (
+                  menu.slice(0, 3).map(item => (
+                    <div 
+                      key={item._id}
+                      className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-sm text-gray-500">{item.category}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">₹{item.price}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {!loading && menu.length === 0 && (
+                  <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
+                    <p className="text-gray-500">No menu items</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
       <RestaurantBottomNav />
     </div>
