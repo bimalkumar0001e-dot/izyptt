@@ -36,6 +36,7 @@ import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import PromoCode from "./pages/PromoCode";
 import PickupConfirmationPage from '@/pages/pickupConfirmationPage';
 import ReturnInstructionPage from "./pages/ReturnInstructionPage";
+import ContactUsPage from "./pages/ContactUsPage";
 
 // Customer Pages
 import CustomerDashboard from "./pages/customer/Dashboard";
@@ -131,6 +132,7 @@ const App = () => (
                 <Route path="/pickup-track/:id" element={<PickupTrackPage />} />
                 <Route path="/track-order/:orderId" element={<TrackOrder />} />
                 <Route path="/return-instructions" element={<ReturnInstructionPage />} />
+                <Route path="/contact-us" element={<ContactUsPage />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLayout />}>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, ShoppingBag, Phone, Mail, MapPin, Settings, Edit, Heart, CreditCard, Percent, Bell, Truck } from 'lucide-react';
+import { User, LogOut, ShoppingBag, Phone, Mail, MapPin, Settings, Edit, Heart, CreditCard, Percent, Bell, Truck, MessageCircle } from 'lucide-react';
 import { AppHeader } from '@/components/AppHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
@@ -229,6 +229,15 @@ const Profile: React.FC = () => {
                   >
                     <Percent className="w-5 h-5 mr-3 text-app-primary" />
                     Return Instructions
+                  </Button>
+                  {/* Contact Us button */}
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start h-auto py-3 border-gray-200 bg-white/70 hover:bg-white"
+                    onClick={() => navigate('/contact-us')}
+                  >
+                    <MessageCircle className="w-5 h-5 mr-3 text-app-primary" />
+                    Contact Us
                   </Button>
                 </>
               )}
