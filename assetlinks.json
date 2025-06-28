@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.izypt.app",
+    "sha256_cert_fingerprints": ["DD:4E:B7:2C:78:E8:FA:1A:75:76:74:78:93:B4:8D:1F:83:66:95:29:40:83:E6:35:54:BF:18:1F:6E:86:CF:21"]
+  }
+}]
