@@ -2,7 +2,7 @@
   "name": "Izypt",
   "short_name": "Izypt",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
   "description": "Your app description here",
