@@ -321,29 +321,6 @@ const ProductsManagement: React.FC = () => {
               onChange={handleSearch}
             />
           </div>
-          {/* Pincode Filter Dropdown */}
-          <select
-            className="app-input h-12 px-4 rounded border border-gray-300 font-bold text-lg bg-white"
-            value={pincodeFilter}
-            onChange={e => setPincodeFilter(e.target.value)}
-            style={{ minWidth: 200 }}
-          >
-            <option value="">All Products</option>
-            <option value="0">0 (All Pincodes)</option>
-            <option value="852127">852127</option>
-            <option value="854335">854335</option>
-          </select>
-          {/* Veg/Non-Veg Filter Dropdown */}
-          <select
-            className="app-input h-12 px-4 rounded border border-gray-300 font-bold text-lg bg-white"
-            value={vegFilter}
-            onChange={e => setVegFilter(e.target.value)}
-            style={{ minWidth: 200 }}
-          >
-            <option value="">All Types</option>
-            <option value="veg">Veg</option>
-            <option value="non-veg">Non-Veg</option>
-          </select>
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center space-x-1">
@@ -489,7 +466,8 @@ const ProductsManagement: React.FC = () => {
           </Dialog>
         </div>
       </div>
-      
+
+      {/* Popular Dishes Section - move here, just above All Products */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Popular Dishes</CardTitle>
@@ -554,12 +532,42 @@ const ProductsManagement: React.FC = () => {
         </CardContent>
       </Card>
       
+      {/* All Products Section */}
       <Card>
         <CardHeader>
-          <CardTitle>All Products</CardTitle>
-          <CardDescription>
-            A list of all products available on the platform
-          </CardDescription>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <CardTitle>All Products</CardTitle>
+              <CardDescription>
+                A list of all products available on the platform
+              </CardDescription>
+            </div>
+            <div className="flex flex-row gap-4">
+              {/* Pincode Filter Dropdown */}
+              <select
+                className="app-input h-12 px-4 rounded border border-gray-300 font-bold text-lg bg-white"
+                value={pincodeFilter}
+                onChange={e => setPincodeFilter(e.target.value)}
+                style={{ minWidth: 200 }}
+              >
+                <option value="">All Products</option>
+                <option value="0">0 (All Pincodes)</option>
+                <option value="852127">852127</option>
+                <option value="854335">854335</option>
+              </select>
+              {/* Veg/Non-Veg Filter Dropdown */}
+              <select
+                className="app-input h-12 px-4 rounded border border-gray-300 font-bold text-lg bg-white"
+                value={vegFilter}
+                onChange={e => setVegFilter(e.target.value)}
+                style={{ minWidth: 200 }}
+              >
+                <option value="">All Types</option>
+                <option value="veg">Veg</option>
+                <option value="non-veg">Non-Veg</option>
+              </select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
