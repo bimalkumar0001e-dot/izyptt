@@ -599,13 +599,13 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ message: 'Only one image file is allowed.' });
     }
 
-    const { name, price, maxPrice, description, category, stock, restaurant, returnPolicy } = req.body;
+    const { name, price, maxPrice, description, category, stock, restaurant, returnPolicy, pincode } = req.body;
     // Use unique filename from multer middleware
     const image = req.file ? `/uploads/${req.file.filename}` : undefined;
 
-    // Only require name, price, maxPrice, description, category, stock, image, returnPolicy
-    if (!name || !price || !maxPrice || !description || !category || !stock || !image || !returnPolicy) {
-      return res.status(400).json({ message: 'All fields except Restaurant ID are required. Return policy and max price are mandatory.' });
+    // Only require name, price, maxPrice, description, category, stock, image, returnPolicy, pincode
+    if (!name || !price || !maxPrice || !description || !category || !stock || !image || !returnPolicy || !pincode) {
+      return res.status(400).json({ message: 'All fields except Restaurant ID are required. Return policy, max price, and pincode are mandatory.' });
     }
     // Fix the isAvailable conversion
     const isAvailable = req.body.isAvailable === 'true' || req.body.isAvailable === true;
@@ -620,6 +620,7 @@ exports.createProduct = async (req, res) => {
       stock,
       returnPolicy,
       isAvailable,
+      pincode,
       restaurant: restaurant || undefined
     });
     await product.save();
@@ -670,6 +671,7 @@ exports.updateProduct = async (req, res) => {
     }
     if (req.body.isAvailable !== undefined) product.isAvailable = req.body.isAvailable === 'true' || req.body.isAvailable === true;
     if (req.body.returnPolicy !== undefined) product.returnPolicy = req.body.returnPolicy;
+    if (req.body.pincode !== undefined) product.pincode = req.body.pincode; // <-- Add this line
     if (req.file) product.image = `/uploads/${req.file.filename}`;
 
     await product.save();

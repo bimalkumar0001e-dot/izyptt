@@ -67,6 +67,11 @@ const productSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    pincode: {
+        type: String,
+        required: true,
+        trim: true
+    },
 
     createdAt: {
         type: Date,

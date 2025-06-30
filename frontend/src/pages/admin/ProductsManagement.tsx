@@ -39,7 +39,8 @@ const ProductsManagement: React.FC = () => {
     restaurant: '',
     isAvailable: true,
     image: null as File | null,
-    returnPolicy: '', // <-- Add this line
+    returnPolicy: '',
+    pincode: '', // <-- Add this line
   });
   const [addError, setAddError] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -53,6 +54,8 @@ const ProductsManagement: React.FC = () => {
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const editImageRef = useRef<HTMLInputElement>(null);
+  const [pincodeFilter, setPincodeFilter] = useState('');
+  const [vegFilter, setVegFilter] = useState(''); // <-- Add this line
 
   // Fetch all products and popular products
   useEffect(() => {
@@ -115,7 +118,7 @@ const ProductsManagement: React.FC = () => {
     setIsAdding(true);
     try {
       // Validate required fields except restaurant
-      if (!newProduct.name || !newProduct.price || !newProduct.maxPrice || !newProduct.category || !newProduct.description || !newProduct.stock || !newProduct.image || !newProduct.returnPolicy) {
+      if (!newProduct.name || !newProduct.price || !newProduct.maxPrice || !newProduct.category || !newProduct.description || !newProduct.stock || !newProduct.image || !newProduct.returnPolicy || !newProduct.pincode) {
         setAddError('Please fill all required fields. Restaurant ID is optional.');
         setIsAdding(false);
         return;
@@ -130,7 +133,8 @@ const ProductsManagement: React.FC = () => {
       if (newProduct.restaurant) formData.append('restaurant', newProduct.restaurant);
       formData.append('isAvailable', String(newProduct.isAvailable));
       formData.append('image', newProduct.image);
-      formData.append('returnPolicy', newProduct.returnPolicy); // <-- Add this line
+      formData.append('returnPolicy', newProduct.returnPolicy);
+      formData.append('pincode', newProduct.pincode); // <-- Add this line
       const res = await fetch(`${API_BASE}/products`, {
         method: 'POST',
         body: formData,
@@ -150,7 +154,7 @@ const ProductsManagement: React.FC = () => {
       setPopularProducts(data2.filter((p: any) => p.isPopular));
       setAddDialogOpen(false);
       setNewProduct({
-        name: '', price: '', maxPrice: '', category: '', description: '', stock: '', restaurant: '', isAvailable: true, image: null, returnPolicy: ''
+        name: '', price: '', maxPrice: '', category: '', description: '', stock: '', restaurant: '', isAvailable: true, image: null, returnPolicy: '', pincode: ''
       });
     } catch (err: any) {
       setAddError(err.message || 'Failed to add product');
@@ -176,6 +180,7 @@ const ProductsManagement: React.FC = () => {
       image: '', // Don't prefill file input
       returnPolicy: data.returnPolicy || '',
       maxPrice: data.maxPrice || '',
+      pincode: data.pincode || '', // <-- Add this line
     });
     setEditDialogOpen(true);
     setEditError('');
@@ -202,6 +207,7 @@ const ProductsManagement: React.FC = () => {
         formData.append('image', editImageRef.current.files[0]);
       }
       formData.append('returnPolicy', editProduct.returnPolicy);
+      formData.append('pincode', editProduct.pincode); // <-- Add this line
       const res = await fetch(`${API_BASE}/products/${editProduct._id}`, {
         method: 'PUT',
         body: formData,
@@ -274,6 +280,30 @@ const ProductsManagement: React.FC = () => {
     } catch {}
   };
 
+  // Add pincode and veg/non-veg filter effect
+  useEffect(() => {
+    let filtered = products;
+    if (pincodeFilter) {
+      if (pincodeFilter === "0") {
+        filtered = filtered.filter(p => p.pincode === "0");
+      } else {
+        filtered = filtered.filter(p => p.pincode === pincodeFilter);
+      }
+    }
+    if (vegFilter) {
+      if (vegFilter === "veg") {
+        filtered = filtered.filter(
+          p => (p.category?.toLowerCase() !== "non-veg")
+        );
+      } else if (vegFilter === "non-veg") {
+        filtered = filtered.filter(
+          p => p.category?.toLowerCase() === "non-veg"
+        );
+      }
+    }
+    setFilteredProducts(filtered);
+  }, [pincodeFilter, vegFilter, products]);
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -291,6 +321,29 @@ const ProductsManagement: React.FC = () => {
               onChange={handleSearch}
             />
           </div>
+          {/* Pincode Filter Dropdown */}
+          <select
+            className="app-input h-12 px-4 rounded border border-gray-300 font-bold text-lg bg-white"
+            value={pincodeFilter}
+            onChange={e => setPincodeFilter(e.target.value)}
+            style={{ minWidth: 200 }}
+          >
+            <option value="">All Products</option>
+            <option value="0">0 (All Pincodes)</option>
+            <option value="852127">852127</option>
+            <option value="854335">854335</option>
+          </select>
+          {/* Veg/Non-Veg Filter Dropdown */}
+          <select
+            className="app-input h-12 px-4 rounded border border-gray-300 font-bold text-lg bg-white"
+            value={vegFilter}
+            onChange={e => setVegFilter(e.target.value)}
+            style={{ minWidth: 200 }}
+          >
+            <option value="">All Types</option>
+            <option value="veg">Veg</option>
+            <option value="non-veg">Non-Veg</option>
+          </select>
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center space-x-1">
@@ -306,7 +359,7 @@ const ProductsManagement: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleAddProduct} encType="multipart/form-data">
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-4 py-4" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                   <div className="grid gap-2">
                     <label htmlFor="name">Product Name</label>
                     <Input
@@ -412,6 +465,16 @@ const ProductsManagement: React.FC = () => {
                       required
                     />
                   </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="pincode">Pincode (Available At)</label>
+                    <Input
+                      id="pincode"
+                      value={newProduct.pincode}
+                      onChange={e => setNewProduct({ ...newProduct, pincode: e.target.value })}
+                      placeholder="Enter pincode"
+                      required
+                    />
+                  </div>
                   {addError && <div className="text-red-500 text-sm">{addError}</div>}
                   <div className="mt-4 flex justify-end space-x-2">
                     <Button type="button" variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
@@ -507,7 +570,8 @@ const ProductsManagement: React.FC = () => {
                 <TableHead>Category</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Max Price</TableHead>
-                <TableHead>Return Policy</TableHead> {/* <-- Add this line */}
+                <TableHead>Return Policy</TableHead>
+                <TableHead>Pincode</TableHead> {/* <-- Add this line */}
                 <TableHead>Popular</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -532,7 +596,8 @@ const ProductsManagement: React.FC = () => {
                   <TableCell>{product.category}</TableCell>
                   <TableCell>₹{product.price}</TableCell>
                   <TableCell>₹{product.maxPrice}</TableCell>
-                  <TableCell>{product.returnPolicy}</TableCell> {/* <-- Add this line */}
+                  <TableCell>{product.returnPolicy}</TableCell>
+                  <TableCell>{product.pincode}</TableCell> {/* <-- Add this line */}
                   <TableCell>
                     <Switch 
                       checked={!!product.isPopular}
@@ -649,7 +714,7 @@ const ProductsManagement: React.FC = () => {
           </DialogHeader>
           {editProduct && (
             <form onSubmit={handleEditProductSubmit} encType="multipart/form-data">
-              <div className="grid gap-4 py-4">
+              <div className="grid gap-4 py-4" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                 <div className="grid gap-2">
                   <label htmlFor="edit-name">Product Name</label>
                   <Input
@@ -746,6 +811,16 @@ const ProductsManagement: React.FC = () => {
                     value={editProduct.returnPolicy}
                     onChange={e => setEditProduct({ ...editProduct, returnPolicy: e.target.value })}
                     placeholder="Enter return policy"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="edit-pincode">Pincode (Available At)</label>
+                  <Input
+                    id="edit-pincode"
+                    value={editProduct.pincode}
+                    onChange={e => setEditProduct({ ...editProduct, pincode: e.target.value })}
+                    placeholder="Enter pincode"
                     required
                   />
                 </div>
