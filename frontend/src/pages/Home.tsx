@@ -447,6 +447,39 @@ const Home: React.FC = () => {
             <PromoBannerCarousel banners={banners} />
           </div>
           
+          {/* Categories Section */}
+          <div className="p-4">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-lg text-gray-800">Categories</h2>
+                <span className="bg-app-primary/10 text-app-primary text-xs px-2 py-1 rounded-full">Explore</span>
+              </div>
+            </div>
+            {/* Horizontally scrollable sections slider */}
+            <div className="flex overflow-x-auto gap-3 pb-2 no-scrollbar" style={{ scrollbarWidth: 'none', borderBottom: 'none', boxShadow: 'none' }}>
+              {sections.map(section => {
+                let imageUrl = section.image;
+                if (imageUrl && typeof imageUrl === 'string') {
+                  if (imageUrl.startsWith('/uploads')) {
+                    imageUrl = `${UPLOADS_BASE}${imageUrl}`;
+                  } else if (!imageUrl.startsWith('http')) {
+                    imageUrl = `${UPLOADS_BASE}/uploads/${imageUrl.replace('uploads/', '')}`;
+                  }
+                } else {
+                  imageUrl = '/placeholder.svg';
+                }
+                return (
+                  <SectionCard
+                    key={section._id}
+                    image={imageUrl}
+                    title={section.name}
+                    onClick={() => handleSectionClick(section)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
           {/* Popular Dishes - Veg & Non Veg Sections */}
           <div className="p-4">
             <div className="flex items-center gap-2 mb-4">
@@ -539,39 +572,6 @@ const Home: React.FC = () => {
             </div>
           </div>
           {/* --- END POPULAR DISHES SECTION --- */}
-
-          {/* Categories Section */}
-          <div className="p-4">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <h2 className="font-bold text-lg text-gray-800">Categories</h2>
-                <span className="bg-app-primary/10 text-app-primary text-xs px-2 py-1 rounded-full">Explore</span>
-              </div>
-            </div>
-            {/* Horizontally scrollable sections slider */}
-            <div className="flex overflow-x-auto gap-3 pb-2 no-scrollbar" style={{ scrollbarWidth: 'none', borderBottom: 'none', boxShadow: 'none' }}>
-              {sections.map(section => {
-                let imageUrl = section.image;
-                if (imageUrl && typeof imageUrl === 'string') {
-                  if (imageUrl.startsWith('/uploads')) {
-                    imageUrl = `${UPLOADS_BASE}${imageUrl}`;
-                  } else if (!imageUrl.startsWith('http')) {
-                    imageUrl = `${UPLOADS_BASE}/uploads/${imageUrl.replace('uploads/', '')}`;
-                  }
-                } else {
-                  imageUrl = '/placeholder.svg';
-                }
-                return (
-                  <SectionCard
-                    key={section._id}
-                    image={imageUrl}
-                    title={section.name}
-                    onClick={() => handleSectionClick(section)}
-                  />
-                );
-              })}
-            </div>
-          </div>
 
           {/* Sections (after popular dishes) */}
           {sections.map(section => (
