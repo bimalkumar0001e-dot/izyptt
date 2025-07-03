@@ -16,6 +16,7 @@ const SystemStatus = require('../models/SystemStatus.model');
 const ReturnInstructions = require('../models/ReturnInstructions.model');
 const MinCartAmount = require('../models/minCartAmount.model');
 const DeliveryFeeSection = require('../models/deliveryFeeSection.model');
+const ProductReview = require('../models/productReview.model');
 
 
 
@@ -1996,5 +1997,90 @@ exports.reorderProductsInSection = async (req, res) => {
     res.json({ message: 'Products reordered in section', section });
   } catch (err) {
     res.status(500).json({ message: 'Error reordering products in section', error: err });
+  }
+};
+
+// ===== Product Review Management =====
+
+// List reviews for a product (search by product name or ID)
+exports.listProductReviews = async (req, res) => {
+  try {
+    const { q, productId } = req.query;
+    let filter = {};
+    if (productId) {
+      filter.product = productId;
+    } else if (q) {
+      // Search product by name
+      const products = await Product.find({ name: new RegExp(q, 'i') });
+      filter.product = { $in: products.map(p => p._id) };
+    }
+    const reviews = await ProductReview.find(filter)
+      .populate('product', 'name image')
+      .sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching product reviews', error: err });
+  }
+};
+
+// Add a review to a product (max 5 images)
+exports.addProductReview = async (req, res) => {
+  try {
+    const { product, reviewText } = req.body;
+    if (!product || !reviewText) {
+      return res.status(400).json({ message: 'Product and review text are required' });
+    }
+    let images = [];
+    if (req.files && req.files.length > 0) {
+      if (req.files.length > 5) {
+        return res.status(400).json({ message: 'Maximum 5 images allowed' });
+      }
+      images = req.files.map(f => `/uploads/${f.filename}`);
+    }
+    const review = new ProductReview({
+      product,
+      reviewText,
+      images,
+      createdBy: req.user ? req.user._id : null
+    });
+    await review.save();
+    res.status(201).json({ message: 'Review added', review });
+  } catch (err) {
+    res.status(500).json({ message: 'Error adding review', error: err });
+  }
+};
+
+// Update a review (text and images)
+exports.updateProductReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reviewText } = req.body;
+    const review = await ProductReview.findById(id);
+    if (!review) return res.status(404).json({ message: 'Review not found' });
+
+    if (reviewText !== undefined) review.reviewText = reviewText;
+    // If new images uploaded, replace images
+    if (req.files && req.files.length > 0) {
+      if (req.files.length > 5) {
+        return res.status(400).json({ message: 'Maximum 5 images allowed' });
+      }
+      review.images = req.files.map(f => `/uploads/${f.filename}`);
+    }
+    review.updatedBy = req.user ? req.user._id : null;
+    await review.save();
+    res.json({ message: 'Review updated', review });
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating review', error: err });
+  }
+};
+
+// Delete a review
+exports.deleteProductReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await ProductReview.findByIdAndDelete(id);
+    res.json({ message: 'Review deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting review', error: err });
   }
 };

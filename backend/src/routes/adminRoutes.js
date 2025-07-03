@@ -210,4 +210,10 @@ router.post('/delivery-fee-sections/:sectionId/fees', adminController.addDeliver
 router.put('/delivery-fee-sections/:sectionId/fees/:feeId', adminController.updateDeliveryFeeSlab);
 router.delete('/delivery-fee-sections/:sectionId/fees/:feeId', adminController.deleteDeliveryFeeSlab);
 
+// Product Review Management
+router.get('/product-reviews', adminController.listProductReviews);
+router.post('/product-reviews', upload.array('images', 5), adminController.addProductReview);
+router.put('/product-reviews/:id', upload.array('images', 5), adminController.updateProductReview);
+router.delete('/product-reviews/:id', adminController.deleteProductReview);
+
 module.exports = router;

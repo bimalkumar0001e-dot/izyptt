@@ -9,6 +9,8 @@ import { ProductQuantitySelector } from '@/components/ProductQuantitySelector';
 import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
 import { BACKEND_URL } from '@/utils/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Star as StarIcon } from 'lucide-react';
 
 const API_BASE = `${BACKEND_URL}/api`;
 const UPLOADS_BASE = BACKEND_URL;
@@ -26,6 +28,9 @@ const ProductDetail: React.FC = () => {
   const [isFavourite, setIsFavourite] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
   const [siteStatus, setSiteStatus] = useState<string>('online');
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [adminReviews, setAdminReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const isSiteDisabled = siteStatus === 'offline' || siteStatus === 'maintenance';
   const isUnavailable = product && product.isAvailable === false;
 
@@ -117,6 +122,17 @@ const ProductDetail: React.FC = () => {
     if (isSiteDisabled || isUnavailable) return;
     if (product) addToCart(product, quantity);
   };
+
+  // Fetch admin reviews when modal opens
+  useEffect(() => {
+    if (showReviewModal && product && product._id) {
+      setReviewsLoading(true);
+      fetch(`${BACKEND_URL}/api/admin/product-reviews?productId=${product._id}`)
+        .then(res => res.json())
+        .then(data => setAdminReviews(Array.isArray(data) ? data : []))
+        .finally(() => setReviewsLoading(false));
+    }
+  }, [showReviewModal, product]);
 
   if (isLoading) {
     return (
@@ -210,6 +226,13 @@ const ProductDetail: React.FC = () => {
             <div className="mt-4">
               <h2 className="font-semibold text-lg">Return Policy</h2>
               <p className="text-gray-600 mt-1">{product.returnPolicy}</p>
+              {/* --- See Reviews Button --- */}
+              <button
+                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 transition"
+                onClick={() => setShowReviewModal(true)}
+              >
+                See Reviews
+              </button>
             </div>
           )}
           <div className="mt-6 flex justify-between items-center">
@@ -231,7 +254,7 @@ const ProductDetail: React.FC = () => {
         {isSiteDisabled && (
           <div className="p-3 mb-2 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-center font-semibold text-base">
             {siteStatus === 'offline'
-              ? 'We are Offline, not accepting orders currently. Please check back later.'
+              ? 'We are Closed, not accepting orders currently. Please check back later.'
               : 'Maintenance Mode: We are performing scheduled maintenance. Please try again soon.'}
           </div>
         )}
@@ -300,6 +323,73 @@ const ProductDetail: React.FC = () => {
             : `Add to Cart - ₹${((product.discountedPrice || product.price) * quantity).toFixed(2)}`}
         </Button>
       </div>
+
+      {/* --- Admin Reviews Modal --- */}
+      <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Product Reviews</DialogTitle>
+          </DialogHeader>
+          {reviewsLoading ? (
+            <div className="py-6 text-center text-gray-500">Loading reviews...</div>
+          ) : (
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+              {/* --- Dummy 4.5 Star Review --- */}
+              <div className="border rounded p-3 bg-gray-50 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  {/* 4 full stars */}
+                  {[1,2,3,4].map(i => (
+                    <StarIcon key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                  ))}
+                  {/* half star using SVG */}
+                  <svg width="20" height="20" viewBox="0 0 20 20" className="inline-block" fill="none">
+                    <defs>
+                      <linearGradient id="half">
+                        <stop offset="50%" stopColor="#facc15" />
+                        <stop offset="50%" stopColor="#e5e7eb" />
+                      </linearGradient>
+                    </defs>
+                    <StarIcon
+                      width={20}
+                      height={20}
+                      className="text-yellow-500"
+                      style={{ fill: 'url(#half)' }}
+                    />
+                  </svg>
+                  <span className="ml-2 font-semibold text-yellow-700">4.5</span>
+                  
+                </div>
+               
+              </div>
+              {/* --- Admin Reviews --- */}
+              {adminReviews.length === 0 ? (
+                <div className="py-6 text-center text-gray-500">No reviews for this product.</div>
+              ) : (
+                adminReviews.map((r) => (
+                  <div key={r._id} className="border rounded p-3">
+                    <div className="font-medium mb-2">{r.reviewText}</div>
+                    {r.images && r.images.length > 0 && (
+                      <div className="flex gap-2 flex-wrap mb-2">
+                        {r.images.map((img: string, idx: number) => (
+                          <img
+                            key={idx}
+                            src={img.startsWith('/uploads') ? `${BACKEND_URL}${img}` : img}
+                            alt="review"
+                            className="w-20 h-20 object-cover rounded"
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-400">
+                      {r.createdAt && <>Posted: {new Date(r.createdAt).toLocaleString()}</>}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

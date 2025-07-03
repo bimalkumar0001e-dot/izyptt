@@ -235,7 +235,7 @@ const RestaurantDashboard: React.FC = () => {
                 ${siteStatus === 'offline' ? 'bg-red-50 border-red-200 text-red-700' : ''}
               `}>
                 {siteStatus === 'online' && 'We are live. Welcome!'}
-                {siteStatus === 'offline' && 'We are Offline, not accepting orders currently. Please check back later!'}
+                {siteStatus === 'offline' && 'We are Closed, not accepting orders currently. Please check back later!'}
                 {siteStatus === 'maintenance' && 'Maintenance Mode: We are performing scheduled maintenance. Please try again soon.'}
               </div>
             )}

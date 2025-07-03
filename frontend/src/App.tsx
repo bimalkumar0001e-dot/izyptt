@@ -65,6 +65,7 @@ import ChargesTaxesFeesManagement from "./pages/admin/ChargesTaxesFeesManagement
 import ReturnInstructionManagement from "./pages/admin/ReturnInstructionManagement";
 import AdminNotification from '@/pages/admin/AdminNotification';
 import CartManagement from "./pages/admin/CartManagement";
+import ProductReviewManage from "./pages/admin/ProductReviewManage";
 
 // Restaurant Pages
 import RestaurantDashboard from "./pages/restaurant/RestaurantDashboard";
@@ -143,6 +144,7 @@ const App = () => (
                   <Route path="delivery-partners" element={<DeliveryManagement />} />
                   <Route path="orders" element={<OrdersManagement />} />
                   <Route path="products" element={<ProductsManagement />} />
+                  <Route path="product-reviews" element={<ProductReviewManage />} /> {/* <-- Add this line */}
                   <Route path="sections" element={<SectionManagement />} /> {/* <-- Add this line */}
                   <Route path="approval" element={<UserApproval />} />
                   <Route path="offers" element={<ManageOffers />} />

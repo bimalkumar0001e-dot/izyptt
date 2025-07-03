@@ -55,16 +55,18 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed = false }) => {
     },
 
 
-    // {
-    //   title: 'Cart Management',
-    //   icon: <Package size={20} />,
-    //   path: '/admin/products',
-    // },
+    
 
     {
       title: 'Product Management',
       icon: <Package size={20} />,
       path: '/admin/products',
+    },
+
+    {
+      title: 'Product Review Management',
+      icon: <Package size={20} />,
+      path: '/admin/product-reviews',
     },
     
     {
