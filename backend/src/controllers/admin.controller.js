@@ -33,6 +33,8 @@ exports.createOffer = async (req, res) => {
     } else {
       return res.status(400).json({ message: 'Offer image is required' });
     }
+    // Handle isPublic
+    offerData.isPublic = req.body.isPublic === 'true' || req.body.isPublic === true;
     const offer = new Offer(offerData);
     await offer.save();
     res.status(201).json({ message: 'Offer created', offer });
@@ -56,6 +58,7 @@ exports.getAllOffers = async (req, res) => {
         await offer.save();
       }
     }
+    // Return all offers (with isPublic field)
     res.json(await Offer.find());
   } catch (err) {
     res.status(500).json({ message: 'Error fetching offers', error: err });
@@ -115,6 +118,10 @@ exports.updateOffer = async (req, res) => {
     // Boolean
     if (req.body.isActive !== undefined) {
       offer.isActive = req.body.isActive === 'true' || req.body.isActive === true;
+    }
+    // Handle isPublic
+    if (req.body.isPublic !== undefined) {
+      offer.isPublic = req.body.isPublic === 'true' || req.body.isPublic === true;
     }
 
     // Only update image if a new file is uploaded
@@ -1912,7 +1919,7 @@ exports.createDeliveryFeeSection = async (req, res) => {
 // Update a delivery fee section (km or isActive)
 exports.updateDeliveryFeeSection = async (req, res) => {
   try {
-    const { km, isActive } = req.body;
+       const { km, isActive } = req.body;
     const section = await DeliveryFeeSection.findById(req.params.sectionId);
     if (!section) return res.status(404).json({ message: 'Section not found' });
     if (km !== undefined) section.km = km;

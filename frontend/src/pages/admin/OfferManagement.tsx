@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Search, Edit, Trash, ToggleLeft, ToggleRight, Eye } from 'lucide-react';
+import { PlusCircle, Search, Edit, Trash, ToggleLeft, ToggleRight, Eye, Globe2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -163,6 +163,30 @@ const ManageOffers: React.FC = () => {
       .finally(() => setIsLoading(false));
   };
 
+  const toggleOfferPublic = (id: string) => {
+    const offer = offers.find(o => o.id === id);
+    if (!offer) return;
+    setIsLoading(true);
+    // Use FormData to send only isPublic
+    const formData = new FormData();
+    formData.append('isPublic', (!offer.isPublic).toString());
+    axios
+      .put(`${API_BASE}/admin/offers/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      .then(res => {
+        setOffers(offers.map(o =>
+          o.id === id ? { ...o, isPublic: !o.isPublic } : o
+        ));
+        showToast(
+          `Offer "${offer.title}" is now ${!offer.isPublic ? 'public' : 'private'}`,
+          'success'
+        );
+      })
+      .catch(() => showToast('Failed to update public status', 'error'))
+      .finally(() => setIsLoading(false));
+  };
+
   const deleteOffer = (id: string) => {
     const offer = offers.find(o => o.id === id);
     if (!offer) return;
@@ -230,6 +254,7 @@ const ManageOffers: React.FC = () => {
                   <TableHead>Discount</TableHead>
                   <TableHead>Valid Until</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Public</TableHead> {/* New column */}
                   <TableHead>Usage</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -237,7 +262,7 @@ const ManageOffers: React.FC = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-4 text-gray-500">
+                    <TableCell colSpan={8} className="text-center py-4 text-gray-500">
                       Loading offers...
                     </TableCell>
                   </TableRow>
@@ -272,6 +297,23 @@ const ManageOffers: React.FC = () => {
                         >
                           {offer.isActive ? 'Active' : 'Inactive'}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        <button
+                          title={offer.isPublic ? "Public" : "Private"}
+                          className="flex items-center"
+                          onClick={() => toggleOfferPublic(offer.id)}
+                          type="button"
+                        >
+                          {offer.isPublic ? (
+                            <ToggleRight className="h-5 w-5 text-blue-600" />
+                          ) : (
+                            <ToggleLeft className="h-5 w-5 text-gray-400" />
+                          )}
+                          <span className={`ml-1 text-xs ${offer.isPublic ? 'text-blue-700' : 'text-gray-400'}`}>
+                            {offer.isPublic ? 'Public' : 'Private'}
+                          </span>
+                        </button>
                       </TableCell>
                       <TableCell>{offer.usageCount}</TableCell>
                       <TableCell className="text-right">
@@ -314,7 +356,7 @@ const ManageOffers: React.FC = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-4 text-gray-500">
+                    <TableCell colSpan={8} className="text-center py-4 text-gray-500">
                       No offers found
                     </TableCell>
                   </TableRow>
@@ -381,9 +423,15 @@ const ManageOffers: React.FC = () => {
           </div>
           <Input name="limitedTo" type="number" value={modalOffer?.limitedTo || ''} onChange={handleModalChange} placeholder="Total Usage Limit (optional)" />
           <Input name="perCustomerLimit" type="number" value={modalOffer?.perCustomerLimit || ''} onChange={handleModalChange} placeholder="Per Customer Limit" />
-          <div className="flex items-center gap-2">
-            <input type="checkbox" name="isActive" checked={modalOffer?.isActive ?? true} onChange={e => setModalOffer((prev: any) => ({ ...prev, isActive: e.target.checked }))} />
-            <span>Active</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" name="isActive" checked={modalOffer?.isActive ?? true} onChange={e => setModalOffer((prev: any) => ({ ...prev, isActive: e.target.checked }))} />
+              <span>Active</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" name="isPublic" checked={modalOffer?.isPublic ?? false} onChange={e => setModalOffer((prev: any) => ({ ...prev, isPublic: e.target.checked }))} />
+              <span>Public</span>
+            </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>

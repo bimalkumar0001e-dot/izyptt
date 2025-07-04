@@ -20,6 +20,7 @@ interface Offer {
   discountType: string;
   discountValue: number;
   isActive: boolean;
+  isPublic: boolean; // <-- Add isPublic field
   image?: string;
 }
 
@@ -54,8 +55,10 @@ const PromoOfferCarousel: React.FC = () => {
 
         if (response.ok) {
           const data = await response.json();
-          // Filter only active offers
-          const activeOffers = (data || []).filter((offer: Offer) => offer.isActive);
+          // Filter only offers that are both active and public
+          const activeOffers = (data || []).filter(
+            (offer: Offer) => offer.isActive && offer.isPublic
+          );
           setOffers(activeOffers);
         }
       } catch (error) {

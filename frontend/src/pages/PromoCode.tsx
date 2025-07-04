@@ -36,7 +36,7 @@ const PromoCode: React.FC = () => {
       .catch(() => setOffers([]));
   }, []);
 
-  const activeOffers = offers.filter(offer => offer.isActive);
+  const activeOffers = offers.filter(offer => offer.isActive && offer.isPublic);
 
   const validatePromoCode = () => {
     if (!promoCode.trim()) {
