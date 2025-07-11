@@ -3,6 +3,7 @@ const router = express.Router();
 const customerController = require('../controllers/customer.controller');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const adminController = require('../controllers/admin.controller');
+const upload = require('../middlewares/upload');
 
 // 🔐 Pickup & Drop Service
 router.post('/pickup-drop/book', verifyToken, customerController.bookPickup);
@@ -47,6 +48,14 @@ router.get('/orders/:id/track', verifyToken, customerController.trackOrderStatus
 router.delete('/orders/:id', verifyToken, customerController.cancelOrder);
 router.post('/orders/:id/cancel', verifyToken, customerController.cancelOrder);
 router.post('/orders/:id/rate', verifyToken, customerController.rateDeliveredOrder);
+
+// Add product review for an order item (single image)
+router.post(
+  '/orders/:orderId/rate-product/:productId',
+  verifyToken,
+  upload.single('image'),
+  customerController.addProductReview
+);
 
 // 🔐 Payments
 router.get('/payment-methods', verifyToken, customerController.viewPaymentMethods);

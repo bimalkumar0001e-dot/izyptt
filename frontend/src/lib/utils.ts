@@ -1,4 +1,3 @@
-
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -26,6 +25,11 @@ export const serviceTypes = {
     name: "Buy Groceries",
     color: "bg-gradient-to-br from-green-400 to-green-600",
     iconClass: "text-green-600"
+  },
+  feed: {
+    name: "Feed People",
+    color: "bg-gradient-to-br from-pink-300 to-pink-500",
+    iconClass: "text-pink-600"
   },
   pickup: {
     name: "Pick & Drop",

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ExternalLink, Truck } from 'lucide-react';
+import { ExternalLink, Truck, Star } from 'lucide-react';
 import { AppHeader } from '@/components/AppHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { OrderStatusBar } from '@/components/OrderStatusBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order } from '@/types/order';
 import { formatDistanceToNow } from 'date-fns';
@@ -20,6 +21,14 @@ const OrdersPage: React.FC = () => {
   const [pastOrders, setPastOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('active');
+  const [reviewModal, setReviewModal] = useState<{ open: boolean, orderId?: string, productId?: string }>(
+    { open: false }
+  );
+  const [reviewImage, setReviewImage] = useState<File | null>(null);
+  const [reviewNote, setReviewNote] = useState('');
+  const [reviewStars, setReviewStars] = useState(0);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -62,6 +71,47 @@ const OrdersPage: React.FC = () => {
     return d.toLocaleString();
   };
 
+  // Handle review modal open
+  const openReviewModal = (orderId: string, productId: string) => {
+    setReviewModal({ open: true, orderId, productId });
+    setReviewImage(null);
+    setReviewNote('');
+    setReviewStars(0);
+    setReviewError(null);
+  };
+
+  // Handle review submit
+  const handleReviewSubmit = async () => {
+    if (!reviewModal.orderId || !reviewModal.productId) return;
+    if (!reviewStars) {
+      setReviewError('Please select a star rating.');
+      return;
+    }
+    setReviewLoading(true);
+    setReviewError(null);
+    try {
+      const formData = new FormData();
+      formData.append('rating', String(reviewStars));
+      formData.append('reviewText', reviewNote);
+      if (reviewImage) formData.append('image', reviewImage);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${BACKEND_URL}/api/customer/orders/${reviewModal.orderId}/rate-product/${reviewModal.productId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Failed to submit review');
+      }
+      setReviewModal({ open: false });
+    } catch (err: any) {
+      setReviewError(err.message || 'Failed to submit review');
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
   // Define a reusable order card component for consistent styling
   const OrderCard = ({ order }: { order: Order }) => {
     const mainItem = order.items?.[0];
@@ -93,6 +143,9 @@ const OrdersPage: React.FC = () => {
     // Use id for navigation
     const orderId = order.id || order._id || '';
 
+    // Find first productId for review (for simplicity, only allow review for first item)
+    const firstProductId = mainItem?.product?._id || mainItem?.product || mainItem?._id;
+
     return (
       <div
         className="shadow-lg border border-gray-100 bg-[#ffd6db] overflow-hidden flex flex-col w-full max-w-full sm:max-w-md aspect-auto rounded-xl mb-4"
@@ -113,39 +166,133 @@ const OrdersPage: React.FC = () => {
             className="w-20 h-20 object-cover rounded-lg border border-gray-200 flex-shrink-0"
             style={{ maxWidth: 80, maxHeight: 80 }}
           />
-          <div className="flex flex-col flex-1 min-w-0">
-            <div className="font-semibold text-base truncate mb-1">{mainItem?.name || 'Order Item'}</div>
-            <div className="text-xs text-gray-600 truncate">{restaurantName}</div>
-            <div className="text-xs text-gray-500 mt-1">Qty: {mainItem?.quantity || 1}</div>
-            <div className="text-xs text-gray-500 mt-1">Payment: {paymentMethod}</div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-lg mb-1">{mainItem?.name || 'Product'}</div>
+            <div className="text-sm text-gray-600">{restaurantName}</div>
+            <div className="text-xs text-gray-500">Qty: {mainItem?.quantity || 1}</div>
+            <div className="text-xs text-gray-500">Payment: {paymentMethod}</div>
           </div>
         </div>
         {/* Divider */}
         <div className="border-t border-dashed border-gray-300"></div>
         {/* Order Details - fit into a single row with flex and small fonts */}
         <div className="bg-white px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 text-sm">
-          <div className="flex flex-col">
-            <span className="font-medium">Order #{orderNumber}</span>
-            <span className="text-xs text-gray-500">Total: ₹{Math.ceil(total)}</span>
+          <div>
+            <div className="font-bold">Order #{orderNumber}</div>
+            <div>Total: ₹{total}</div>
           </div>
-          <Button
-            size="sm"
-            className="mt-2 sm:mt-0"
-            onClick={() => navigate(`/track-order/${orderId}`)}
-          >
-            Track Order
-          </Button>
+          <div className="flex gap-2 mt-2 sm:mt-0">
+            <Button
+              variant="outline"
+              className="text-orange-600 border-orange-500 hover:bg-orange-50 bg-[#ff7300] border-2 border-[#ff7300] font-semibold text-white shadow-none hover:bg-[#ff7300]/90 hover:text-white focus:ring-2 focus:ring-orange-300"
+              onClick={() => navigate(`/track-order/${orderId}`)}
+            >
+              Track Order
+            </Button>
+            {/* Show Add Review button only if delivered */}
+            {status === 'delivered' && (
+              <Button
+                variant="default"
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => openReviewModal(orderId, firstProductId)}
+              >
+                Add Review
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     );
   };
+
+  // Review Modal UI
+  const ReviewModal = (
+    <Dialog open={reviewModal.open} onOpenChange={open => setReviewModal({ open })}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add Review</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="block mb-1 font-medium">Rating</label>
+            <div className="flex gap-1">
+              {[1,2,3,4,5].map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  className="p-0 bg-transparent border-none"
+                  onClick={() => setReviewStars(star)}
+                  aria-label={`Rate ${star} star`}
+                >
+                  <Star
+                    size={28}
+                    fill={reviewStars >= star ? "#fbbf24" : "none"}
+                    stroke="#fbbf24"
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Review Note</label>
+            <textarea
+              className="w-full border rounded p-2"
+              rows={3}
+              maxLength={200}
+              placeholder="Write a short review..."
+              value={reviewNote}
+              onChange={e => setReviewNote(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Upload Image (optional, 1 only)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={e => {
+                if (e.target.files && e.target.files[0]) {
+                  setReviewImage(e.target.files[0]);
+                }
+              }}
+            />
+            {reviewImage && (
+              <div className="mt-2 flex items-center gap-2">
+                <img
+                  src={URL.createObjectURL(reviewImage)}
+                  alt="Preview"
+                  className="w-16 h-16 object-cover rounded border"
+                />
+                <button
+                  type="button"
+                  className="text-xs text-red-500 underline"
+                  onClick={() => setReviewImage(null)}
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+          </div>
+          {reviewError && <div className="text-red-500 text-sm">{reviewError}</div>}
+        </div>
+        <DialogFooter>
+          <Button
+            onClick={handleReviewSubmit}
+            disabled={reviewLoading}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            {reviewLoading ? 'Submitting...' : 'Submit Review'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <div
       className="app-container"
       style={{
         minHeight: "100vh",
-        background: "#f5f5f5" // changed from gradient to grey white
+        background: "#f5f5f5"
       }}
     >
       <AppHeader title="My Orders" showBackButton />
@@ -189,6 +336,7 @@ const OrdersPage: React.FC = () => {
         </Tabs>
       </div>
       <BottomNav />
+      {ReviewModal}
     </div>
   );
 };

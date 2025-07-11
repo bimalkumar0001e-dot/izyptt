@@ -30,9 +30,8 @@ exports.createOffer = async (req, res) => {
     // Handle file upload
     if (req.file) {
       offerData.image = `/uploads/${req.file.filename}`;
-    } else {
-      return res.status(400).json({ message: 'Offer image is required' });
     }
+    // Remove the requirement for image
     // Handle isPublic
     offerData.isPublic = req.body.isPublic === 'true' || req.body.isPublic === true;
     const offer = new Offer(offerData);

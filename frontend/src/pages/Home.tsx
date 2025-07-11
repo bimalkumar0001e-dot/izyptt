@@ -311,6 +311,8 @@ const Home: React.FC = () => {
   const handleServiceClick = (type: string) => {
     if (type === 'pickup') {
       navigate('/pickup-drop');
+    } else if (type === 'feed') {
+      navigate('/feed-people');
     } else {
       setShowComingSoon(true);
     }
@@ -407,10 +409,10 @@ const Home: React.FC = () => {
                 onClick={() => !isSiteDisabled && handleServiceClick('pickup')}
               />
               <ServiceCard
-                type="groceries"
-                name="Buy Groceries"
-                colorClass={serviceTypes.groceries.color}
-                onClick={() => !isSiteDisabled && handleServiceClick('groceries')}
+                type="feed"
+                name="Feed People"
+                colorClass={serviceTypes.feed.color}
+                onClick={() => !isSiteDisabled && handleServiceClick('feed')}
               />
               <ServiceCard
                 type="party"

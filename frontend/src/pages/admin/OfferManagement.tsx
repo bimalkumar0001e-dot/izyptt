@@ -379,7 +379,6 @@ const ManageOffers: React.FC = () => {
               accept="image/*"
               name="image"
               onChange={handleModalChange}
-              required={modalType === 'create'}
             />
             {/* Preview */}
             {(modalImage || modalOffer?.image) && (

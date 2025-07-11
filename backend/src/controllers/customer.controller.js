@@ -9,6 +9,9 @@ const Notification = require('../models/notification.model'); // Make sure you h
 const notificationService = require('../services/notificationService'); // <-- Add this line
 const bcrypt = require('bcryptjs');
 const PaymentMethod = require('../models/paymentMethod.model');
+const ProductReview = require('../models/productReview.model');
+const multer = require('multer');
+const upload = require('../middlewares/upload');
 
 // ===== Profile Management =====
 exports.viewProfile = async (req, res) => {
@@ -1163,5 +1166,47 @@ exports.viewAllFavouriteFoodItems = async (req, res) => {
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching favourite food items', error: err });
+  }
+};
+
+// Add product review for an order item
+exports.addProductReview = async (req, res) => {
+  try {
+    const { orderId, productId } = req.params;
+    const { rating, reviewText } = req.body;
+    // Validate input
+    if (!rating || !reviewText || !productId) {
+      return res.status(400).json({ message: 'Rating, review text, and productId are required.' });
+    }
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
+    }
+    // Find order and check delivered
+    const order = await Order.findOne({ _id: orderId, customer: req.user.id, status: { $in: ['delivered', 'Delivered'] } });
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found or not delivered yet.' });
+    }
+    // Check product exists in order
+    const hasProduct = order.items.some(item => item.product.toString() === productId);
+    if (!hasProduct) {
+      return res.status(400).json({ message: 'Product not found in this order.' });
+    }
+    // Handle image upload (single file)
+    let imagePath = null;
+    if (req.file) {
+      imagePath = `/uploads/${req.file.filename}`;
+    }
+    // Save review
+    const review = new ProductReview({
+      product: productId,
+      reviewText,
+      image: imagePath,
+      rating,
+      createdBy: req.user.id
+    });
+    await review.save();
+    res.status(201).json({ message: 'Review added', review });
+  } catch (err) {
+    res.status(500).json({ message: 'Error adding review', error: err });
   }
 };

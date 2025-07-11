@@ -13,6 +13,7 @@ import PickupTrackPage from "./pages/track pickup page";
 import MyPickups from "./pages/MyPickups";
 import Favorites from "./pages/Favorites";
 import TrackOrder from './pages/TrackOrder';
+import FeedPeople from "./pages/FeedPeople";
 
 // Pages
 import Home from "./pages/Home";
@@ -134,6 +135,7 @@ const App = () => (
                 <Route path="/track-order/:orderId" element={<TrackOrder />} />
                 <Route path="/return-instructions" element={<ReturnInstructionPage />} />
                 <Route path="/contact-us" element={<ContactUsPage />} />
+                <Route path="/feed-people" element={<FeedPeople />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLayout />}>

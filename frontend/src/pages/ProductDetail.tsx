@@ -337,11 +337,9 @@ const ProductDetail: React.FC = () => {
               {/* --- Dummy 4.5 Star Review --- */}
               <div className="border rounded p-3 bg-gray-50 flex flex-col gap-2">
                 <div className="flex items-center gap-2">
-                  {/* 4 full stars */}
                   {[1,2,3,4].map(i => (
                     <StarIcon key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                   ))}
-                  {/* half star using SVG */}
                   <svg width="20" height="20" viewBox="0 0 20 20" className="inline-block" fill="none">
                     <defs>
                       <linearGradient id="half">
@@ -357,31 +355,43 @@ const ProductDetail: React.FC = () => {
                     />
                   </svg>
                   <span className="ml-2 font-semibold text-yellow-700">4.5</span>
-                  
                 </div>
-               
               </div>
-              {/* --- Admin Reviews --- */}
+              {/* --- Admin & Customer Reviews --- */}
               {adminReviews.length === 0 ? (
                 <div className="py-6 text-center text-gray-500">No reviews for this product.</div>
               ) : (
                 adminReviews.map((r) => (
-                  <div key={r._id} className="border rounded p-3">
-                    <div className="font-medium mb-2">{r.reviewText}</div>
-                    {r.images && r.images.length > 0 && (
-                      <div className="flex gap-2 flex-wrap mb-2">
-                        {r.images.map((img: string, idx: number) => (
-                          <img
-                            key={idx}
-                            src={img.startsWith('/uploads') ? `${BACKEND_URL}${img}` : img}
-                            alt="review"
-                            className="w-20 h-20 object-cover rounded"
+                  <div key={r._id} className="border rounded p-3 mb-4 bg-white">
+                    {/* Show stars if rating exists */}
+                    {typeof r.rating === 'number' && (
+                      <div className="flex items-center mb-1">
+                        {[1,2,3,4,5].map(i => (
+                          <StarIcon
+                            key={i}
+                            className={`w-4 h-4 ${i <= r.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`}
                           />
                         ))}
+                        <span className="ml-2 text-yellow-700 font-semibold">{r.rating.toFixed(1)}</span>
                       </div>
                     )}
-                    <div className="text-xs text-gray-400">
-                      {r.createdAt && <>Posted: {new Date(r.createdAt).toLocaleString()}</>}
+                    {/* Show reviewer name: 'Izypt' for admin, else customer name */}
+                    <div className="mb-1 font-semibold text-gray-700">
+                      <span className="text-sm text-gray-500">{r.createdBy && r.createdBy.name ? r.createdBy.name : 'Izypt'}</span>
+                    </div>
+                    <div className="mb-2 text-gray-800 whitespace-pre-line">{r.reviewText}</div>
+                    {/* Show review image if present */}
+                    {r.image && (
+                      <div className="flex gap-2 mt-2">
+                        <img
+                          src={r.image.startsWith('/uploads') ? `${UPLOADS_BASE}${r.image}` : r.image}
+                          alt="review"
+                          className="w-20 h-20 object-cover rounded border"
+                        />
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-400 mt-2">
+                      Posted: {new Date(r.createdAt).toLocaleString()}
                     </div>
                   </div>
                 ))

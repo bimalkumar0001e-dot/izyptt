@@ -11,9 +11,15 @@ const productReviewSchema = new mongoose.Schema({
     trim: true,
     required: true
   },
-  images: [{
-    type: String // image URLs/paths
-  }],
+  image: {
+    type: String // single image URL/path
+  },
+  rating: {
+    type: Number,
+    min: 1,
+    max: 5,
+    required: true
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -23,5 +29,14 @@ const productReviewSchema = new mongoose.Schema({
     ref: 'User'
   }
 }, { timestamps: true });
+
+// Always populate createdBy with name when finding reviews
+productReviewSchema.pre(/^find/, function(next) {
+  this.populate({
+    path: 'createdBy',
+    select: 'name'
+  });
+  next();
+});
 
 module.exports = mongoose.model('ProductReview', productReviewSchema);

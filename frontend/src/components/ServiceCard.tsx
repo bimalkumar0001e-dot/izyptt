@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Cake, ShoppingCart, Truck, Recycle } from 'lucide-react';
+import { Cake, ShoppingCart, Truck, Recycle, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ServiceCardProps {
-  type: 'party' | 'groceries' | 'pickup' | 'scrap';
+  type: 'party' | 'groceries' | 'pickup' | 'scrap' | 'feed';
   name: string;
   colorClass: string;
   onClick?: () => void;
@@ -49,6 +49,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         return <Truck className="w-6 h-6 text-white" />;
       case 'scrap':
         return <Recycle className="w-6 h-6 text-white" />;
+      case 'feed':
+        return <Heart className="w-6 h-6 text-white" />;
     }
   };
 
