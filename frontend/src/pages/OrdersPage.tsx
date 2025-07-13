@@ -181,7 +181,7 @@ const OrdersPage: React.FC = () => {
             <div className="font-bold">Order #{orderNumber}</div>
             <div>Total: ₹{total}</div>
           </div>
-          <div className="flex gap-2 mt-2 sm:mt-0">
+          <div className="flex gap-2 mt-2 sm:mt-0">  // Action buttons
             <Button
               variant="outline"
               className="text-orange-600 border-orange-500 hover:bg-orange-50 bg-[#ff7300] border-2 border-[#ff7300] font-semibold text-white shadow-none hover:bg-[#ff7300]/90 hover:text-white focus:ring-2 focus:ring-orange-300"
