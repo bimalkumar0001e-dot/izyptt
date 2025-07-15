@@ -64,7 +64,7 @@ const BannerManagement: React.FC = () => {
         const data = await res.json();
         console.log('Fetched banners:', data); // Debug log
         
-        // Map the data properly to match our component's expectations
+        // Map the data properly to match our component's expectations clearly
         const bannersWithDates = data.map((banner: any) => ({
           ...banner,
           id: banner._id, // ensure we use _id as id
