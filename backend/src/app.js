@@ -50,9 +50,9 @@ app.use(cors({
 //   domain: '.izypt.com', // Allows all subdomains
 // });
 
-// Serve uploads folder
+// Serve uploads folder for review images and other uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-app.use('/uploads', express.static(path.join(__dirname, './restaurant_delv images')));
+app.use('/restaurant_delv images', express.static(path.join(__dirname, '../restaurant_delv images')));
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

@@ -73,8 +73,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const initializeAuth = async () => {
       let token = localStorage.getItem("token");
       let refreshToken = localStorage.getItem("refreshToken");
+      // If token exists but is expired, try to refresh
       if (token && isTokenExpired(token) && refreshToken) {
-        // Try to refresh token
         try {
           const res = await fetch(`${API_BASE}/auth/refresh-token`, {
             method: "POST",
@@ -96,13 +96,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           return;
         }
       }
-      if (token) {
+      // If token exists and is valid, restore session
+      if (token && !isTokenExpired(token)) {
         setToken(token);
         setIsAuthenticated(true);
         await fetchProfile();
       } else {
         setIsAuthenticated(false);
         setUser(null);
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
       }
       setAuthState((prev) => ({ ...prev, isLoading: false }));
     };
