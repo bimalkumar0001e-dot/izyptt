@@ -241,7 +241,7 @@ const TrackOrder: React.FC = () => {
             {/* Show delivery time */}
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Delivery Time:</span>
-              <span className="text-sm font-semibold text-indigo-600 text-right">25-40 minutes</span>
+              <span className="text-sm font-semibold text-indigo-600 text-right">35-50 minutes</span>
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Order No:</span>
