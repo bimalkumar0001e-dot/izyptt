@@ -28,6 +28,24 @@ const DeliveryDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState<boolean>(true);
+  const [orderTimers, setOrderTimers] = useState<{[orderId: string]: number}>({});
+
+  // Timer effect: update every second for active orders
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOrderTimers((prev) => {
+        const now = Date.now();
+        const updated: {[orderId: string]: number} = {};
+        orders.forEach(order => {
+          if (!['delivered','cancelled','canceled'].includes((order.status || '').toLowerCase())) {
+            updated[order._id] = now;
+          }
+        });
+        return updated;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [orders]);
 
   // Only redirect if auth check is finished with a small delay to ensure auth context is fully loaded
   useEffect(() => {
@@ -215,257 +233,171 @@ const DeliveryDashboard: React.FC = () => {
         </div>
         <div className="mb-4" />
         
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="pickups">Pickups</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="overview" className="mt-4">
-            {/* <div className="grid grid-cols-2 gap-4 mb-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Today's Earnings</CardDescription>
-                  <CardTitle>₹{todayEarnings}</CardTitle>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>Total Deliveries</CardDescription>
-                  <CardTitle>{assignedOrders + deliveredOrders}</CardTitle>
-                </CardHeader>
-              </Card>
-            </div> */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="text-base">Your Performance</CardTitle>
-                <CardDescription>Last 7 days</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mb-2">
-                      <Package className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <p className="text-gray-600 text-sm">On-time Rate</p>
-                    <p className="text-xl font-semibold">95%</p>
+        {/* --- Assigned Orders with Countdown --- */}
+        <div className="mb-6">
+          {orders
+            .filter(order => !['delivered','cancelled','canceled'].includes((order.status || '').toLowerCase()))
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // oldest first
+            .map(order => {
+              // 15-minute countdown timer logic
+              const orderPlacedTime = new Date(order.createdAt).getTime();
+              const now = orderTimers[order._id] || Date.now();
+              const elapsed = Math.floor((now - orderPlacedTime) / 1000);
+
+              let secondsLeft = 0;
+              let isFirstTimer = true;
+              let delayed = false;
+              if (elapsed < 30 * 60) {
+                secondsLeft = 30 * 60 - elapsed;
+                isFirstTimer = true;
+                delayed = false;
+              } else {
+                const delayElapsed = elapsed - 30 * 60;
+                const current15MinCycle = delayElapsed % (15 * 60);
+                secondsLeft = 15 * 60 - current15MinCycle;
+                isFirstTimer = false;
+                delayed = true;
+              }
+              const totalSeconds = isFirstTimer ? 30 * 60 : 15 * 60;
+              const percent = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 100);
+              const formatTimer = (secs: number) => {
+                const m = Math.floor(secs / 60).toString().padStart(2, '0');
+                const s = (secs % 60).toString().padStart(2, '0');
+                return `${m}:${s}`;
+              };
+              return (
+                <div key={order._id} className="mx-4 mb-4 p-4 rounded-xl shadow bg-gradient-to-r from-indigo-100 to-pink-100 border border-indigo-200 flex flex-col items-center">
+                  <div className="flex w-full justify-between items-center mb-2">
+                    <span className={`font-semibold text-lg ${delayed ? 'text-orange-600' : 'text-app-primary'}`}>
+                      Assigned Order
+                      {delayed && (
+                        <span className="ml-2 text-orange-600 font-bold">You are delayed</span>
+                      )}
+                    </span>
+                    <span className="font-bold text-2xl px-3 py-1 rounded-lg bg-gradient-to-r from-pink-400 to-purple-400 text-white flex items-center gap-2">
+                      {formatTimer(secondsLeft)} <span role="img" aria-label="timer">⏰</span>
+                    </span>
                   </div>
-                  
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full mb-2">
-                      <Check className="w-5 h-5 text-green-600" />
-                    </div>
-                    <p className="text-gray-600 text-sm">Rating</p>
-                    <p className="text-xl font-semibold">4.8/5</p>
+                  {/* Show exact timestamp of order placed */}
+                  <div className="w-full text-right text-xs text-gray-500 mb-2">
+                    Placed at: {new Date(order.createdAt).toLocaleString()}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold">Quick Actions</h2>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <Button 
-                variant="outline"
-                className="h-20 flex flex-col items-center justify-center"
-                onClick={() => navigate('/delivery/orders')}
-              >
-                <Package className="h-6 w-6 mb-2" />
-                <span>View Orders</span>
-              </Button>
-              
-              <Button 
-                variant="outline"
-                className="h-20 flex flex-col items-center justify-center"
-                onClick={() => navigate('/delivery/pickup')}
-              >
-                <MapPin className="h-6 w-6 mb-2" />
-                <span>View Pickups</span>
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="orders" className="mt-4">
-            <div className="mb-4 flex justify-between">
-              <h3 className="text-lg font-semibold">Active Deliveries</h3>
-              <Button 
-                size="sm" 
-                variant="ghost"
-                onClick={() => navigate('/delivery/orders')}
-              >
-                View All
-              </Button>
-            </div>
-            
-            <div className="space-y-3 mb-6">
-              {loading ? (
-                <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                  <p className="text-gray-500">Loading...</p>
-                </div>
-              ) : (
-                orders
-                  .filter(order => ['out_for_delivery', 'on_the_way'].includes(order.status))
-                  .map((order) => (
-                    <div 
-                      key={order._id}
-                      className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
-                      onClick={() => navigate(`/delivery/orders/${order._id}`)}
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <p className="font-medium">Order #{order.orderNumber || order._id.substring(0, 8)}</p>
-                          <p className="text-sm text-gray-500">
-                            {order.restaurantName || 'Multiple Vendors'}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">₹{order.finalAmount?.toFixed(2) || order.totalAmount?.toFixed(2)}</p>
-                          <p className="text-xs text-blue-600">
-                            {order.status.replace('_', ' ').toUpperCase()}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start">
-                        <MapPin className="w-5 h-5 text-gray-500 mr-2 mt-1 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm text-gray-600">{order.deliveryAddress?.address}</p>
-                          <p className="text-sm text-gray-600">
-                            {order.deliveryAddress?.city}, {order.deliveryAddress?.pincode}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-3 flex justify-between">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 mr-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/delivery/orders/${order._id}`);
-                          }}
-                        >
-                          View Details
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await handleMarkAsDelivered(order._id);
-                          }}
-                        >
-                          Mark Delivered
-                        </Button>
-                      </div>
+                  {/* Show current status */}
+                  <div className="w-full text-left text-xs text-gray-700 mb-2 font-semibold">
+                    Status: {order.status?.replace(/_/g, ' ').toUpperCase()}
+                  </div>
+                  {/* Progress bar with delivery boy image */}
+                  <div className="w-full h-3 rounded-full bg-gray-200 mb-2 relative overflow-visible">
+                    <div style={{ width: `${percent}%` }} className="h-3 rounded-full bg-gradient-to-r from-green-400 to-blue-400 transition-all duration-300" />
+                    <img
+                      src="/delivery_boy.png"
+                      alt="Delivery Boy"
+                      style={{
+                        position: 'absolute',
+                        top: '-20px',
+                        left: `calc(${percent}% - 16px)`,
+                        height: '40px',
+                        width: '40px',
+                        objectFit: 'contain',
+                        transition: 'left 1s linear',
+                        zIndex: 2,
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  </div>
+                  <div className="text-xl font-bold text-center mb-2">
+                    Total Amount: <span className="text-green-700">₹{Math.ceil(order.finalAmount ?? order.totalAmount ?? 0)}</span>
+                  </div>
+                  <div className="w-full mb-2">
+                    <span className="font-semibold">Address:</span>
+                    <div className="text-base ml-2">
+                      {order.deliveryAddress?.address}, {order.deliveryAddress?.city}, {order.deliveryAddress?.pincode}
                     </div>
-                  ))
-              )}
-              {!loading && orders.filter(order => ['out_for_delivery', 'on_the_way'].includes(order.status)).length === 0 && (
-                <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                  <p className="text-gray-500">No active deliveries</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="mb-4 flex justify-between">
-              <h3 className="text-lg font-semibold">New Orders</h3>
-            </div>
-            
-            <div className="space-y-3">
-              {loading ? (
-                <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                  <p className="text-gray-500">Loading...</p>
-                </div>
-              ) : (
-                orders
-                  .filter(order => order.status === 'packed')
-                  .map((order) => (
-                    <div 
-                      key={order._id}
-                      className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
+                  </div>
+                  <div className="flex gap-3 w-full mt-2">
+                    <Button
+                      className="bg-blue-500 hover:bg-blue-600 text-white flex-1"
+                      disabled={((order.status || '').toLowerCase() === 'picked')}
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`${API_BASE}/delivery/orders/${order._id}/status`, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ status: 'picked' }),
+                            credentials: 'include'
+                          });
+                          if (!res.ok) throw new Error('Failed to update status');
+                          toast('Order marked as picked');
+                          setOrders((prev: any[]) => prev.map(o => o._id === order._id ? { ...o, status: 'picked' } : o));
+                        } catch (err) {
+                          toast('Error', { description: 'Could not mark as picked' });
+                        }
+                      }}
                     >
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <p className="font-medium">Order #{order.orderNumber || order._id.substring(0, 8)}</p>
-                          <p className="text-sm text-gray-500">
-                            {order.restaurantName || 'Multiple Vendors'}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">₹{order.finalAmount?.toFixed(2) || order.totalAmount?.toFixed(2)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start mb-3">
-                        <MapPin className="w-5 h-5 text-gray-500 mr-2 mt-1 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm text-gray-600">{order.deliveryAddress?.address}</p>
-                          <p className="text-sm text-gray-600">
-                            {order.deliveryAddress?.city}, {order.deliveryAddress?.pincode}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center mb-3">
-                        <Clock className="w-4 h-4 text-yellow-500 mr-1" />
-                        <span className="text-xs text-yellow-500">Ready for pickup</span>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                        >
-                          Reject
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="flex-1 bg-app-primary hover:bg-app-accent"
-                        >
-                          Accept
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-              )}
-              {!loading && orders.filter(order => order.status === 'packed').length === 0 && (
-                <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                  <p className="text-gray-500">No new orders available</p>
+                      Picked
+                    </Button>
+                    <Button
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white flex-1"
+                      disabled={((order.status || '').toLowerCase() === 'on_the_way')}
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`${API_BASE}/delivery/orders/${order._id}/status`, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ status: 'on_the_way' }),
+                            credentials: 'include'
+                          });
+                          if (!res.ok) throw new Error('Failed to update status');
+                          toast('Order marked as on the way');
+                          setOrders((prev: any[]) => prev.map(o => o._id === order._id ? { ...o, status: 'on_the_way' } : o));
+                        } catch (err) {
+                          toast('Error', { description: 'Could not mark as on the way' });
+                        }
+                      }}
+                    >
+                      On Way
+                    </Button>
+                    <Button
+                      className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                      disabled={((order.status || '').toLowerCase() === 'delivered')}
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`${API_BASE}/delivery/orders/${order._id}/status`, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ status: 'delivered' }),
+                            credentials: 'include'
+                          });
+                          if (!res.ok) throw new Error('Failed to update status');
+                          toast('Order marked as delivered');
+                          setOrders((prev: any[]) => prev.map(o => o._id === order._id ? { ...o, status: 'delivered' } : o));
+                        } catch (err) {
+                          toast('Error', { description: 'Could not mark as delivered' });
+                        }
+                      }}
+                    >
+                      Delivered
+                    </Button>
+                  </div>
+                  <Button
+                    className="mt-2 bg-app-primary hover:bg-app-accent text-white px-6 py-2 rounded-lg font-semibold"
+                    onClick={() => navigate(`/delivery/orders/${order._id}`)}
+                  >
+                    View Details
+                  </Button>
                 </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="pickups" className="mt-4">
-            <div className="mb-4 flex justify-between">
-              <h3 className="text-lg font-semibold">Pickup Requests</h3>
-              <Button 
-                size="sm" 
-                variant="ghost"
-                onClick={() => navigate('/delivery/pickup')}
-              >
-                View All
-              </Button>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No pickup requests</p>
-              <p className="mt-2 text-sm text-gray-400">
-                Check back later for pickup requests
-              </p>
-              <Button 
-                className="mt-4 bg-app-primary hover:bg-app-accent"
-                onClick={() => navigate('/delivery/pickup')}
-              >
-                Check Pickup Orders
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+              );
+            })}
+        </div>
       </div>
       
       <DeliveryBottomNav />

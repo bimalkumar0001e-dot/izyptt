@@ -58,4 +58,5 @@ export interface Order {
   deliveryDate?: Date;
   isAssigned: boolean;
   createdAt?: Date; // Add createdAt for compatibility
+  cancellationReason?: string; // Reason entered by admin when cancelled
 }

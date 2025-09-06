@@ -23,6 +23,12 @@ const OrderConfirmation: React.FC = () => {
   const [adminHandlingCharge, setAdminHandlingCharge] = useState<number | null>(null);
   const [adminGstTax, setAdminGstTax] = useState<number | null>(null);
 
+  // Timer state
+  const [secondsLeft, setSecondsLeft] = useState(0); // Will be calculated
+  const [delayMessage, setDelayMessage] = useState('');
+  const [isFirstTimer, setIsFirstTimer] = useState(true);
+  const [delayStart, setDelayStart] = useState<number | null>(null);
+
   // Play sound effect and show confetti when component mounts
   useEffect(() => {
     if (!soundPlayed) {
@@ -99,6 +105,70 @@ const OrderConfirmation: React.FC = () => {
       .catch(() => setAdminGstTax(0));
   }, []);
 
+  // Start countdown timer when order is loaded
+  useEffect(() => {
+    if (!order || !order.createdAt) return;
+    // Calculate initial seconds left from order.createdAt
+    const orderPlacedTime = new Date(order.createdAt).getTime();
+    const now = Date.now();
+    const elapsed = Math.floor((now - orderPlacedTime) / 1000);
+    if (elapsed < 30 * 60) {
+      setSecondsLeft(30 * 60 - elapsed);
+      setIsFirstTimer(true);
+      setDelayMessage('');
+      setDelayStart(null);
+    } else {
+      // If status is not delivered/canceled, start delay timer
+      if (order.status !== 'canceled' && order.status !== 'delivered') {
+        // If delayStart is not set, set it to now
+        if (!delayStart) setDelayStart(now);
+        const delayElapsed = delayStart ? Math.floor((now - delayStart) / 1000) : 0;
+        setSecondsLeft(Math.max(0, 15 * 60 - delayElapsed));
+        setIsFirstTimer(false);
+        setDelayMessage('Your order is slightly delayed.');
+      } else {
+        setSecondsLeft(0);
+        setIsFirstTimer(false);
+        setDelayMessage('');
+      }
+    }
+    // Start interval to update timer every second
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const elapsed = Math.floor((now - orderPlacedTime) / 1000);
+      if (elapsed < 30 * 60) {
+        setSecondsLeft(30 * 60 - elapsed);
+        setIsFirstTimer(true);
+        setDelayMessage('');
+        setDelayStart(null);
+      } else {
+        if (order.status !== 'canceled' && order.status !== 'delivered') {
+          if (!delayStart) setDelayStart(now);
+          const delayElapsed = delayStart ? Math.floor((now - delayStart) / 1000) : 0;
+          setSecondsLeft(Math.max(0, 15 * 60 - delayElapsed));
+          setIsFirstTimer(false);
+          setDelayMessage('Your order is slightly delayed.');
+        } else {
+          setSecondsLeft(0);
+          setIsFirstTimer(false);
+          setDelayMessage('');
+        }
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [order, delayStart]);
+
+  // Format timer as MM:SS
+  const formatTimer = (secs: number) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  // Calculate progress for progress bar
+  const totalSeconds = isFirstTimer ? 30 * 60 : 15 * 60;
+  const percent = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 100);
+
   // Calculate breakdown using order data (use stored values if present)
   let subtotal = 0;
   let discount = 0;
@@ -143,8 +213,50 @@ const OrderConfirmation: React.FC = () => {
           </div>
           <h2 className="text-2xl font-semibold text-green-700">Order Placed Successfully!</h2>
           <p className="text-gray-600 mt-1">
-            Your order has been placed and is being reviewed.
+            Your order has been placed and is being prepared.
           </p>
+          {/* Countdown Timer with Progress Bar and Delivery Boy Image */}
+          <div className="mt-4 flex flex-col items-center">
+            <div className="flex items-center gap-2 text-xl font-bold text-indigo-700">
+              
+              <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-lg shadow font-mono tracking-widest">
+                {formatTimer(secondsLeft)}
+              </span>
+              <span role="img" aria-label="clock">⏰</span>
+            </div>
+            {/* Progress Bar with Delivery Boy Image */}
+            <div className="w-64 h-4 bg-gray-200 rounded-full mt-3 relative overflow-visible">
+              <div
+                className="h-4 rounded-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 transition-all"
+                style={{ width: `${percent}%` }}
+              ></div>
+              <img
+                src="/delivery_boy.png"
+                alt="Delivery Boy"
+                style={{
+                  position: 'absolute',
+                  top: '-20px', // Move image above the bar
+                  left: `calc(${percent}% - 16px)`, // Center image horizontally
+                  height: '40px',
+                  width: '40px',
+                  objectFit: 'contain',
+                  transition: 'left 1s linear',
+                  zIndex: 2,
+                  pointerEvents: 'none',
+                }}
+              />
+            </div>
+            <div className="mt-1 text-xs text-gray-500">
+              <span role="img" aria-label="sparkles">✨</span>
+              Sit back and relax while we prepare your delicious meal!
+              <span role="img" aria-label="pizza">🍕</span>
+            </div>
+            {delayMessage && (
+              <div className="mt-2 text-sm text-red-500 font-semibold">
+                {delayMessage}
+              </div>
+            )}
+          </div>
           <div className="mt-4 bg-gray-100 px-4 py-2 rounded-lg inline-block">
             <p className="font-medium text-indigo-700">
               Order ID: <span className="font-bold text-pink-600">#{order.id ? order.id.substring(0, 8) : ''}</span>

@@ -31,6 +31,8 @@ router.patch('/delivery-boys/:id/activate', adminController.activateDeactivateDe
 // In adminRoutes.js
 router.get('/pending-delivery-partners', adminController.getPendingDeliveryPartners);
 router.patch('/delivery-boys/:id/approve', adminController.approveDeliveryBoy);
+// Add availability toggle route
+router.patch('/delivery-boys/:id/availability', adminController.toggleDeliveryBoyAvailability);
 
 // Restaurant Partner Management
 router.get('/restaurants', adminController.getAllRestaurants);

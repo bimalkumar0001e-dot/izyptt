@@ -47,6 +47,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/utils/toast';
 import axios from 'axios';
 import { BACKEND_URL } from '@/utils/utils';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable'; // <-- Fix import
 
 const API_BASE = `${BACKEND_URL}/api`;
 
@@ -79,6 +81,7 @@ const OrdersManagement: React.FC = () => {
   const [deliveryPartners, setDeliveryPartners] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>(''); // <-- Add date filter state
   const navigate = useNavigate();
   
   // State for assign delivery partner dialog
@@ -180,15 +183,26 @@ const OrdersManagement: React.FC = () => {
     }
   };
 
-  // Filter orders based on search query and status
+  // Filter orders based on search query, status, and date
   const filteredOrders = orders.filter(order => {
     const matchesQuery =
       (order.orderNumber || order._id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (order.customer?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (order.restaurant?.restaurantDetails?.name || order.restaurant?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-    if (statusFilter === 'all') return matchesQuery;
-    return matchesQuery && order.status === statusFilter;
+    let matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+
+    let matchesDate = true;
+    if (dateFilter) {
+      const orderDate = new Date(order.createdAt);
+      const selectedDate = new Date(dateFilter);
+      matchesDate =
+        orderDate.getFullYear() === selectedDate.getFullYear() &&
+        orderDate.getMonth() === selectedDate.getMonth() &&
+        orderDate.getDate() === selectedDate.getDate();
+    }
+
+    return matchesQuery && matchesStatus && matchesDate;
   });
   
   // Function to handle assigning a delivery partner to an order
@@ -425,10 +439,69 @@ const OrdersManagement: React.FC = () => {
     return total;
   };
 
+  // Export PDF handler
+  const handleExportReport = () => {
+    const doc = new jsPDF();
+    doc.text('Orders Report', 14, 16);
+
+    // Prepare table data
+    const tableColumn = [
+      'Order ID',
+      'Customer',
+      'Restaurant',
+      'Date',
+      'Amount',
+      'Status'
+    ];
+    const tableRows = filteredOrders.map(order => [
+      order.orderNumber ? `#${order.orderNumber}` : (order._id ? `#${order._id}` : '-'),
+      order.customer?.name || '-',
+      (order.restaurant?.restaurantDetails?.name || order.restaurant?.name || '-'),
+      order.createdAt ? new Date(order.createdAt).toLocaleString() : '-',
+      typeof order.finalAmount === 'number' && !isNaN(order.finalAmount)
+        ? `₹${Math.ceil(order.finalAmount)}`
+        : typeof order.totalAmount === 'number' && !isNaN(order.totalAmount)
+        ? `₹${Math.ceil(order.totalAmount)}`
+        : 'N/A',
+      order.status
+    ]);
+
+    // If filtered by delivered or cancelled, calculate total amount
+    if (statusFilter === 'delivered' || statusFilter === 'cancelled') {
+      const totalAmount = filteredOrders.reduce((sum, order) => {
+        if (typeof order.finalAmount === 'number' && !isNaN(order.finalAmount)) {
+          return sum + order.finalAmount;
+        } else if (typeof order.totalAmount === 'number' && !isNaN(order.totalAmount)) {
+          return sum + order.totalAmount;
+        }
+        return sum;
+      }, 0);
+
+      // Add summary row
+      tableRows.push([
+        '', '', '', 'Total Amount',
+        `₹${Math.ceil(totalAmount)}`,
+        ''
+      ]);
+    }
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 22,
+      styles: { fontSize: 9 }
+    });
+
+    doc.save('orders_report.pdf');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Order Management</h1>
+        <Button onClick={handleExportReport} variant="outline">
+          Export Report
+        </Button>
       </div>
 
       <Card>
@@ -470,6 +543,15 @@ const OrdersManagement: React.FC = () => {
                   <SelectItem value="cancelled">Canceled</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="w-full sm:w-48">
+              {/* Date filter input */}
+              <Input
+                type="date"
+                value={dateFilter}
+                onChange={e => setDateFilter(e.target.value)}
+                placeholder="Filter by date"
+              />
             </div>
           </div>
 

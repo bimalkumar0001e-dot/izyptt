@@ -54,6 +54,26 @@ const AllDishesPage: React.FC = () => {
       setFilteredProducts(productsList);
       return;
     }
+    // Special handling for veg query: match exactly "veg" (case-insensitive, trimmed)
+    if (query.trim().toLowerCase() === "veg") {
+      const filtered = productsList.filter(
+        (product) =>
+          typeof product.category === "string" &&
+          product.category.trim().toLowerCase() === "veg"
+      );
+      setFilteredProducts(filtered);
+      return;
+    }
+    // Special handling for non-veg query: match exactly "non-veg" (case-insensitive, trimmed)
+    if (query.trim().toLowerCase() === "non-veg") {
+      const filtered = productsList.filter(
+        (product) =>
+          typeof product.category === "string" &&
+          product.category.trim().toLowerCase() === "non-veg"
+      );
+      setFilteredProducts(filtered);
+      return;
+    }
     const filtered = productsList.filter(
       (product) =>
         product.name.toLowerCase().includes(query.toLowerCase()) ||

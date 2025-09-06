@@ -312,6 +312,24 @@ exports.activateDeactivateDeliveryBoy = async (req, res) => {
   }
 };
 
+exports.toggleDeliveryBoyAvailability = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || user.role !== 'delivery') return res.status(404).json({ message: 'Delivery boy not found' });
+    if (!user.deliveryDetails) user.deliveryDetails = {};
+    // Accept isAvailable from request body
+    if (typeof req.body.isAvailable === 'boolean') {
+      user.deliveryDetails.isAvailable = req.body.isAvailable;
+      await user.save();
+      res.json({ message: `Delivery boy marked as ${req.body.isAvailable ? 'available' : 'unavailable'}`, user });
+    } else {
+      res.status(400).json({ message: 'Missing isAvailable in request body' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating delivery boy availability', error: err });
+  }
+};
+
 exports.getPendingDeliveryPartners = async (req, res) => {
   try {
     const pending = await User.find({ role: 'delivery', isApproved: false });
@@ -463,9 +481,57 @@ exports.verifyPopularRestaurant = async (req, res) => {
 // ===== Order Management =====
 exports.listAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
+    // Fetch all orders
+    let orders = await Order.find()
       .populate('customer restaurant deliveryPartner')
-      .sort({ createdAt: -1 }); // Sort by latest first
+      .sort({ createdAt: -1 });
+
+    // Find orders without a delivery partner and not delivered/cancelled
+    const unassignedOrders = orders.filter(order =>
+      !order.deliveryPartner &&
+      ['placed', 'confirmed', 'preparing', 'packing', 'packed', 'ready'].includes(order.status) &&
+      order.status !== 'delivered' &&
+      order.status !== 'cancelled' &&
+      order.status !== 'canceled'
+    );
+
+    if (unassignedOrders.length > 0) {
+      // Find active and approved delivery partners
+      const activePartners = await User.find({
+        role: 'delivery',
+        status: 'active',
+        isApproved: true
+      });
+
+      // Assign each unassigned order to a random active partner
+      for (const order of unassignedOrders) {
+        if (activePartners.length === 0) break;
+        const randomPartner = activePartners[Math.floor(Math.random() * activePartners.length)];
+        order.deliveryPartner = randomPartner._id;
+        // Add to status timeline
+        if (!order.statusTimeline) order.statusTimeline = [];
+        order.statusTimeline.push({
+          status: order.status,
+          timestamp: new Date(),
+          note: 'Auto-assigned delivery partner'
+        });
+        await order.save();
+
+        // Create notification for delivery partner
+        await Notification.create({
+          user: randomPartner._id,
+          message: `You have been assigned a new delivery order (Order ID: ${order._id})`,
+          type: 'delivery',
+          orderId: order._id
+        });
+      }
+
+      // Re-fetch orders to include updated deliveryPartner info
+      orders = await Order.find()
+        .populate('customer restaurant deliveryPartner')
+        .sort({ createdAt: -1 });
+    }
+
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching orders', error: err });
@@ -2090,3 +2156,68 @@ exports.deleteProductReview = async (req, res) => {
     res.status(500).json({ message: 'Error deleting review', error: err });
   }
 };
+
+// --- Automatic Order Status Updater ---
+const AUTO_STATUS_INTERVAL_MS = 60 * 1000; // 1 minute
+
+async function autoUpdateOrderStatuses() {
+  try {
+    // Find all orders not delivered/cancelled
+    const orders = await Order.find({
+      status: { $nin: ['delivered', 'cancelled', 'canceled'] }
+    });
+
+    const now = Date.now();
+
+    for (const order of orders) {
+      // Find last status change time
+      let lastStatusTime = order.createdAt;
+      if (order.statusTimeline && order.statusTimeline.length > 0) {
+        const lastTimeline = order.statusTimeline[order.statusTimeline.length - 1];
+        lastStatusTime = lastTimeline.timestamp || order.createdAt;
+      }
+
+      // Status transitions with new timings
+      if (order.status === 'placed') {
+        // If 1 minute passed since placed, set to preparing
+        if (now - new Date(lastStatusTime).getTime() >= 1 * 60 * 1000) {
+          order.status = 'preparing';
+          order.statusTimeline.push({
+            status: 'preparing',
+            timestamp: new Date(),
+            note: 'Auto status update: placed → preparing'
+          });
+          await order.save();
+        }
+      } else if (order.status === 'preparing') {
+        // If 15 minutes passed since preparing, set to packing
+        if (now - new Date(lastStatusTime).getTime() >= 15 * 60 * 1000) {
+          order.status = 'packing';
+          order.statusTimeline.push({
+            status: 'packing',
+            timestamp: new Date(),
+            note: 'Auto status update: preparing → packing'
+          });
+          await order.save();
+        }
+      } else if (order.status === 'packing') {
+        // If 10 minutes passed since packing, set to on_the_way
+        if (now - new Date(lastStatusTime).getTime() >= 10 * 60 * 1000) {
+          order.status = 'on_the_way';
+          order.statusTimeline.push({
+            status: 'on_the_way',
+            timestamp: new Date(),
+            note: 'Auto status update: packing → on_the_way'
+          });
+          await order.save();
+        }
+      }
+      // Add more transitions if needed
+    }
+  } catch (err) {
+    console.error('Auto order status updater error:', err);
+  }
+}
+
+// Start the interval when this module is loaded
+setInterval(autoUpdateOrderStatuses, AUTO_STATUS_INTERVAL_MS);

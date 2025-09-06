@@ -123,15 +123,15 @@ const OrdersPage: React.FC = () => {
   }
 
   // Order filtering
-  const newOrders = orders.filter(
-    o => (o.status || '').toLowerCase() === 'placed'
-  );
-  const activeOrders = orders.filter(
-    o => ['preparing', 'packing'].includes((o.status || '').toLowerCase())
-  );
-  const pastOrders = orders.filter(
-    o => !['preparing', 'packing', 'pending', 'placed'].includes((o.status || '').toLowerCase())
-  );
+  const newOrders = orders
+    .filter(o => (o.status || '').toLowerCase() === 'placed')
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); // oldest first
+  const activeOrders = orders
+    .filter(o => ['preparing', 'packing'].includes((o.status || '').toLowerCase()))
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const pastOrders = orders
+    .filter(o => !['preparing', 'packing', 'pending', 'placed'].includes((o.status || '').toLowerCase()))
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   // Helper to format time ago
   function timeAgo(dateString: string) {
@@ -179,14 +179,14 @@ const OrdersPage: React.FC = () => {
             <span className="font-semibold">Payment Mode:</span> {order.paymentMethod}
           </div>
           <div className="mb-2">
-            <span className="font-semibold">Total:</span> ₹{(order.finalAmount ?? order.totalAmount ?? 0).toFixed(2)}
+            <span className="font-semibold">Total:</span> ₹{Math.ceil(order.finalAmount ?? order.totalAmount ?? 0)}
           </div>
           <div className="mb-2">
             <span className="font-semibold">Items:</span>
             <ul className="list-disc ml-6 mt-1">
               {order.items?.map((item: any, idx: number) => (
                 <li key={idx}>
-                  {item.quantity}x {item.name} - ₹{item.total?.toFixed(2) || item.price?.toFixed(2)}
+                  {item.quantity}x {item.name} - ₹{Math.ceil(item.total ?? item.price ?? 0)}
                 </li>
               ))}
             </ul>
@@ -268,7 +268,7 @@ const OrdersPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-lg">₹{(order.finalAmount ?? order.totalAmount ?? 0).toFixed(2)}</div>
+                        <div className="font-bold text-lg">₹{Math.ceil(order.finalAmount ?? order.totalAmount ?? 0)}</div>
                         <div className={
                           order.status === 'delivered'
                             ? 'text-green-600 font-semibold text-xs'

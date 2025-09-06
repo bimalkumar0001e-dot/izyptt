@@ -20,8 +20,8 @@
     "path": "/Users/deepakkumar/Desktop/iizzyyptt/android.keystore",
     "alias": "android"
   },
-  "appVersionName": "7",
-  "appVersionCode": 7,
+  "appVersionName": "12",
+  "appVersionCode": 12,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://www.izypt.com/manifest.json",
@@ -41,14 +41,20 @@
       "name": "PlayStore",
       "comment": "The app signing certificate SHA-256 fingerprint from Google Play Console",
       "value": "DD:4E:B7:2C:78:E8:FA:1A:75:76:74:78:93:B4:8D:1F:83:66:95:29:40:83:E6:35:54:BF:18:1F:6E:86:CF:21"
+    },
+    {
+      "name": "AdditionalFingerprint",
+      "comment": "Additional app signing certificate SHA-256 fingerprint",
+      "value": "63:59:8E:A7:F0:D0:BE:71:61:8D:E9:41:09:57:75:27:40:31:39:72:C6:41:D3:63:F7:83:57:F0:D0:29:51:A4"
     }
   ],
   "additionalTrustedOrigins": [
-    "https://izypt.com"
+    "izypt.com",
+    "www.izypt.com"
   ],
   "retainedBundles": [],
   "protocolHandlers": [],
   "fileHandlers": [],
   "launchHandlerClientMode": "",
-  "appVersion": "7"
+  "appVersion": "12"
 }

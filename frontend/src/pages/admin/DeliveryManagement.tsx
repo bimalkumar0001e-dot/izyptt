@@ -115,6 +115,27 @@ const DeliveryManagement: React.FC = () => {
     }
   };
 
+  const toggleAvailability = async (id: string, currentAvailability: boolean) => {
+    try {
+      await axios.patch(`/api/admin/delivery-boys/${id}/availability`, {
+        isAvailable: !currentAvailability
+      });
+      setAllPartners(prev =>
+        prev.map(partner =>
+          partner._id === id
+            ? { ...partner, deliveryDetails: { ...partner.deliveryDetails, isAvailable: !currentAvailability } }
+            : partner
+        )
+      );
+      showToast(
+        `Delivery Partner marked as ${!currentAvailability ? 'Available' : 'Unavailable'}`,
+        !currentAvailability ? 'success' : 'warning'
+      );
+    } catch (err) {
+      showToast('Failed to update availability', 'error');
+    }
+  };
+
   const approveDeliveryPartner = async (id: string) => {
     try {
       await axios.patch(`/api/admin/delivery-boys/${id}/approve`);
@@ -286,18 +307,33 @@ const DeliveryManagement: React.FC = () => {
                             <Eye className="h-4 w-4" />
                           </Button>
                           {partner.isApproved ? (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => toggleStatus(partner._id, partner.status)}
-                              title={partner.status === 'active' ? "Deactivate" : "Activate"}
-                            >
-                              {partner.status === 'active' ? (
-                                <ToggleRight className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <ToggleLeft className="h-4 w-4 text-gray-400" />
-                              )}
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => toggleStatus(partner._id, partner.status)}
+                                title={partner.status === 'active' ? "Deactivate" : "Activate"}
+                              >
+                                {partner.status === 'active' ? (
+                                  <ToggleRight className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <ToggleLeft className="h-4 w-4 text-gray-400" />
+                                )}
+                              </Button>
+                              {/* Availability toggle button */}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => toggleAvailability(partner._id, partner.deliveryDetails?.isAvailable)}
+                                title={partner.deliveryDetails?.isAvailable ? "Mark Unavailable" : "Mark Available"}
+                              >
+                                {partner.deliveryDetails?.isAvailable ? (
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <XCircle className="h-4 w-4 text-gray-400" />
+                                )}
+                              </Button>
+                            </>
                           ) : (
                             <>
                               <Button

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Check, ArrowLeft, Bell, AlertCircle, Utensils, List, PlusCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RestaurantBottomNav } from '@/components/restaurant/RestaurantBottomNav'; // Uncomment if you have this component
 import PromoBannerCarousel from '@/components/PromoBannerCarousel';
 import { BACKEND_URL } from '@/utils/utils';
+import { toast } from "@/components/ui/sonner";
 
 const API_BASE = `${BACKEND_URL}/api`;
 // Remove hardcoded UPLOADS_BASE, use BACKEND_URL for images
@@ -29,6 +30,9 @@ const RestaurantDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [siteStatus, setSiteStatus] = useState<string>('online');
   const [statusLoading, setStatusLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [orderTimers, setOrderTimers] = useState<{[orderId: string]: number}>({});
 
   // Improve redirect logic to be more tolerant during loading
   useEffect(() => {
@@ -113,6 +117,23 @@ const RestaurantDashboard: React.FC = () => {
       .catch(() => setSiteStatus('online'))
       .finally(() => setStatusLoading(false));
   }, []);
+
+  // Timer effect: update every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOrderTimers((prev) => {
+        const now = Date.now();
+        const updated: {[orderId: string]: number} = {};
+        orders.forEach(order => {
+          if (!['delivered','cancelled','canceled'].includes((order.status || '').toLowerCase())) {
+            updated[order._id] = now;
+          }
+        });
+        return updated;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [orders]);
 
   // Stats
   const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === new Date().toDateString()).length;
@@ -246,164 +267,234 @@ const RestaurantDashboard: React.FC = () => {
             <PromoBannerCarousel banners={banners} />
           </div>
           <div className="mb-4" /> {/* Add space below banner section */}
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="orders">Orders</TabsTrigger>
-              <TabsTrigger value="menu">Menu</TabsTrigger>
-            </TabsList>
 
-            <TabsContent value="overview" className="mt-4">
-              {/* <div className="grid grid-cols-1 gap-4 mb-6">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardDescription>Total Orders</CardDescription>
-                    <CardTitle>{totalOrders}</CardTitle>
-                  </CardHeader>
-                </Card>
-              </div> */}
+          {/* --- Active Orders Countdown Banner --- */}
+          {orders && orders.length > 0 && (
+            <div className="mb-6">
+              {orders
+                .filter(o => !['delivered','cancelled','canceled'].includes((o.status || '').toLowerCase()))
+                .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // oldest first
+                .map(order => {
+                  // Timer logic
+                  const orderPlacedTime = new Date(order.createdAt).getTime();
+                  const now = orderTimers[order._id] || Date.now();
+                  let elapsed = Math.floor((now - orderPlacedTime) / 1000);
 
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle className="text-base">Your Performance</CardTitle>
-                  <CardDescription>Last 7 days</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mb-2">
-                        <Package className="w-5 h-5 text-blue-600" />
+                  let secondsLeft = 0;
+                  let isFirstTimer = true;
+                  let delayed = false;
+                  let timerLabel = '';
+                  if (elapsed < 30 * 60) {
+                    // Initial 30 min timer
+                    secondsLeft = 30 * 60 - elapsed;
+                    isFirstTimer = true;
+                    delayed = false;
+                    timerLabel = '';
+                  } else {
+                    // After 30 min, repeat 15 min timer with "Order Delayed"
+                    const delayElapsed = elapsed - 30 * 60;
+                    const delayCycle = Math.floor(delayElapsed / (15 * 60));
+                    const delayCycleElapsed = delayElapsed % (15 * 60);
+                    secondsLeft = 15 * 60 - delayCycleElapsed;
+                    isFirstTimer = false;
+                    delayed = true;
+                    timerLabel = 'Order Delayed';
+                  }
+                  const totalSeconds = isFirstTimer ? 30 * 60 : 15 * 60;
+                  const percent = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 100);
+                  const formatTimer = (secs: number) => {
+                    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+                    const s = (secs % 60).toString().padStart(2, '0');
+                    return `${m}:${s}`;
+                  };
+                  return (
+                    <div key={order._id || order.id} className="mx-4 mb-4 p-4 rounded-xl shadow bg-gradient-to-r from-indigo-100 to-pink-100 border border-indigo-200 flex flex-col items-center">
+                      <div className="flex w-full justify-between items-center mb-2">
+                        <span className={`font-semibold text-lg ${delayed ? 'text-orange-600' : 'text-app-primary'}`}>
+                          Order in progress
+                          {delayed && (
+                            <span className="ml-2 text-orange-600 font-bold">{timerLabel}</span>
+                          )}
+                        </span>
+                        <span className="font-bold text-2xl px-3 py-1 rounded-lg bg-gradient-to-r from-pink-400 to-purple-400 text-white flex items-center gap-2">
+                          {formatTimer(secondsLeft)} <span role="img" aria-label="timer">⏰</span>
+                        </span>
                       </div>
-                      <p className="text-gray-600 text-sm">Order Fulfillment</p>
-                      <p className="text-xl font-semibold">98%</p>
+                      {/* Show exact timestamp of order placed */}
+                      <div className="w-full text-right text-xs text-gray-500 mb-2">
+                        Placed at: {new Date(order.createdAt).toLocaleString()}
+                      </div>
+                      {/* Show current status */}
+                      <div className="w-full text-left text-xs text-gray-700 mb-2 font-semibold">
+                        Status: {order.status?.replace(/_/g, ' ').toUpperCase()}
+                      </div>
+                      <div className="w-full h-3 rounded-full bg-gray-200 mb-2 relative overflow-visible">
+                        <div style={{ width: `${percent}%` }} className="h-3 rounded-full bg-gradient-to-r from-green-400 to-blue-400 transition-all duration-300" />
+                        {/* Delivery boy image, same as TrackOrder/OrderConfirmation */}
+                        <img
+                          src="/delivery_boy.png"
+                          alt="Delivery Boy"
+                          style={{
+                            position: 'absolute',
+                            top: '-20px',
+                            left: `calc(${percent}% - 16px)`,
+                            height: '40px',
+                            width: '40px',
+                            objectFit: 'contain',
+                            transition: 'left 1s linear',
+                            zIndex: 2,
+                            pointerEvents: 'none',
+                          }}
+                        />
+                      </div>
+                      <div className="text-xl font-bold text-center mb-2">
+                        Total Amount: <span className="text-green-700">₹{Math.ceil(order.finalAmount ?? order.totalAmount ?? 0)}</span>
+                      </div>
+                      {/* Ordered items list */}
+                      <div className="w-full mb-2">
+                        <span className="font-semibold">Items:</span>
+                        <ul className="list-disc ml-6 mt-1 text-base">
+                          {order.items?.map((item: any, idx: number) => (
+                            <li key={idx}>
+                              {item.quantity}x {item.name}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      {/* Preparing & Packing buttons */}
+                      <div className="flex gap-3 w-full mt-2">
+                        <Button
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white flex-1"
+                          disabled={((order.status || '').toLowerCase() !== 'placed')}
+                          onClick={async () => {
+                            try {
+                              const freshToken = localStorage.getItem('token');
+                              const res = await fetch(`${API_BASE}/restaurants/orders/${order._id}/status`, {
+                                method: 'PUT',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${freshToken}`
+                                },
+                                body: JSON.stringify({ status: 'preparing' })
+                              });
+                              if (!res.ok) throw new Error('Failed to update status');
+                              toast.success('Order marked as Preparing');
+                              setOrders((prev) =>
+                                prev.map(o =>
+                                  o._id === order._id ? { ...o, status: 'preparing' } : o
+                                )
+                              );
+                            } catch (err) {
+                              toast.error('Failed to mark as Preparing');
+                            }
+                          }}
+                        >
+                          Preparing
+                        </Button>
+                        <Button
+                          className="bg-blue-500 hover:bg-blue-600 text-white flex-1"
+                          disabled={((order.status || '').toLowerCase() !== 'preparing')}
+                          onClick={async () => {
+                            try {
+                              const freshToken = localStorage.getItem('token');
+                              const res = await fetch(`${API_BASE}/restaurants/orders/${order._id}/status`, {
+                                method: 'PUT',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${freshToken}`
+                                },
+                                body: JSON.stringify({ status: 'packing' })
+                              });
+                              if (!res.ok) throw new Error('Failed to update status');
+                              toast.success('Order marked as Packing');
+                              setOrders((prev) =>
+                                prev.map(o =>
+                                  o._id === order._id ? { ...o, status: 'packing' } : o
+                                )
+                              );
+                            } catch (err) {
+                              toast.error('Failed to mark as Packing');
+                            }
+                          }}
+                        >
+                          Packing
+                        </Button>
+                      </div>
+                      <Button
+                        className="mt-2 bg-app-primary hover:bg-app-accent text-white px-6 py-2 rounded-lg font-semibold"
+                        onClick={() => { setSelectedOrder(order); setModalOpen(true); }}
+                      >
+                        View Details
+                      </Button>
                     </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full mb-2">
-                        <Check className="w-5 h-5 text-green-600" />
-                      </div>
-                      <p className="text-gray-600 text-sm">Rating</p>
-                      <p className="text-xl font-semibold">4.7/5</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-lg font-semibold">Quick Actions</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <Button 
-                  variant="outline"
-                  className="h-20 flex flex-col items-center justify-center"
-                  onClick={() => navigate('/restaurant/orders')}
-                >
-                  <List className="h-6 w-6 mb-2" />
-                  <span>View Orders</span>
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="h-20 flex flex-col items-center justify-center"
-                  onClick={() => navigate('/restaurant/menu')}
-                >
-                  <Utensils className="h-6 w-6 mb-2" />
-                  <span>View Menu</span>
-                </Button>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="orders" className="mt-4">
-              <div className="mb-4 flex justify-between">
-                <h3 className="text-lg font-semibold">Recent Orders</h3>
-                <Button 
-                  size="sm" 
-                  variant="ghost"
-                  onClick={() => navigate('/restaurant/orders')}
-                >
-                  View All
-                </Button>
-              </div>
-              <div className="space-y-3 mb-6">
-                {loading ? (
-                  <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                    <p className="text-gray-500">Loading...</p>
-                  </div>
-                ) : (
-                  orders.slice(0, 3).map(order => (
-                    <div 
-                      key={order._id}
-                      className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
-                      onClick={() => navigate(`/restaurant/orders/${order._id}`)}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-medium">Order #{order.orderNumber || order._id.substring(0, 8)}</p>
-                          <p className="text-sm text-gray-500">{order.customerName || 'Customer'}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">₹{order.finalAmount?.toFixed(2) || order.totalAmount?.toFixed(2)}</p>
-                          <p className="text-xs text-blue-600">{order.status.replace('_', ' ').toUpperCase()}</p>
-                        </div>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {order.items?.map((item: any) => item.name).join(', ')}
-                      </div>
-                    </div>
-                  ))
-                )}
-                {!loading && orders.length === 0 && (
-                  <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                    <p className="text-gray-500">No recent orders</p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="menu" className="mt-4">
-              <div className="mb-4 flex justify-between">
-                <h3 className="text-lg font-semibold">Menu Items</h3>
-                <Button 
-                  size="sm" 
-                  className="bg-app-primary hover:bg-app-accent text-white flex items-center gap-1"
-                  onClick={() => navigate('/restaurant/menu/add')}
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  Add Item
-                </Button>
-              </div>
-              <div className="space-y-3 mb-6">
-                {loading ? (
-                  <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                    <p className="text-gray-500">Loading...</p>
-                  </div>
-                ) : (
-                  menu.slice(0, 3).map(item => (
-                    <div 
-                      key={item._id}
-                      className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-sm text-gray-500">{item.category}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">₹{item.price}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-                {!loading && menu.length === 0 && (
-                  <div className="bg-white p-6 rounded-xl text-center border border-gray-100">
-                    <p className="text-gray-500">No menu items</p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
+                  );
+                })}
+            </div>
+          )}
         </div>
       </div>
       <RestaurantBottomNav />
+      {/* Modal for order details */}
+      {selectedOrder && (
+        <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 ${modalOpen ? '' : 'hidden'}`}>
+          <div className="bg-white rounded-xl shadow-lg max-w-lg w-full p-6 relative">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+              onClick={() => setModalOpen(false)}
+            >
+              <span className="text-xl">×</span>
+            </button>
+            <h2 className="text-lg font-semibold mb-2">Order Details</h2>
+            <div className="mb-2">
+              <span className="font-semibold">Order #:</span> {selectedOrder.orderNumber || selectedOrder._id?.substring(0,8)}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Status:</span> {selectedOrder.status?.replace(/_/g, ' ').toUpperCase()}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Customer:</span> {selectedOrder.customer?.name || selectedOrder.customerName || "-"}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Phone:</span> {selectedOrder.customer?.phone || selectedOrder.customerPhone || "-"}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Delivery Address:</span>{" "}
+              {selectedOrder.deliveryAddress
+                ? `${selectedOrder.deliveryAddress.address || ''}${selectedOrder.deliveryAddress.landmark ? ', ' + selectedOrder.deliveryAddress.landmark : ''}${selectedOrder.deliveryAddress.city ? ', ' + selectedOrder.deliveryAddress.city : ''}${selectedOrder.deliveryAddress.state ? ', ' + selectedOrder.deliveryAddress.state : ''}${selectedOrder.deliveryAddress.pincode ? ' - ' + selectedOrder.deliveryAddress.pincode : ''}`.replace(/^,\s*/, '')
+                : selectedOrder.address || selectedOrder.deliveryAddress || "-"}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Payment Mode:</span> {selectedOrder.paymentMethod}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Total:</span> ₹{(selectedOrder.finalAmount ?? selectedOrder.totalAmount ?? 0).toFixed(2)}
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Items:</span>
+              <ul className="list-disc ml-6 mt-1">
+                {selectedOrder.items?.map((item: any, idx: number) => (
+                  <li key={idx}>
+                    {item.quantity}x {item.name} - ₹{item.total?.toFixed(2) || item.price?.toFixed(2)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {selectedOrder.statusTimeline && selectedOrder.statusTimeline.length > 0 && (
+              <div className="mb-2">
+                <span className="font-semibold">Status Timeline:</span>
+                <ul className="list-disc ml-6 mt-1 text-xs text-gray-600">
+                  {selectedOrder.statusTimeline.map((st: any, idx: number) => (
+                    <li key={idx}>
+                      {st.status?.replace(/_/g, ' ').toUpperCase()} - {new Date(st.timestamp).toLocaleString()}
+                      {st.note && <span> ({st.note})</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

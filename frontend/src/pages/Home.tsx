@@ -47,6 +47,10 @@ const Home: React.FC = () => {
   const [sectionProductOrders, setSectionProductOrders] = useState<{ [sectionId: string]: any[] }>({});
   const [popularDishesOrder, setPopularDishesOrder] = useState<any[]>([]);
 
+  // --- Order Countdown Banner ---
+  const [activeOrders, setActiveOrders] = useState<any[]>([]);
+  const [orderTimers, setOrderTimers] = useState<Record<string, { secondsLeft: number, isFirstTimer: boolean, percent: number, timerDisplay: string }>>({});
+
   useEffect(() => {
     // Redirect if not authenticated or blocked/inactive
     if (isLoading) return; // Wait until loading is done
@@ -290,6 +294,97 @@ const Home: React.FC = () => {
     return () => clearInterval(interval);
   }, [popularDishesOrder]);
 
+  useEffect(() => {
+    // Fetch all active orders (not delivered/canceled)
+    if (!isAuthenticated || !user) return;
+    const fetchActiveOrders = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch(`${API_BASE}/customer/orders`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch orders');
+        const data = await res.json();
+        // All active orders (not delivered/canceled)
+        const active = (data || []).filter((order: any) => !['delivered', 'canceled', 'cancelled'].includes((order.status || '').toLowerCase()));
+        setActiveOrders(active);
+      } catch {
+        setActiveOrders([]);
+      }
+    };
+    fetchActiveOrders();
+  }, [isAuthenticated, user]);
+
+  useEffect(() => {
+    if (!activeOrders || activeOrders.length === 0) return;
+    // Initialize timers for each order
+    const timers: Record<string, { secondsLeft: number, isFirstTimer: boolean, percent: number, timerDisplay: string }> = {};
+    activeOrders.forEach(order => {
+      if (!order.createdAt) return;
+      const orderPlacedTime = new Date(order.createdAt).getTime();
+      const now = Date.now();
+      const elapsed = Math.floor((now - orderPlacedTime) / 1000);
+      let secondsLeft = 0;
+      let isFirstTimer = true;
+      if (elapsed < 30 * 60) {
+        secondsLeft = 30 * 60 - elapsed;
+        isFirstTimer = true;
+      } else {
+        const delayElapsed = elapsed - 30 * 60;
+        const current15MinCycle = delayElapsed % (15 * 60);
+        secondsLeft = 15 * 60 - current15MinCycle;
+        isFirstTimer = false;
+      }
+      const totalSeconds = isFirstTimer ? 30 * 60 : 15 * 60;
+      const percent = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 100);
+      timers[order._id || order.id] = {
+        secondsLeft,
+        isFirstTimer,
+        percent,
+        timerDisplay: formatTimer(secondsLeft)
+      };
+    });
+    setOrderTimers(timers);
+    // Start interval for live update
+    const interval = setInterval(() => {
+      const timers: Record<string, { secondsLeft: number, isFirstTimer: boolean, percent: number, timerDisplay: string }> = {};
+      activeOrders.forEach(order => {
+        if (!order.createdAt) return;
+        const orderPlacedTime = new Date(order.createdAt).getTime();
+        const now = Date.now();
+        const elapsed = Math.floor((now - orderPlacedTime) / 1000);
+        let secondsLeft = 0;
+        let isFirstTimer = true;
+        if (elapsed < 30 * 60) {
+          secondsLeft = 30 * 60 - elapsed;
+          isFirstTimer = true;
+        } else {
+          const delayElapsed = elapsed - 30 * 60;
+          const current15MinCycle = delayElapsed % (15 * 60);
+          secondsLeft = 15 * 60 - current15MinCycle;
+          isFirstTimer = false;
+        }
+        const totalSeconds = isFirstTimer ? 30 * 60 : 15 * 60;
+        const percent = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 100);
+        timers[order._id || order.id] = {
+          secondsLeft,
+          isFirstTimer,
+          percent,
+          timerDisplay: formatTimer(secondsLeft)
+        };
+      });
+      setOrderTimers(timers);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeOrders]);
+
+  function formatTimer(secs: number) {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -449,6 +544,119 @@ const Home: React.FC = () => {
             <PromoBannerCarousel banners={banners} />
           </div>
           
+          {/* --- Order Countdown Banner --- */}
+          {activeOrders && activeOrders.length > 0 && (
+            activeOrders.length === 1 ? (
+              <div className="mx-4 mt-4 mb-2 flex flex-col gap-4">
+                {/* Single order, centered */}
+                {activeOrders.map(order => {
+                  const timer = orderTimers[order._id || order.id] || { secondsLeft: 0, isFirstTimer: true, percent: 0, timerDisplay: '00:00' };
+                  return (
+                    <div key={order._id || order.id} className="p-4 rounded-xl shadow bg-gradient-to-r from-indigo-100 to-pink-100 border border-indigo-200 flex flex-col items-center">
+                      {/* ...existing code for order progress box... */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-bold text-indigo-700 text-xl">Order in progress</span>
+                        <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-lg shadow font-mono tracking-widest text-2xl">{timer.timerDisplay}</span>
+                        <span role="img" aria-label="clock">⏰</span>
+                      </div>
+                      {/* Order status small text */}
+                      <div className="mb-1 text-xs text-gray-600 font-medium">
+                        Status: {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Processing'}
+                      </div>
+                      <div className="w-64 h-4 bg-gray-200 rounded-full mt-1 relative overflow-visible">
+                        <div
+                          className="h-4 rounded-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 transition-all"
+                          style={{ width: `${timer.percent}%` }}
+                        ></div>
+                        <img
+                          src="/delivery_boy.png"
+                          alt="Delivery Boy"
+                          style={{
+                            position: 'absolute',
+                            top: '-20px',
+                            left: `calc(${timer.percent}% - 16px)`,
+                            height: '40px',
+                            width: '40px',
+                            objectFit: 'contain',
+                            transition: 'left 1s linear',
+                            zIndex: 2,
+                            pointerEvents: 'none',
+                          }}
+                        />
+                      </div>
+                      <div className="mt-2 text-xl font-semibold text-gray-700">
+                        Total Amount: <span className="text-green-700 font-bold">₹{Math.ceil(order.finalAmount || order.total || 0)}</span>
+                      </div>
+                      <button
+                        className="mt-4 px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700 transition"
+                        onClick={() => navigate(`/track-order/${order._id || order.id}`)}
+                      >
+                        Track Order
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="mx-4 mt-4 mb-2">
+                {/* Multiple orders, horizontal scroll */}
+                <div
+                  className="flex gap-4 overflow-x-auto no-scrollbar pb-2"
+                  style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                  <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
+                  {activeOrders.map(order => {
+                    const timer = orderTimers[order._id || order.id] || { secondsLeft: 0, isFirstTimer: true, percent: 0, timerDisplay: '00:00' };
+                    return (
+                      <div key={order._id || order.id} className="p-4 rounded-xl shadow bg-gradient-to-r from-indigo-100 to-pink-100 border border-indigo-200 flex flex-col items-center min-w-[340px] max-w-[340px]">
+                        {/* ...existing code for order progress box... */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-bold text-indigo-700 text-xl">Order in progress</span>
+                          <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-lg shadow font-mono tracking-widest text-2xl">{timer.timerDisplay}</span>
+                          <span role="img" aria-label="clock">⏰</span>
+                        </div>
+                        {/* Order status small text */}
+                        <div className="mb-1 text-xs text-gray-600 font-medium">
+                          Status: {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Processing'}
+                        </div>
+                        <div className="w-64 h-4 bg-gray-200 rounded-full mt-1 relative overflow-visible">
+                          <div
+                            className="h-4 rounded-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 transition-all"
+                            style={{ width: `${timer.percent}%` }}
+                          ></div>
+                          <img
+                            src="/delivery_boy.png"
+                            alt="Delivery Boy"
+                            style={{
+                              position: 'absolute',
+                              top: '-20px',
+                              left: `calc(${timer.percent}% - 16px)`,
+                              height: '40px',
+                              width: '40px',
+                              objectFit: 'contain',
+                              transition: 'left 1s linear',
+                              zIndex: 2,
+                              pointerEvents: 'none',
+                            }}
+                          />
+                        </div>
+                        <div className="mt-2 text-xl font-semibold text-gray-700">
+                          Total Amount: <span className="text-green-700 font-bold">₹{Math.ceil(order.finalAmount || order.total || 0)}</span>
+                        </div>
+                        <button
+                          className="mt-4 px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700 transition"
+                          onClick={() => navigate(`/track-order/${order._id || order.id}`)}
+                        >
+                          Track Order
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )
+          )}
+
           {/* Categories Section */}
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
@@ -490,9 +698,19 @@ const Home: React.FC = () => {
             </div>
             {/* Veg Section */}
             <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-semibold text-base text-green-700">Vegetarian Favorites</span>
-                <span className="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-base text-green-700">Vegetarian Favorites</span>
+                  <span className="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
+                </div>
+                {/* See All button moved to right */}
+                <button
+                  className="text-xs text-app-primary bg-app-primary/10 px-2 py-1 rounded-full hover:bg-app-primary/20 transition"
+                  onClick={() => navigate('/all-dishes?q=veg')}
+                  aria-label="See all vegetarian dishes"
+                >
+                  See All
+                </button>
               </div>
               {loading ? (
                 <div className="grid grid-cols-2 gap-4">
@@ -532,9 +750,19 @@ const Home: React.FC = () => {
             </div>
             {/* Non Veg Section */}
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-semibold text-base text-red-700">Signature Non-Veg Delights</span>
-                <span className="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-base text-red-700">Signature Non-Veg Delights</span>
+                  <span className="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+                </div>
+                {/* See All button for non-veg dishes */}
+                <button
+                  className="text-xs text-app-primary bg-app-primary/10 px-2 py-1 rounded-full hover:bg-app-primary/20 transition"
+                  onClick={() => navigate('/all-dishes?q=non-veg')}
+                  aria-label="See all non-veg dishes"
+                >
+                  See All
+                </button>
               </div>
               {loading ? (
                 <div className="grid grid-cols-2 gap-4">
@@ -580,7 +808,17 @@ const Home: React.FC = () => {
             <div key={section._id} className="p-4">
               <div className="flex justify-between items-center mb-2">
                 <h2 className="text-lg font-bold text-gray-800">{section.name}</h2>
-                <span className="text-xs text-gray-500">{section.products.length} product{section.products.length !== 1 ? 's' : ''}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">{section.products.length} product{section.products.length !== 1 ? 's' : ''}</span>
+                  {/* See All button for section */}
+                  <button
+                    className="text-xs text-app-primary bg-app-primary/10 px-2 py-1 rounded-full hover:bg-app-primary/20 transition"
+                    onClick={() => navigate(`/all-products?section=${section._id}`)}
+                    aria-label={`See all products in ${section.name}`}
+                  >
+                    See All
+                  </button>
+                </div>
               </div>
               <div className="flex overflow-x-auto gap-3 pb-2 no-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {/* Hide scrollbar for Webkit browsers */}

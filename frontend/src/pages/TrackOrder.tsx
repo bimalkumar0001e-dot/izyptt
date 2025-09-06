@@ -21,6 +21,103 @@ const TrackOrder: React.FC = () => {
   const [adminHandlingCharge, setAdminHandlingCharge] = useState<number | null>(null);
   const [adminGstTax, setAdminGstTax] = useState<number | null>(null);
 
+  // Timer state for countdown and progress bar
+  const [secondsLeft, setSecondsLeft] = useState(0); // Will be calculated
+  const [delayMessage, setDelayMessage] = useState('');
+  const [isFirstTimer, setIsFirstTimer] = useState(true);
+  const [delayStart, setDelayStart] = useState<number | null>(null);
+  const [deliveredElapsed, setDeliveredElapsed] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!order || !order.createdAt) return;
+    const orderPlacedTime = new Date(order.createdAt).getTime();
+    const deliveredTime = order.deliveryDate ? new Date(order.deliveryDate).getTime() : null;
+    const now = Date.now();
+    const elapsed = Math.floor((now - orderPlacedTime) / 1000);
+
+    // If delivered or cancelled, freeze timer and stop interval
+    if (order.status === 'delivered' || ['cancelled','canceled'].includes((order.status || '').toLowerCase())) {
+      let deliveryDurationSecs = deliveredTime ? Math.floor((deliveredTime - orderPlacedTime) / 1000) : (elapsed > 30*60 ? 30*60 : elapsed);
+      setSecondsLeft(0);
+      setIsFirstTimer(false);
+      setDelayMessage(order.status === 'delivered'
+        ? `Your order has been delivered within ${formatTimer(deliveryDurationSecs)}.`
+        : 'Order has been cancelled.'
+      );
+      return;
+    }
+
+    // Initial 30 min timer
+    if (elapsed < 30 * 60) {
+      setSecondsLeft(30 * 60 - elapsed);
+      setIsFirstTimer(true);
+      setDelayMessage('');
+      setDelayStart(null);
+    } else {
+      // After 30 min, start repeating 15 min timers until delivered/cancelled
+      setIsFirstTimer(false);
+      const delayElapsed = elapsed - 30 * 60;
+      const current15MinCycle = delayElapsed % (15 * 60);
+      setSecondsLeft(15 * 60 - current15MinCycle);
+      setDelayMessage('Your order is slightly delayed.');
+      setDelayStart(orderPlacedTime + 30 * 60 * 1000 + Math.floor(delayElapsed / (15 * 60)) * 15 * 60 * 1000);
+    }
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const elapsed = Math.floor((now - orderPlacedTime) / 1000);
+      if (order.status === 'delivered' || ['cancelled','canceled'].includes((order.status || '').toLowerCase())) {
+        let deliveryDurationSecs = deliveredTime ? Math.floor((deliveredTime - orderPlacedTime) / 1000) : (elapsed > 30*60 ? 30*60 : elapsed);
+        setSecondsLeft(0);
+        setIsFirstTimer(false);
+        setDelayMessage(order.status === 'delivered'
+          ? `Your order has been delivered within ${formatTimer(deliveryDurationSecs)}.`
+          : 'Order has been cancelled.'
+        );
+        clearInterval(interval);
+        return;
+      }
+      if (elapsed < 30 * 60) {
+        setSecondsLeft(30 * 60 - elapsed);
+        setIsFirstTimer(true);
+        setDelayMessage('');
+        setDelayStart(null);
+      } else {
+        setIsFirstTimer(false);
+        const delayElapsed = elapsed - 30 * 60;
+        const current15MinCycle = delayElapsed % (15 * 60);
+        setSecondsLeft(15 * 60 - current15MinCycle);
+        setDelayMessage('Your order is slightly delayed.');
+        setDelayStart(orderPlacedTime + 30 * 60 * 1000 + Math.floor(delayElapsed / (15 * 60)) * 15 * 60 * 1000);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [order]);
+
+  // Format timer as MM:SS
+  const formatTimer = (secs: number) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  // Calculate progress for progress bar
+  const totalSeconds = isFirstTimer ? 30 * 60 : 15 * 60;
+  // If delivered, freeze timer at delivery time
+  let deliveryDurationSecs = null;
+  if (order?.status === 'delivered' && order?.createdAt) {
+    if (order.deliveryDate) {
+      deliveryDurationSecs = Math.floor((new Date(order.deliveryDate).getTime() - new Date(order.createdAt).getTime()) / 1000);
+    } else {
+      const deliveredElapsed = Math.floor((new Date().getTime() - new Date(order.createdAt).getTime()) / 1000);
+      deliveryDurationSecs = deliveredElapsed > 30*60 ? 30*60 : deliveredElapsed;
+    }
+  }
+  const percent = order?.status === 'delivered' ? 100 : Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 100);
+  const timerDisplay = order?.status === 'delivered' && deliveryDurationSecs !== null
+    ? formatTimer(deliveryDurationSecs)
+    : formatTimer(secondsLeft);
+
   useEffect(() => {
     const fetchOrder = async () => {
       if (orderId) {
@@ -269,6 +366,46 @@ const TrackOrder: React.FC = () => {
               <span className="text-sm font-medium text-right">{order.items?.map(i => `${i.quantity}x ${i.name}`).join(', ')}</span>
             </div>
           </div>
+          {/* --- Countdown and Progress Bar --- */}
+          <div className="mb-6 flex flex-col items-center">
+            <div className="flex items-center gap-2 text-xl font-bold text-indigo-700">
+              <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-lg shadow font-mono tracking-widest">
+                {timerDisplay}
+              </span>
+              <span role="img" aria-label="clock">⏰</span>
+            </div>
+            <div className="w-64 h-4 bg-gray-200 rounded-full mt-3 relative overflow-visible">
+              <div
+                className="h-4 rounded-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 transition-all"
+                style={{ width: `${percent}%` }}
+              ></div>
+              <img
+                src="/delivery_boy.png"
+                alt="Delivery Boy"
+                style={{
+                  position: 'absolute',
+                  top: '-20px', // Move image above the bar
+                  left: `calc(${percent}% - 16px)`, // Center image horizontally
+                  height: '40px',
+                  width: '40px',
+                  objectFit: 'contain',
+                  transition: 'left 1s linear',
+                  zIndex: 2,
+                  pointerEvents: 'none',
+                }}
+              />
+            </div>
+            <div className="mt-1 text-xs text-gray-500">
+              <span role="img" aria-label="sparkles">✨</span>
+              Sit back and relax while we prepare your delicious meal!
+              <span role="img" aria-label="pizza">🍕</span>
+            </div>
+            {delayMessage && (
+              <div className="mt-2 text-sm text-red-500 font-semibold">
+                {delayMessage}
+              </div>
+            )}
+          </div>
           {/* Status Stepper */}
           <div className="my-6">
             <div className="flex flex-col gap-4">
@@ -295,6 +432,7 @@ const TrackOrder: React.FC = () => {
                   </div>
                 </div>
               ))}
+              {/* Fix: Ensure this block is outside the map and inside the parent div */}
               {['cancelled','canceled'].includes((order.status || '').toLowerCase()) && (
                 <div className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-red-500 text-white shadow">
@@ -309,6 +447,12 @@ const TrackOrder: React.FC = () => {
             <span className="text-sm text-gray-500">Current Status: </span>
             <span className="text-sm font-bold text-pink-700">{order.status?.replace('_',' ')}</span>
           </div>
+          {/* Show cancel reason if cancelled by admin and reason exists */}
+          {['cancelled', 'canceled'].includes((order.status || '').toLowerCase()) && order.cancellationReason && (
+            <div className="mt-2 text-sm text-red-600">
+              <span className="font-semibold">Reason:</span> {order.cancellationReason}
+            </div>
+          )}
           {/* Cancel Order Button */}
           <div className="flex flex-col items-end mt-6">
             <Button
@@ -324,7 +468,7 @@ const TrackOrder: React.FC = () => {
               Order can be cancelled within 5 minutes of order placement.
             </span>
             {/* Show message if cancel is not allowed due to time */}
-            {!canCancel && placedTime && (timeSincePlaced >= FIVE_MINUTES) && !['cancelled', 'canceled', 'delivered'].includes((order.status || '').toLowerCase()) && (
+            {!canCancel && placedTime && (timeSincePlaced >= FIVE_MINUTES) && !['cancelled', 'canceled', 'delivered'].includes(order.status.toLowerCase()) && (
               <span className="mt-1 text-xs text-red-500 font-semibold">
                 You can only cancel your order within 5 minutes of placing it.
               </span>
