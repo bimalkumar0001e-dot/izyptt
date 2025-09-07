@@ -41,5 +41,5 @@ const SectionCard: React.FC<SectionCardProps> = ({
     </div>
   </div>
 );
-
+//in last now
 export default SectionCard;

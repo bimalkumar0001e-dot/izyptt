@@ -6,7 +6,7 @@ const { verifyToken } = require('../middlewares/authMiddleware');
 // Get current user's cart
 router.get('/', verifyToken, cartController.getCart);
 
-// Add item to cart
+// Add item to carttt
 router.post('/add', verifyToken, cartController.addToCart);
 
 // Update cart item quantity
