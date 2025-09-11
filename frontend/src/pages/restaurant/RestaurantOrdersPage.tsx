@@ -131,7 +131,7 @@ const OrdersPage: React.FC = () => {
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   const pastOrders = orders
     .filter(o => !['preparing', 'packing', 'pending', 'placed'].includes((o.status || '').toLowerCase()))
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // most recent first
 
   // Helper to format time ago
   function timeAgo(dateString: string) {

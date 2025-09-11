@@ -448,14 +448,17 @@ const OrdersManagement: React.FC = () => {
     const tableColumn = [
       'Order ID',
       'Customer',
+      'Phone', // Added phone column
       'Restaurant',
       'Date',
       'Amount',
+      'Items', // Added items column
       'Status'
     ];
     const tableRows = filteredOrders.map(order => [
       order.orderNumber ? `#${order.orderNumber}` : (order._id ? `#${order._id}` : '-'),
       order.customer?.name || '-',
+      order.customer?.phone || order.customerPhone || '-', // Phone
       (order.restaurant?.restaurantDetails?.name || order.restaurant?.name || '-'),
       order.createdAt ? new Date(order.createdAt).toLocaleString() : '-',
       typeof order.finalAmount === 'number' && !isNaN(order.finalAmount)
@@ -463,6 +466,9 @@ const OrdersManagement: React.FC = () => {
         : typeof order.totalAmount === 'number' && !isNaN(order.totalAmount)
         ? `₹${Math.ceil(order.totalAmount)}`
         : 'N/A',
+      Array.isArray(order.items)
+        ? order.items.map((item: any) => `${item.quantity}x ${item.name}`).join(', ')
+        : '-', // Items
       order.status
     ]);
 
@@ -479,7 +485,7 @@ const OrdersManagement: React.FC = () => {
 
       // Add summary row
       tableRows.push([
-        '', '', '', 'Total Amount',
+        '', '', '', '', 'Total Amount',
         `₹${Math.ceil(totalAmount)}`,
         ''
       ]);

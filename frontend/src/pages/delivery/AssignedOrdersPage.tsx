@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ArrowLeft, Package, MapPin, Calendar, User, Clock } from 'lucide-react';
+import { Bell, ArrowLeft, Package, MapPin, Calendar, User, Clock, Calendar as CalendarIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { OrderStatus } from '@/types/order';
@@ -17,6 +17,8 @@ const DeliveryOrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [filterDate, setFilterDate] = useState<string>('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Get token from localStorage (fallback if not in context)
   const token = localStorage.getItem('token');
@@ -177,13 +179,6 @@ const DeliveryOrdersPage: React.FC = () => {
           )}
 
           {order.status === 'on_the_way' && (
-            // Remove the large Mark as Delivered button at the top for 'on_the_way' status
-            // <button
-            //   onClick={() => handleUpdateStatus(order._id, 'delivered')}
-            //   className="w-full bg-green-600 text-white py-2 rounded-md text-sm"
-            // >
-            //   Mark as Delivered
-            // </button>
             null
           )}
         </div>
@@ -212,7 +207,6 @@ const DeliveryOrdersPage: React.FC = () => {
         >
           View Details
         </button>
-        {/* Disable Picked and On Way buttons if status is not preparing, packed, placed, pending, picked,packing also */}
         <button
           onClick={async (e) => {
             e.stopPropagation();
@@ -300,6 +294,8 @@ const DeliveryOrdersPage: React.FC = () => {
       </div>
     </div>
   );
+
+  const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
   // Add this handler to switch tab via navigation
   const handleTabChange = (value: string) => {
@@ -410,7 +406,34 @@ const DeliveryOrdersPage: React.FC = () => {
               </div>
             ) : pastOrders.length > 0 ? (
               <div>
-                {pastOrders.map((order, index) => renderOrderCard(order, index, false))}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-lg font-semibold">Past Deliveries</h2>
+                    <button
+                      className="flex items-center gap-2 px-3 py-1 bg-app-primary text-white rounded hover:bg-app-accent"
+                      onClick={() => setShowDatePicker(!showDatePicker)}
+                    >
+                      <CalendarIcon className="w-4 h-4" />
+                      Filter by Date
+                    </button>
+                  </div>
+                  {showDatePicker && (
+                    <input
+                      type="date"
+                      className="mb-4 px-2 py-1 border rounded"
+                      value={filterDate}
+                      onChange={e => setFilterDate(e.target.value)}
+                      max={formatDate(new Date())}
+                    />
+                  )}
+                  {pastOrders
+                    .filter(order => {
+                      if (!filterDate) return true;
+                      const orderDate = formatDate(new Date(order.deliveredAt || order.createdAt));
+                      return orderDate === filterDate;
+                    })
+                    .map((order, index) => renderOrderCard(order, index))}
+                </div>
               </div>
             ) : (
               <div className="bg-white p-8 rounded-xl text-center border border-gray-100">
