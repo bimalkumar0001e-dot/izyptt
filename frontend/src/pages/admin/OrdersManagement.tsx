@@ -104,6 +104,10 @@ const OrdersManagement: React.FC = () => {
   const [adminHandlingCharge, setAdminHandlingCharge] = useState<number | null>(null);
   const [adminGstTax, setAdminGstTax] = useState<number | null>(null);
 
+  // New state for delete order dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<any | null>(null);
+
   // Fetch orders and delivery partners from backend
   useEffect(() => {
     fetchOrders();
@@ -501,6 +505,19 @@ const OrdersManagement: React.FC = () => {
     doc.save('orders_report.pdf');
   };
 
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    try {
+      await axios.delete(`${API_BASE}/admin/orders/${orderToDelete._id}`, { headers: getAuthHeaders() });
+      toast.success('Order deleted successfully');
+      setDeleteDialogOpen(false);
+      setOrderToDelete(null);
+      fetchOrders();
+    } catch (err) {
+      toast.error('Failed to delete order');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -669,6 +686,12 @@ const OrdersManagement: React.FC = () => {
                               <Loader className="h-4 w-4 mr-2 text-yellow-500" />
                               Change Status...
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Danger Zone</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => { setOrderToDelete(order); setDeleteDialogOpen(true); }} className="text-red-600">
+                              <X className="h-4 w-4 mr-2" />
+                              Delete Order
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -832,9 +855,11 @@ const OrdersManagement: React.FC = () => {
                   <span className="font-bold">Payment Mode:</span> {orderDetails.paymentMethod}
                 </div>
                 <div className="mb-2">
-                  <span className="font-bold">Total:</span> {adminDeliveryFee === null || adminHandlingCharge === null || adminGstTax === null
-                    ? <span className="text-gray-400">Loading...</span>
-                    : <>₹{calculateOrderTotal(orderDetails).toFixed(2)}</>
+                  <span className="font-bold">Total:</span> {typeof orderDetails.finalAmount === 'number' && !isNaN(orderDetails.finalAmount)
+                    ? <>₹{Math.ceil(orderDetails.finalAmount)}</>
+                    : typeof orderDetails.totalAmount === 'number' && !isNaN(orderDetails.totalAmount)
+                    ? <>₹{Math.ceil(orderDetails.totalAmount)}</>
+                    : <span className="text-gray-400">N/A</span>
                   }
                 </div>
                 <div className="mb-2">
@@ -873,6 +898,37 @@ const OrdersManagement: React.FC = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOrderDetailsDialogOpen(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Order Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Order</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this order? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="mb-2">
+              <span className="font-bold">Order #:</span> {orderToDelete?.orderNumber || orderToDelete?._id}
+            </div>
+            <div className="mb-2">
+              <span className="font-bold">Customer:</span> {orderToDelete?.customer?.name || '-'}
+            </div>
+            <div className="mb-2">
+              <span className="font-bold">Amount:</span> ₹{orderToDelete?.finalAmount || orderToDelete?.totalAmount || '-'}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteOrder}>
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

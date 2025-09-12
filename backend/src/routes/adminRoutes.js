@@ -45,6 +45,7 @@ router.put('/restaurants/:id', adminController.updateRestaurant);
 // Order Management
 router.get('/orders', verifyToken, adminController.listAllOrders);
 router.get('/orders/:id', verifyToken, adminController.viewOrderDetails);
+router.delete('/orders/:id', verifyToken, adminController.deleteOrder);
 router.patch('/orders/:id/assign-delivery', verifyToken, adminController.assignDeliveryPartner);
 // Restore the proper verifyToken middleware for production
 router.patch('/orders/:id/status', verifyToken, adminController.updateOrderStatus);
