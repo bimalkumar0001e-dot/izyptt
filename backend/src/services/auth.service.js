@@ -27,16 +27,7 @@ exports.verifyOTP = async (phone, otp) => {
 exports.sendOtp = async (phone, role = 'customer') => {
   // Generate a 6-digit OTP
   const otp = await exports.generateOTP(phone);
-  if (role === 'customer') {
-    // Only send SMS for new/unverified customers
-    await sendSMS(phone, otp);
-  } else if (role === 'display_only') {
-    // For returning verified customers, do NOT send SMS, just return OTP
-    // No action needed
-  } else if (role === 'restaurant' || role === 'delivery') {
-    // For restaurant/delivery registration, do NOT send SMS, just return OTP
-    // No action needed
-  }
-  // For admin, do NOT send SMS, just return OTP
+  // Do NOT send SMS for any role, just return OTP
+  // This disables Fast2SMS for all roles
   return otp;
 };

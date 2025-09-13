@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AppHeader } from '@/components/AppHeader';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,11 @@ const Login: React.FC = () => {
   // Add these states for delivery/restaurant
   const [deliveryShowOtpScreen, setDeliveryShowOtpScreen] = useState(false);
   const [restaurantShowOtpScreen, setRestaurantShowOtpScreen] = useState(false);
+
+  // FIX: Move useEffect to top level
+  useEffect(() => {
+    if (lastOtp) setOtp(lastOtp);
+  }, [lastOtp]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +63,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const res = await sendOtp(phone, 'admin');
+      const res = await sendOtp(phone); // FIXED
       if (res && res.otp) setLastOtp(res.otp);
       setShowOtpScreen(true);
       setError('');
@@ -76,7 +81,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const data = await verifyOtp(phone, otp, name, 'admin'); // Pass role
+      const data = await verifyOtp(phone, otp, name); // FIXED
       if (data.user && data.user.role === 'admin') {
         navigate('/admin/dashboard');
       }
@@ -111,7 +116,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const res = await sendOtp(phone, 'customer');
+      const res = await sendOtp(phone); // FIXED: only pass phone
       if (res && res.otp) setLastOtp(res.otp);
       setShowOtpScreen(true);
       setError('');
@@ -129,7 +134,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const data = await verifyOtp(phone, otp, name, 'customer'); // Pass role for consistency
+      const data = await verifyOtp(phone, otp, name); // FIXED: only pass phone, otp, name
       if (data.user && data.user.role === 'customer') {
         navigate('/home');
       }
@@ -152,7 +157,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const res = await sendOtp(phone, 'delivery');
+      const res = await sendOtp(phone); // FIXED
       if (res && res.otp) setLastOtp(res.otp);
       setDeliveryShowOtpScreen(true);
       setError('');
@@ -170,7 +175,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const data = await verifyOtp(phone, otp, name, 'delivery'); // Pass role
+      const data = await verifyOtp(phone, otp, name); // FIXED
       if (data.user && data.user.role === 'delivery') {
         navigate('/delivery/dashboard');
       }
@@ -195,7 +200,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const res = await sendOtp(phone, 'restaurant');
+      const res = await sendOtp(phone); // FIXED
       if (res && res.otp) setLastOtp(res.otp);
       setRestaurantShowOtpScreen(true);
       setError('');
@@ -213,7 +218,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const data = await verifyOtp(phone, otp, name, 'restaurant'); // Pass role
+      const data = await verifyOtp(phone, otp, name); // FIXED
       if (data.user && data.user.role === 'restaurant') {
         navigate('/restaurant/dashboard');
       }

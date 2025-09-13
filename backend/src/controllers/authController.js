@@ -82,16 +82,10 @@ exports.sendOtp = async (req, res) => {
             userRole = user ? user.role : 'customer';
         }
 
-        // Special handling for customer: check if already verified
+        // Special handling for customer: always generate and return OTP, do NOT send SMS
         if (userRole === 'customer') {
-            const user = await User.findOne({ phone, role: 'customer' });
-            if (user && user.isVerified) {
-                const otp = await sendOtp(phone, 'display_only');
-                return res.status(200).json({ message: 'OTP (for returning customer)', otp });
-            } else {
-                const otp = await sendOtp(phone, 'customer');
-                return res.status(200).json({ message: 'OTP sent successfully', otp: process.env.NODE_ENV === 'development' ? otp : undefined });
-            }
+            const otp = await sendOtp(phone, 'customer');
+            return res.status(200).json({ message: 'OTP generated. Please enter the code shown below.', otp });
         }
 
         // --- Role-based login gating for restaurant/delivery ---
