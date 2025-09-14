@@ -116,8 +116,16 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
+<<<<<<< HEAD
       const res = await sendOtp(phone); // FIXED: only pass phone
       if (res && res.otp) setLastOtp(res.otp);
+=======
+      const res = await sendOtp(phone, 'customer');
+      if (res && res.otp) {
+        setLastOtp(res.otp);
+        setOtp(res.otp); // Autofill OTP input
+      }
+>>>>>>> 561765f (final1)
       setShowOtpScreen(true);
       setError('');
     } catch (error: any) {

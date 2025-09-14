@@ -17,6 +17,8 @@ import { toast } from '@/utils/toast';
 import axios from 'axios';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { BACKEND_URL } from '@/utils/utils';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const API_BASE = `${BACKEND_URL}/api`;
 
@@ -179,10 +181,49 @@ const CustomerManagement: React.FC = () => {
     setEnableLoading(false);
   };
 
+  // Handle export report
+  const handleExportReport = () => {
+    const doc = new jsPDF();
+    doc.text('Customers Report', 14, 16);
+
+    const tableColumn = [
+      'Name',
+      'Email',
+      'Phone',
+      'Customer ID',
+      'Status',
+      'Joined',
+      'Total Orders',
+      'Total Spent'
+    ];
+    const tableRows = filteredCustomers.map(customer => [
+      customer.name || '-',
+      customer.email || '-',
+      customer.phone || '-',
+      customer._id || '-',
+      customer.status || '-',
+      customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : '-',
+      customer.totalOrders ?? '-',
+      typeof customer.totalSpent === 'number' ? `₹${customer.totalSpent.toFixed(2)}` : '₹0.00'
+    ]);
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 22,
+      styles: { fontSize: 9 }
+    });
+
+    doc.save('customers_report.pdf');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Customer Management</h1>
+        <Button onClick={handleExportReport} variant="outline">
+          Export Report
+        </Button>
       </div>
 
       <Card>
