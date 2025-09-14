@@ -450,6 +450,7 @@ const OrdersManagement: React.FC = () => {
 
     // Prepare table data
     const tableColumn = [
+      'S.No.', // Add serial number column
       'Order ID',
       'Customer',
       'Phone', // Added phone column
@@ -459,7 +460,8 @@ const OrdersManagement: React.FC = () => {
       'Items', // Added items column
       'Status'
     ];
-    const tableRows = filteredOrders.map(order => [
+    const tableRows = filteredOrders.map((order, idx) => [
+      idx + 1, // Serial number
       order.orderNumber ? `#${order.orderNumber}` : (order._id ? `#${order._id}` : '-'),
       order.customer?.name || '-',
       order.customer?.phone || order.customerPhone || '-', // Phone
@@ -476,24 +478,18 @@ const OrdersManagement: React.FC = () => {
       order.status
     ]);
 
-    // If filtered by delivered or cancelled, calculate total amount
-    if (statusFilter === 'delivered' || statusFilter === 'cancelled') {
-      const totalAmount = filteredOrders.reduce((sum, order) => {
-        if (typeof order.finalAmount === 'number' && !isNaN(order.finalAmount)) {
-          return sum + order.finalAmount;
-        } else if (typeof order.totalAmount === 'number' && !isNaN(order.totalAmount)) {
-          return sum + order.totalAmount;
-        }
-        return sum;
-      }, 0);
-
-      // Add summary row
-      tableRows.push([
-        '', '', '', '', 'Total Amount',
-        `₹${Math.ceil(totalAmount)}`,
-        ''
-      ]);
-    }
+    // Add summary row for total orders and total amount
+    const totalAmount = filteredOrders.reduce((sum, order) => {
+      if (typeof order.finalAmount === 'number' && !isNaN(order.finalAmount)) {
+        return sum + Math.ceil(order.finalAmount);
+      } else if (typeof order.totalAmount === 'number' && !isNaN(order.totalAmount)) {
+        return sum + Math.ceil(order.totalAmount);
+      }
+      return sum;
+    }, 0);
+    tableRows.push([
+      '', '', '', '', '', 'Total Orders', `${filteredOrders.length}`, `₹${totalAmount}`, ''
+    ]);
 
     autoTable(doc, {
       head: [tableColumn],
