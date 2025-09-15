@@ -28,6 +28,7 @@ export interface User {
 
 export interface UserAddress {
   id: string;
+  _id?: string; // <-- add MongoDB _id for backend matching
   title: string;
   fullAddress: string;
   landmark?: string;

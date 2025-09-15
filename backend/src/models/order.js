@@ -65,7 +65,10 @@ const orderSchema = new mongoose.Schema({
     landmark: { type: String },
     city: { type: String, required: true },
     state: { type: String, required: true },
-    pincode: { type: String, required: true }
+    pincode: { type: String, required: true },
+    title: { type: String }, // <-- ensure title is present
+    fullAddress: { type: String }, // <-- ensure fullAddress is present
+    distance: { type: Number }
   },
   paymentMethod: {
     type: String,

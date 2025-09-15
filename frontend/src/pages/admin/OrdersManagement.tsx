@@ -839,13 +839,22 @@ const OrdersManagement: React.FC = () => {
                   <span className="font-bold">Phone:</span> {orderDetails.customer?.phone || orderDetails.customerPhone || '-'}
                 </div>
                 <div className="mb-2">
-                  <span className="font-bold">Delivery Partner:</span> {orderDetails.deliveryPartner?.name || '-'}
-                </div>
-                <div className="mb-2">
-                  <span className="font-bold">Delivery Address:</span>{" "}
-                  {orderDetails.deliveryAddress
-                    ? `${orderDetails.deliveryAddress.address || ''}${orderDetails.deliveryAddress.landmark ? ', ' + orderDetails.deliveryAddress.landmark : ''}${orderDetails.deliveryAddress.city ? ', ' + orderDetails.deliveryAddress.city : ''}${orderDetails.deliveryAddress.state ? ', ' + orderDetails.deliveryAddress.state : ''}${orderDetails.deliveryAddress.pincode ? ' - ' + orderDetails.deliveryAddress.pincode : ''}`.replace(/^,\s*/, '')
-                    : orderDetails.address || orderDetails.deliveryAddress || "-"}
+                  <strong>Delivery Address:</strong>{' '}
+                  {orderDetails?.deliveryAddress?.title && (
+                    <span className="font-semibold">{orderDetails.deliveryAddress.title}</span>
+                  )}
+                  <div>
+                    {orderDetails?.deliveryAddress?.fullAddress || orderDetails?.deliveryAddress?.address || "No address specified"}
+                  </div>
+                  {orderDetails?.deliveryAddress?.landmark && (
+                    <div>Landmark: {orderDetails.deliveryAddress.landmark}</div>
+                  )}
+                  <div>
+                    {[orderDetails?.deliveryAddress?.city, orderDetails?.deliveryAddress?.state, orderDetails?.deliveryAddress?.pincode].filter(Boolean).join(", ")}
+                  </div>
+                  {orderDetails?.deliveryAddress?.distance !== undefined && orderDetails?.deliveryAddress?.distance !== null && !isNaN(Number(orderDetails.deliveryAddress.distance)) && (
+                    <div>Distance: {orderDetails.deliveryAddress.distance} km</div>
+                  )}
                 </div>
                 <div className="mb-2">
                   <span className="font-bold">Payment Mode:</span> {orderDetails.paymentMethod}

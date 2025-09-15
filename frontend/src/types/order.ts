@@ -47,12 +47,14 @@ export interface Order {
   status: OrderStatus;
   statusUpdates: OrderStatusUpdate[];
   deliveryAddress: {
+    title?: string;
     fullAddress: string;
     address?: string; // Add address for compatibility
     landmark?: string;
     city: string;
     state?: string; // Add state for compatibility
     pincode: string;
+    distance?: number;
   };
   orderDate: Date;
   deliveryDate?: Date;

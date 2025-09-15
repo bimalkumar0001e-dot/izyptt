@@ -321,19 +321,30 @@ const TrackOrder: React.FC = () => {
             {/* Show complete address */}
             <div className="flex items-start justify-between mt-1">
               <span className="text-sm text-gray-500">Delivery Address:</span>
-              <span className="text-sm font-medium text-right break-all">
-                {/* Show full address with landmark, city, state, pincode */}
-                {order.deliveryAddress?.fullAddress ||
-                  [
-                    order.deliveryAddress?.address,
-                    order.deliveryAddress?.landmark,
-                    order.deliveryAddress?.city,
-                    order.deliveryAddress?.state,
-                    order.deliveryAddress?.pincode
-                  ]
-                    .filter(Boolean)
-                    .join(', ') || 'N/A'}
-              </span>
+              <div className="text-sm font-medium text-right">
+                {/* Show title if available */}
+                {order.deliveryAddress?.title && (
+                  <p className="font-semibold">{order.deliveryAddress.title}</p>
+                )}
+                {/* Show full address (prefer fullAddress, fallback to address) */}
+                <p>
+                  {order.deliveryAddress?.fullAddress || order.deliveryAddress?.address || "No address specified"}
+                </p>
+                {/* Show landmark if available */}
+                {order.deliveryAddress?.landmark && (
+                  <p>Landmark: {order.deliveryAddress.landmark}</p>
+                )}
+                {/* Show city, state, pincode */}
+                <p>
+                  {[order.deliveryAddress?.city, order.deliveryAddress?.state, order.deliveryAddress?.pincode].filter(Boolean).join(", ") || "Location details not available"}
+                </p>
+                {/* Show distance if available */}
+                {order.deliveryAddress?.distance !== undefined && order.deliveryAddress?.distance !== null && !isNaN(Number(order.deliveryAddress.distance)) && (
+                  <p className="mt-1">
+                    <span className="font-semibold">Distance:</span> {order.deliveryAddress.distance} km
+                  </p>
+                )}
+              </div>
             </div>
             {/* Show delivery time */}
             <div className="flex items-center justify-between mt-1">

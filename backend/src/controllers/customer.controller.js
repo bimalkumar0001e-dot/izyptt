@@ -620,15 +620,35 @@ exports.placeNewOrder = async (req, res) => {
       appliedOffer: appliedOfferId, // Include the applied offer ID
     };
 
-    // Ensure deliveryAddress.title is set (for old clients or fallback)
-    if (orderData.deliveryAddress && !orderData.deliveryAddress.title) {
-      // Try to get from user's address book
-      const userAddress = req.user.addresses?.find(addr =>
-        addr.fullAddress === orderData.deliveryAddress.address ||
-        addr.fullAddress === orderData.deliveryAddress.fullAddress
-      );
-      if (userAddress && userAddress.title) {
-        orderData.deliveryAddress.title = userAddress.title;
+    // Ensure deliveryAddress.title and distance are set (for old clients or fallback)
+    if (orderData.deliveryAddress) {
+      // Try to get from user's address book by _id if available, else by fullAddress
+      let userAddress;
+      if (orderData.deliveryAddress._id) {
+        userAddress = req.user.addresses?.find(addr => addr._id?.toString() === orderData.deliveryAddress._id?.toString());
+      }
+      if (!userAddress) {
+        userAddress = req.user.addresses?.find(addr =>
+          addr.fullAddress === orderData.deliveryAddress.address ||
+          addr.fullAddress === orderData.deliveryAddress.fullAddress
+        );
+      }
+      if (userAddress) {
+        if (!orderData.deliveryAddress.title && userAddress.title) {
+          orderData.deliveryAddress.title = userAddress.title;
+        }
+        if (!orderData.deliveryAddress.fullAddress && userAddress.fullAddress) {
+          orderData.deliveryAddress.fullAddress = userAddress.fullAddress;
+        }
+        if ((orderData.deliveryAddress.distance === undefined || orderData.deliveryAddress.distance === null) && userAddress.distance !== undefined) {
+          orderData.deliveryAddress.distance = userAddress.distance;
+        }
+        // Optionally fill other fields if missing
+        if (!orderData.deliveryAddress.city && userAddress.city) orderData.deliveryAddress.city = userAddress.city;
+        if (!orderData.deliveryAddress.state && userAddress.state) orderData.deliveryAddress.state = userAddress.state;
+        if (!orderData.deliveryAddress.pincode && userAddress.pincode) orderData.deliveryAddress.pincode = userAddress.pincode;
+        if (!orderData.deliveryAddress.landmark && userAddress.landmark) orderData.deliveryAddress.landmark = userAddress.landmark;
+        if (!orderData.deliveryAddress.address && userAddress.address) orderData.deliveryAddress.address = userAddress.address;
       }
     }
 
@@ -707,6 +727,7 @@ exports.placeNewOrder = async (req, res) => {
       } catch {}
     }
 
+    // Map/rename fields for frontend
     const mappedOrder = {
       id: order._id,
       orderNumber: order.orderNumber,
@@ -721,14 +742,22 @@ exports.placeNewOrder = async (req, res) => {
       discount: discount,
       total: order.finalAmount || order.totalAmount || 0,
       paymentMethod: order.paymentMethod,
-      deliveryAddress: order.deliveryAddress,
+      // Ensure all address fields are present for frontend
+      deliveryAddress: {
+        title: order.deliveryAddress?.title || '',
+        fullAddress: order.deliveryAddress?.fullAddress || order.deliveryAddress?.address || '',
+        address: order.deliveryAddress?.address || '',
+        landmark: order.deliveryAddress?.landmark || '',
+        city: order.deliveryAddress?.city || '',
+        state: order.deliveryAddress?.state || '',
+        pincode: order.deliveryAddress?.pincode || '',
+        distance: order.deliveryAddress?.distance !== undefined ? order.deliveryAddress.distance : null,
+      },
       status: order.status,
       createdAt: order.createdAt,
-      // Add these fields for frontend
       deliveryFee: order.deliveryFee,
       handlingCharge: order.handlingCharge,
       taxAmount: order.taxAmount,
-      ...order.toObject()
     };
 
     res.status(201).json({ message: 'Order placed', order: mappedOrder });
@@ -812,7 +841,17 @@ exports.viewOrderDetails = async (req, res) => {
       items: itemsWithImages,
       total: order.finalAmount || order.totalAmount || 0,
       paymentMethod: order.paymentMethod,
-      deliveryAddress: order.deliveryAddress,
+      // Ensure all address fields are present for frontend
+      deliveryAddress: {
+        title: order.deliveryAddress?.title || '',
+        fullAddress: order.deliveryAddress?.fullAddress || order.deliveryAddress?.address || '',
+        address: order.deliveryAddress?.address || '',
+        landmark: order.deliveryAddress?.landmark || '',
+        city: order.deliveryAddress?.city || '',
+        state: order.deliveryAddress?.state || '',
+        pincode: order.deliveryAddress?.pincode || '',
+        distance: order.deliveryAddress?.distance !== undefined ? order.deliveryAddress.distance : null,
+      },
       status: order.status,
       createdAt: order.createdAt,
       ...order.toObject() // fallback for any extra fields needed

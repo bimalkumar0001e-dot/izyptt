@@ -249,12 +249,13 @@ const Checkout: React.FC = () => {
         total: cart.total,
         paymentMethod, // <-- this is now the code, e.g. "cash", "upi", "online"
         deliveryAddress: {
+          _id: address._id, // <-- include address _id for backend matching
           address: address.fullAddress || 'Unknown Address',
           landmark: address.landmark || '',
           city: address.city,
           state: (address as any).state || 'Bihar',
           pincode: address.pincode,
-          distance: address.distance // <-- include distance
+          distance: address.distance
         },
         appliedOffer: appliedOffer ? appliedOffer.code : undefined
       };
