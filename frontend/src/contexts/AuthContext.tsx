@@ -14,7 +14,7 @@ interface AuthContextProps {
   logout: () => void;
   register: (userData: { name: string; email: string; password: string; role: UserRole; phone: string }) => Promise<void>;
   sendOtp: (phone: string) => Promise<{ message: string; otp?: string }>;
-  verifyOtp: (phone: string, otp: string, name?: string) => Promise<any>;
+  verifyOtp: (phone: string, otp: string, name?: string, role?: UserRole) => Promise<any>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   forgotPassword: (email: string, role: UserRole) => Promise<boolean>;
   approveUser: (userId: string, role: 'restaurant' | 'delivery') => Promise<void>;

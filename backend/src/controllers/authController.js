@@ -208,7 +208,10 @@ exports.verifyOtp = async (req, res) => {
         // Restaurant/Delivery OTP login (not registration)
         else if (role === 'restaurant' || role === 'delivery') {
             // Defensive: fallback to checking all roles if role is missing
-            let user = await User.findOne({ phone, role: role || { $in: ['restaurant', 'delivery'] } });
+            let user = await User.findOne({ phone, role: role });
+            if (!user) {
+                user = await User.findOne({ phone, role: { $in: ['restaurant', 'delivery'] } });
+            }
             if (!user) {
                 return res.status(404).json({ message: 'Your number is not registered yet. Please register first.' });
             }

@@ -178,7 +178,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const data = await verifyOtp(phone, otp, name); // FIXED
+      const data = await verifyOtp(phone, otp, name, 'delivery'); // Now valid
       if (data.user && data.user.role === 'delivery') {
         navigate('/delivery/dashboard');
       }
@@ -221,7 +221,7 @@ const Login: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const data = await verifyOtp(phone, otp, name); // FIXED
+      const data = await verifyOtp(phone, otp, name, 'restaurant'); // Now valid
       if (data.user && data.user.role === 'restaurant') {
         navigate('/restaurant/dashboard');
       }
