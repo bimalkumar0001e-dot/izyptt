@@ -28,6 +28,10 @@ const TrackOrder: React.FC = () => {
   const [delayStart, setDelayStart] = useState<number | null>(null);
   const [deliveredElapsed, setDeliveredElapsed] = useState<number | null>(null);
 
+  // State for customer instructions
+  const [instructions, setInstructions] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => {
     if (!order || !order.createdAt) return;
     const orderPlacedTime = new Date(order.createdAt).getTime();
@@ -238,6 +242,33 @@ const TrackOrder: React.FC = () => {
       toast({ title: 'Failed to cancel order', description: 'Please try again.' });
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleSubmitInstructions = async () => {
+    if (!orderId || !instructions.trim()) return;
+    setSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${BACKEND_URL}/api/customer/orders/${orderId}/instructions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ instructions }),
+      });
+      const data = await res.json();
+      if (res.ok && data.order) {
+        setOrder(prev => ({
+          ...prev,
+          ...data.order,
+        }));
+        toast({ title: 'Instructions saved', description: 'Your instructions have been sent to the restaurant.' });
+      } else {
+        toast({ title: 'Failed to save instructions', description: data.message || 'Please try again.' });
+      }
+    } catch (err) {
+      toast({ title: 'Failed to save instructions', description: 'Please try again.' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -464,6 +495,32 @@ const TrackOrder: React.FC = () => {
               <span className="font-semibold">Reason:</span> {order.cancellationReason}
             </div>
           )}
+          {/* --- Add Customer Instructions Section --- */}
+          <div className="mt-4">
+            <label htmlFor="customerInstructions" className="block text-sm font-medium text-gray-700 mb-1">
+              Cooking Instructions for Restaurant:
+            </label>
+            <textarea
+              id="customerInstructions"
+              className="w-full border rounded px-3 py-2 min-h-[60px]"
+              placeholder="E.g., No onion, extra spicy, pack cutlery, etc."
+              value={order?.deliveryInstructions || instructions}
+              onChange={e => setInstructions(e.target.value)}
+              disabled={!!order?.deliveryInstructions}
+            />
+            {!order?.deliveryInstructions && (
+              <Button
+                className="mt-2"
+                disabled={instructions.trim().length === 0 || submitting}
+                onClick={handleSubmitInstructions}
+              >
+                {submitting ? 'Saving...' : 'Save Instructions'}
+              </Button>
+            )}
+            {order?.deliveryInstructions && (
+              <div className="mt-2 text-green-700 text-sm font-medium">Instructions saved and sent to restaurant.</div>
+            )}
+          </div>
           {/* Cancel Order Button */}
           <div className="flex flex-col items-end mt-6">
             <Button

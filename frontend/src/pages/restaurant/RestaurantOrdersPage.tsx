@@ -176,6 +176,14 @@ const OrdersPage: React.FC = () => {
               : order.address || order.deliveryAddress || "-"}
           </div>
           <div className="mb-2">
+            <span className="font-semibold">Cooking Instructions:</span>{' '}
+            {order.deliveryInstructions ? (
+              <span className="text-gray-800">{order.deliveryInstructions}</span>
+            ) : (
+              <span className="text-gray-400 italic">No instructions provided.</span>
+            )}
+          </div>
+          <div className="mb-2">
             <span className="font-semibold">Payment Mode:</span> {order.paymentMethod}
           </div>
           <div className="mb-2">

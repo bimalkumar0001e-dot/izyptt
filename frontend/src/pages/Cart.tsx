@@ -110,9 +110,9 @@ const Cart: React.FC = () => {
         
         <div className="flex-1 p-4 flex flex-col items-center justify-center">
           <img 
-            src="https://img.icons8.com/pastel-glyph/64/000000/empty-cart.png"
+            src="/empty_cart_illustration.png" // <-- Use your desired image path here
             alt="Empty Cart"
-            className="w-24 h-24 mb-4 opacity-50"
+            className="w-40 h-40 mb-4 opacity-90" // Larger and more visible
           />
           <h2 className="text-xl font-semibold text-gray-700">Your cart is empty</h2>
           <p className="text-gray-500 text-center mt-2 mb-4">

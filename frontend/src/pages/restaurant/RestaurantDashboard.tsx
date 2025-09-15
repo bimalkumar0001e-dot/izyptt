@@ -459,9 +459,29 @@ const RestaurantDashboard: React.FC = () => {
             </div>
             <div className="mb-2">
               <span className="font-semibold">Delivery Address:</span>{" "}
-              {selectedOrder.deliveryAddress
-                ? `${selectedOrder.deliveryAddress.address || ''}${selectedOrder.deliveryAddress.landmark ? ', ' + selectedOrder.deliveryAddress.landmark : ''}${selectedOrder.deliveryAddress.city ? ', ' + selectedOrder.deliveryAddress.city : ''}${selectedOrder.deliveryAddress.state ? ', ' + selectedOrder.deliveryAddress.state : ''}${selectedOrder.deliveryAddress.pincode ? ' - ' + selectedOrder.deliveryAddress.pincode : ''}`.replace(/^,\s*/, '')
-                : selectedOrder.address || selectedOrder.deliveryAddress || "-"}
+              {selectedOrder.deliveryAddress ? (
+                <>
+                  {selectedOrder.deliveryAddress.title && (
+                    <span className="font-semibold">{selectedOrder.deliveryAddress.title}</span>
+                  )}
+                  <div>
+                    {selectedOrder.deliveryAddress.fullAddress || selectedOrder.deliveryAddress.address || "No address specified"}
+                  </div>
+                  {selectedOrder.deliveryAddress.landmark && (
+                    <div>Landmark: {selectedOrder.deliveryAddress.landmark}</div>
+                  )}
+                  <div>
+                    {[selectedOrder.deliveryAddress.city, selectedOrder.deliveryAddress.state, selectedOrder.deliveryAddress.pincode].filter(Boolean).join(", ") || "Location details not available"}
+                  </div>
+                  {selectedOrder.deliveryAddress.distance !== undefined && selectedOrder.deliveryAddress.distance !== null && !isNaN(Number(selectedOrder.deliveryAddress.distance)) && (
+                    <div className="mt-1">
+                      <span className="font-semibold">Distance:</span> {selectedOrder.deliveryAddress.distance} km
+                    </div>
+                  )}
+                </>
+              ) : (
+                selectedOrder.address || selectedOrder.deliveryAddress || "-"
+              )}
             </div>
             <div className="mb-2">
               <span className="font-semibold">Payment Mode:</span> {selectedOrder.paymentMethod}

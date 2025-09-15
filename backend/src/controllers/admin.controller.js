@@ -279,6 +279,19 @@ exports.getCustomerOrderHistory = async (req, res) => {
   }
 };
 
+exports.deleteCustomer = async (req, res) => {
+  try {
+    const customerId = req.params.id;
+    const user = await User.findById(customerId);
+    if (!user) return res.status(404).json({ message: 'Customer not found' });
+    await User.deleteOne({ _id: customerId });
+    // Optionally: delete related orders, addresses, etc. if needed
+    res.json({ message: 'Customer deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting customer', error: err });
+  }
+};
+
 // Delivery Boy Management
 exports.getAllDeliveryBoys = async (req, res) => {
   try {

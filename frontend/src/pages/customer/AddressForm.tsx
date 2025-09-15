@@ -52,8 +52,8 @@ const AddressForm: React.FC = () => {
       setError('Please fill all required fields');
       return;
     }
-    if (pincode !== '852127') {
-      setError('Sorry, we are currently available only at pincode 852127');
+    if (pincode !== '852127' && pincode !== '852126') {
+      setError('Sorry, we are currently available only at pincode 852127 and 852126');
       return;
     }
     if (isNaN(Number(distance)) || Number(distance) <= 0) {

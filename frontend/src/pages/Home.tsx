@@ -17,6 +17,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import SectionCard from '@/components/SectionCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BACKEND_URL } from '@/utils/utils';
+import { useCart } from '@/contexts/CartContext';
 
 const API_BASE = `${BACKEND_URL}/api`;
 const UPLOADS_BASE = BACKEND_URL;
@@ -50,6 +51,13 @@ const Home: React.FC = () => {
   // --- Order Countdown Banner ---
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
   const [orderTimers, setOrderTimers] = useState<Record<string, { secondsLeft: number, isFirstTimer: boolean, percent: number, timerDisplay: string }>>({});
+
+  const { cart, addToCart, updateQuantity } = useCart();
+
+  const getCartItemId = (productId: string) => {
+    const item = cart.items?.find(i => i.product?._id === productId || i.product?.id === productId);
+    return item?._id;
+  };
 
   useEffect(() => {
     // Redirect if not authenticated or blocked/inactive
@@ -379,6 +387,23 @@ const Home: React.FC = () => {
     return () => clearInterval(interval);
   }, [activeOrders]);
 
+  useEffect(() => {
+    // Automatically slide products from right to left every 5 minutes
+    const interval = setInterval(() => {
+      setSections(prevSections => {
+        return prevSections.map(section => {
+          if (section.products && section.products.length > 1) {
+            // Move last product to the front (right to left)
+            const newProducts = [section.products[section.products.length - 1], ...section.products.slice(0, section.products.length - 1)];
+            return { ...section, products: newProducts };
+          }
+          return section;
+        });
+      });
+    }, 300000); // 5 minutes in ms
+    return () => clearInterval(interval);
+  }, []);
+
   function formatTimer(secs: number) {
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
     const s = (secs % 60).toString().padStart(2, '0');
@@ -443,6 +468,23 @@ const Home: React.FC = () => {
       typeof item.category === 'string' &&
       !nonVegCategories.includes(item.category.trim().toLowerCase())
   );
+
+  const handleAddToCart = (product: any) => {
+    addToCart(product, 1);
+  };
+
+  const handleUpdateCartQuantity = (productId: string, quantity: number) => {
+    // Find cart item by productId
+    const item = cart.items?.find((i: any) => i.product?._id === productId || i.product?.id === productId);
+    if (item) {
+      updateQuantity(item._id, quantity); // Use cart item _id
+    }
+  };
+
+  const getCartQuantity = (productId: string) => {
+    const item = cart.items?.find((i: any) => i.product?._id === productId || i.product?.id === productId);
+    return item ? item.quantity : 0;
+  };
 
   return (
     <div className="app-container bg-gray-50">
@@ -741,6 +783,18 @@ const Home: React.FC = () => {
                             restaurant: item.restaurantName
                           }}
                           hideAddToCart={isSiteDisabled}
+                          quantity={getCartQuantity(item._id)}
+                          cartItemId={getCartItemId(item._id)}
+                          onAdd={() => handleAddToCart(item)}
+                          onIncrease={(cartItemId, product) => handleUpdateCartQuantity(item._id || item.id, getCartQuantity(item._id) + 1)}
+                          onDecrease={(cartItemId, product) => {
+                            const quantity = getCartQuantity(item._id);
+                            if (quantity === 1) {
+                              updateQuantity(cartItemId, 0); // Remove from cart
+                            } else {
+                              handleUpdateCartQuantity(item._id || item.id, quantity - 1);
+                            }
+                          }}
                         />
                       </div>
                     ))
@@ -793,6 +847,18 @@ const Home: React.FC = () => {
                             restaurant: item.restaurantName
                           }}
                           hideAddToCart={isSiteDisabled}
+                          quantity={getCartQuantity(item._id)}
+                          cartItemId={getCartItemId(item._id)}
+                          onAdd={() => handleAddToCart(item)}
+                          onIncrease={(cartItemId, product) => handleUpdateCartQuantity(item._id || item.id, getCartQuantity(item._id) + 1)}
+                          onDecrease={(cartItemId, product) => {
+                            const quantity = getCartQuantity(item._id);
+                            if (quantity === 1) {
+                              updateQuantity(cartItemId, 0); // Remove from cart
+                            } else {
+                              handleUpdateCartQuantity(item._id || item.id, quantity - 1);
+                            }
+                          }}
                         />
                       </div>
                     ))
@@ -828,18 +894,32 @@ const Home: React.FC = () => {
                 {section.products.length === 0 ? (
                   <div className="text-gray-400 text-center py-4">No products in this section.</div>
                 ) : (
-                  (sectionProductOrders[section._id] || section.products).map((product: any) => (
-                    <div key={product._id} className="min-w-[180px] max-w-[220px]">
-                      <ProductCard
-                        product={{
-                          ...product,
-                          id: product._id,
-                          restaurant: product.restaurantName || product.restaurant || ''
-                        }}
-                        hideAddToCart={isSiteDisabled}
-                      />
-                    </div>
-                  ))
+                  (sectionProductOrders[section._id] || section.products).map((product: any) => {
+                    const quantity = getCartQuantity(product._id);
+                    return (
+                      <div key={product._id} className="min-w-[180px] max-w-[220px]">
+                        <ProductCard
+                          product={{
+                            ...product,
+                            id: product._id,
+                            restaurant: product.restaurantName || product.restaurant || ''
+                          }}
+                          hideAddToCart={isSiteDisabled}
+                          quantity={quantity}
+                          cartItemId={getCartItemId(product._id)}
+                          onAdd={() => handleAddToCart(product)}
+                          onIncrease={(cartItemId, product) => handleUpdateCartQuantity(product._id || product.id, quantity + 1)}
+                          onDecrease={(cartItemId, product) => {
+                            if (quantity === 1) {
+                              updateQuantity(cartItemId, 0); // Remove from cart
+                            } else {
+                              handleUpdateCartQuantity(product._id || product.id, quantity - 1);
+                            }
+                          }}
+                        />
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -897,6 +977,21 @@ const Home: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Floating Cart Options - show only if cart has 1 or more items */}
+        {cart.items.length > 0 && (
+          <div className="fixed left-1/2 -translate-x-1/2 bottom-24 z-50 flex flex-col items-center gap-4 pointer-events-none">
+            <div className="flex flex-col gap-4 pointer-events-auto">
+              <Button
+                className="bg-app-primary text-white font-bold rounded-full shadow-lg px-8 py-4 text-lg"
+                onClick={() => navigate('/cart')}
+                style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }}
+              >
+                View Cart ({cart.items.length})
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Section Products Modal */}
         <Dialog open={showSectionModal} onOpenChange={setShowSectionModal}>

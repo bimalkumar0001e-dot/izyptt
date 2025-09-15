@@ -23,6 +23,7 @@ router.get('/customers', adminController.getAllCustomers);
 router.patch('/customers/:id/activate', adminController.activateDeactivateCustomer);
 router.get('/customers/:id/orders', adminController.getCustomerOrderHistory);
 router.get('/customers/:id/pickups', adminController.getCustomerPickupHistory); // Added route for pickup history
+router.delete('/customers/:id', adminController.deleteCustomer);
 
 // Delivery Boy Management
 router.get('/delivery-boys', adminController.getAllDeliveryBoys);

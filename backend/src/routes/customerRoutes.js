@@ -48,6 +48,7 @@ router.get('/orders/:id/track', verifyToken, customerController.trackOrderStatus
 router.delete('/orders/:id', verifyToken, customerController.cancelOrder);
 router.post('/orders/:id/cancel', verifyToken, customerController.cancelOrder);
 router.post('/orders/:id/rate', verifyToken, customerController.rateDeliveredOrder);
+router.post('/orders/:id/instructions', verifyToken, customerController.addOrderInstructions);
 
 // Add product review for an order item (single image)
 router.post(

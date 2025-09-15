@@ -895,6 +895,14 @@ const OrdersManagement: React.FC = () => {
                     <span className="font-bold text-red-500">Cancellation Reason:</span> {orderDetails.cancellationReason}
                   </div>
                 )}
+                <div className="mb-2">
+                  <span className="font-semibold">Customer Instructions:</span>{' '}
+                  {orderDetails.deliveryInstructions ? (
+                    <span className="text-gray-800">{orderDetails.deliveryInstructions}</span>
+                  ) : (
+                    <span className="text-gray-400 italic">No instructions provided.</span>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="text-gray-500">No details found.</div>

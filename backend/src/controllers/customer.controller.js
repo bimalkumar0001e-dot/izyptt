@@ -907,6 +907,18 @@ exports.rateDeliveredOrder = async (req, res) => {
   }
 };
 
+exports.addOrderInstructions = async (req, res) => {
+  try {
+    const order = await Order.findOne({ _id: req.params.id, customer: req.user.id });
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    order.deliveryInstructions = req.body.instructions;
+    await order.save();
+    res.json({ message: 'Instructions updated', deliveryInstructions: order.deliveryInstructions });
+  } catch (err) {
+    res.status(500).json({ message: 'Error saving instructions', error: err });
+  }
+};
+
 // ===== Payments =====
 exports.viewPaymentMethods = async (req, res) => {
   try {

@@ -311,7 +311,24 @@ const DeliveryDashboard: React.FC = () => {
                   <div className="w-full mb-2">
                     <span className="font-semibold">Address:</span>
                     <div className="text-base ml-2">
-                      {order.deliveryAddress?.address}, {order.deliveryAddress?.city}, {order.deliveryAddress?.pincode}
+                      {/* Show title if available */}
+                      {order.deliveryAddress?.title && (
+                        <span className="font-semibold">{order.deliveryAddress.title}</span>
+                      )}
+                      <div>
+                        {order.deliveryAddress?.fullAddress || order.deliveryAddress?.address || "No address specified"}
+                      </div>
+                      {order.deliveryAddress?.landmark && (
+                        <div>Landmark: {order.deliveryAddress.landmark}</div>
+                      )}
+                      <div>
+                        {[order.deliveryAddress?.city, order.deliveryAddress?.state, order.deliveryAddress?.pincode].filter(Boolean).join(", ") || "Location details not available"}
+                      </div>
+                      {order.deliveryAddress?.distance !== undefined && order.deliveryAddress?.distance !== null && !isNaN(Number(order.deliveryAddress.distance)) && (
+                        <div className="mt-1">
+                          <span className="font-semibold">Distance:</span> {order.deliveryAddress.distance} km
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-3 w-full mt-2">

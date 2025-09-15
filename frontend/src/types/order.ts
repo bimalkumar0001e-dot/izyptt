@@ -56,6 +56,7 @@ export interface Order {
     pincode: string;
     distance?: number;
   };
+  deliveryInstructions?: string;
   orderDate: Date;
   deliveryDate?: Date;
   isAssigned: boolean;

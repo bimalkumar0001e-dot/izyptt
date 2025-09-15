@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, ToggleLeft, ToggleRight, History, Truck, CreditCard, PlusCircle } from 'lucide-react';
+import { Search, Eye, ToggleLeft, ToggleRight, History, Truck, CreditCard, PlusCircle, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -179,6 +179,18 @@ const CustomerManagement: React.FC = () => {
       toast.error('Failed to enable payment method');
     }
     setEnableLoading(false);
+  };
+
+  // Handle delete customer
+  const handleDeleteCustomer = async (customer: any) => {
+    if (!window.confirm(`Are you sure you want to delete customer '${customer.name}'? This action cannot be undone.`)) return;
+    try {
+      await axios.delete(`${API_BASE}/admin/customers/${customer._id}`);
+      setCustomers(prev => prev.filter(c => c._id !== customer._id));
+      toast.success('Customer deleted successfully');
+    } catch (err) {
+      toast.error('Failed to delete customer');
+    }
   };
 
   // Handle export report
@@ -369,6 +381,14 @@ const CustomerManagement: React.FC = () => {
                             title="Enable Payment Method"
                           >
                             <PlusCircle className="h-4 w-4 text-green-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteCustomer(customer)}
+                            title="Delete Customer"
+                          >
+                            <Trash className="h-4 w-4 text-red-600" />
                           </Button>
                         </div>
                       </TableCell>
