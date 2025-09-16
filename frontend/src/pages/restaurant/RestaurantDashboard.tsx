@@ -351,6 +351,13 @@ const RestaurantDashboard: React.FC = () => {
                       <div className="mb-2">
                         <span className="font-semibold">Phone:</span> {order.customer?.phone || order.customerPhone || "-"}
                       </div>
+                      <div className="mb-2">
+                        <span className="font-semibold">Cooking Instructions:</span> {order.deliveryInstructions ? (
+                          <span className="ml-2 text-gray-800">{order.deliveryInstructions}</span>
+                        ) : (
+                          <span className="ml-2 text-gray-400">No instructions provided</span>
+                        )}
+                      </div>
                       <div className="w-full h-3 rounded-full bg-gray-200 mb-2 relative overflow-visible">
                         <div style={{ width: `${percent}%` }} className="h-3 rounded-full bg-gradient-to-r from-green-400 to-blue-400 transition-all duration-300" />
                         {/* Delivery boy image, same as TrackOrder/OrderConfirmation */}
