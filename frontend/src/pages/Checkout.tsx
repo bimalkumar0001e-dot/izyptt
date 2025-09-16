@@ -39,6 +39,34 @@ const Checkout: React.FC = () => {
   const [siteStatus, setSiteStatus] = useState<string>('online');
   const isSiteDisabled = siteStatus === 'offline' || siteStatus === 'maintenance';
   
+  // --- Delivery Time Rule Fetch ---
+  // Helper to check if selected address is missing distance
+  const getSelectedAddress = (): UserAddress | undefined => {
+    return user?.address?.find((addr: any) =>
+      (addr.id || addr._id)?.toString() === selectedAddressId?.toString()
+    );
+  };
+  const selectedAddress = getSelectedAddress();
+  const [deliveryTimeRule, setDeliveryTimeRule] = useState<{title:string,minDistance:number,maxDistance:number,minTime:number,maxTime:number}|null>(null);
+  useEffect(() => {
+    if (!selectedAddress || typeof selectedAddress.distance !== 'number') {
+      setDeliveryTimeRule(null);
+      return;
+    }
+    const fetchDeliveryTimeRule = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/admin/delivery-times`);
+        const rules = await res.json();
+        if (Array.isArray(rules)) {
+          const dist = Number(selectedAddress.distance);
+          const rule = rules.find((r:any) => dist >= r.minDistance && dist <= r.maxDistance);
+          setDeliveryTimeRule(rule || null);
+        }
+      } catch { setDeliveryTimeRule(null); }
+    };
+    fetchDeliveryTimeRule();
+  }, [selectedAddressId, selectedAddress?.distance]);
+
   // Redirect if not authenticated or blocked/inactive
   useEffect(() => {
     if (isLoading) return; // Wait for auth state to load
@@ -92,12 +120,6 @@ const Checkout: React.FC = () => {
       .catch(() => setSiteStatus('online'));
   }, [isAuthenticated, cart.items.length, user?.address, user?.status, navigate]);
 
-  const getSelectedAddress = (): UserAddress | undefined => {
-    return user?.address?.find((addr: any) =>
-      (addr.id || addr._id)?.toString() === selectedAddressId?.toString()
-    );
-  };
-  
   const handleApplyPromoCode = async (code: string): Promise<Offer | null> => {
     try {
       // Make an actual API call to validate the promo code
@@ -157,7 +179,6 @@ const Checkout: React.FC = () => {
   };
 
   // Helper to check if selected address is missing distance
-  const selectedAddress = getSelectedAddress();
   const isAddressMissingDistance = selectedAddress && (selectedAddress.distance === undefined || selectedAddress.distance === null || isNaN(Number(selectedAddress.distance)));
 
   const handleContinueToPayment = () => {
@@ -373,6 +394,24 @@ const Checkout: React.FC = () => {
               />
             </div>
             
+            {/* Show delivery time in address step if available */}
+            {currentStep === 'address' && deliveryTimeRule && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 mb-2 flex items-center justify-between">
+                <span className="text-sm text-gray-700 font-medium">Estimated Delivery Time:</span>
+                <span className="text-sm font-bold text-indigo-700">{deliveryTimeRule.minTime}-{deliveryTimeRule.maxTime} minutes</span>
+              </div>
+            )}
+            
+            <Separator />
+            
+            <div>
+              <OrderSummary 
+                cart={cart} 
+                appliedOffer={appliedOffer}
+                addressDistance={getSelectedAddress()?.distance}
+              />
+            </div>
+            
             <Separator />
             
             <div>
@@ -412,7 +451,7 @@ const Checkout: React.FC = () => {
                     <div>
                       <p className="font-medium">{getSelectedAddress()?.title || getAddressTitle(getSelectedAddress())}</p>
                       <p className="text-sm text-gray-600">
-                        {getSelectedAddress()?.fullAddress || getSelectedAddress()?.address || "No address specified"}
+                        {getSelectedAddress()?.fullAddress || "No address specified"}
                       </p>
                       {getSelectedAddress()?.landmark && (
                         <p className="text-sm text-gray-600">
@@ -467,10 +506,19 @@ const Checkout: React.FC = () => {
               />
             </div>
             
+            <Separator />
+            {/* Show original delivery time as per admin rule for selected address */}
+            {deliveryTimeRule && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 mb-2 flex items-center justify-between">
+                <span className="text-sm text-gray-700 font-medium">Estimated Delivery Time:</span>
+                <span className="text-sm font-bold text-indigo-700">{deliveryTimeRule.minTime}-{deliveryTimeRule.maxTime} minutes</span>
+              </div>
+            )}
+            <Separator />
             <OrderSummary 
               cart={cart} 
               appliedOffer={appliedOffer}
-              addressDistance={getSelectedAddress()?.distance}
+              addressDistance={selectedAddress?.distance}
             />
 
             <Button 

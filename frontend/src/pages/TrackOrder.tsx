@@ -32,6 +32,25 @@ const TrackOrder: React.FC = () => {
   const [instructions, setInstructions] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // --- Delivery Time Rule Fetch ---
+  const [deliveryTimeRule, setDeliveryTimeRule] = useState<{title:string,minDistance:number,maxDistance:number,minTime:number,maxTime:number}|null>(null);
+  useEffect(() => {
+    const fetchDeliveryTimeRule = async () => {
+      if (!order?.deliveryAddress?.distance) return;
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/admin/delivery-times`);
+        const rules = await res.json();
+        if (Array.isArray(rules)) {
+          const dist = Number(order.deliveryAddress.distance);
+          // Find rule where distance falls in range
+          const rule = rules.find((r:any) => dist >= r.minDistance && dist <= r.maxDistance);
+          setDeliveryTimeRule(rule || null);
+        }
+      } catch {}
+    };
+    fetchDeliveryTimeRule();
+  }, [order?.deliveryAddress?.distance]);
+
   useEffect(() => {
     if (!order || !order.createdAt) return;
     const orderPlacedTime = new Date(order.createdAt).getTime();
@@ -106,7 +125,76 @@ const TrackOrder: React.FC = () => {
   };
 
   // Calculate progress for progress bar
-  const totalSeconds = isFirstTimer ? 30 * 60 : 15 * 60;
+  // Calculate initial timer duration from deliveryTimeRule.maxTime (in minutes)
+  const initialTimerSeconds = deliveryTimeRule?.maxTime ? deliveryTimeRule.maxTime * 60 : 30 * 60;
+  const totalSeconds = isFirstTimer ? initialTimerSeconds : 15 * 60;
+
+  useEffect(() => {
+    if (!order || !order.createdAt) return;
+    const orderPlacedTime = new Date(order.createdAt).getTime();
+    const deliveredTime = order.deliveryDate ? new Date(order.deliveryDate).getTime() : null;
+    const now = Date.now();
+    const elapsed = Math.floor((now - orderPlacedTime) / 1000);
+
+    // If delivered or cancelled, freeze timer and stop interval
+    if (order.status === 'delivered' || ['cancelled','canceled'].includes((order.status || '').toLowerCase())) {
+      let deliveryDurationSecs = deliveredTime ? Math.floor((deliveredTime - orderPlacedTime) / 1000) : (elapsed > initialTimerSeconds ? initialTimerSeconds : elapsed);
+      setSecondsLeft(0);
+      setIsFirstTimer(false);
+      setDelayMessage(order.status === 'delivered'
+        ? `Your order has been delivered within ${formatTimer(deliveryDurationSecs)}.`
+        : 'Order has been cancelled.'
+      );
+      return;
+    }
+
+    // Initial timer: use admin max delivery time
+    if (elapsed < initialTimerSeconds) {
+      setSecondsLeft(initialTimerSeconds - elapsed);
+      setIsFirstTimer(true);
+      setDelayMessage('');
+      setDelayStart(null);
+    } else {
+      // After initial timer, start repeating 15 min timers until delivered/cancelled
+      setIsFirstTimer(false);
+      const delayElapsed = elapsed - initialTimerSeconds;
+      const current15MinCycle = delayElapsed % (15 * 60);
+      setSecondsLeft(15 * 60 - current15MinCycle);
+      setDelayMessage('Your order is slightly delayed.');
+      setDelayStart(orderPlacedTime + initialTimerSeconds * 1000 + Math.floor(delayElapsed / (15 * 60)) * 15 * 60 * 1000);
+    }
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const elapsed = Math.floor((now - orderPlacedTime) / 1000);
+      if (order.status === 'delivered' || ['cancelled','canceled'].includes((order.status || '').toLowerCase())) {
+        let deliveryDurationSecs = deliveredTime ? Math.floor((deliveredTime - orderPlacedTime) / 1000) : (elapsed > initialTimerSeconds ? initialTimerSeconds : elapsed);
+        setSecondsLeft(0);
+        setIsFirstTimer(false);
+        setDelayMessage(order.status === 'delivered'
+          ? `Your order has been delivered within ${formatTimer(deliveryDurationSecs)}.`
+          : 'Order has been cancelled.'
+        );
+        clearInterval(interval);
+        return;
+      }
+      if (elapsed < initialTimerSeconds) {
+        setSecondsLeft(initialTimerSeconds - elapsed);
+        setIsFirstTimer(true);
+        setDelayMessage('');
+        setDelayStart(null);
+      } else {
+        setIsFirstTimer(false);
+        const delayElapsed = elapsed - initialTimerSeconds;
+        const current15MinCycle = delayElapsed % (15 * 60);
+        setSecondsLeft(15 * 60 - current15MinCycle);
+        setDelayMessage('Your order is slightly delayed.');
+        setDelayStart(orderPlacedTime + initialTimerSeconds * 1000 + Math.floor(delayElapsed / (15 * 60)) * 15 * 60 * 1000);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [order, deliveryTimeRule?.maxTime]);
+
   // If delivered, freeze timer at delivery time
   let deliveryDurationSecs = null;
   if (order?.status === 'delivered' && order?.createdAt) {
@@ -380,7 +468,11 @@ const TrackOrder: React.FC = () => {
             {/* Show delivery time */}
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Delivery Time:</span>
-              <span className="text-sm font-semibold text-indigo-600 text-right">35-50 minutes</span>
+              <span className="text-sm font-semibold text-indigo-600 text-right">
+                {deliveryTimeRule
+                  ? `${deliveryTimeRule.minTime}-${deliveryTimeRule.maxTime} minutes`
+                  : 'N/A'}
+              </span>
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-gray-500">Order No:</span>

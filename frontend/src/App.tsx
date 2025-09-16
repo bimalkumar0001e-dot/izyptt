@@ -67,6 +67,7 @@ import ReturnInstructionManagement from "./pages/admin/ReturnInstructionManageme
 import AdminNotification from '@/pages/admin/AdminNotification';
 import CartManagement from "./pages/admin/CartManagement";
 import ProductReviewManage from "./pages/admin/ProductReviewManage";
+import DeliveryTimeManagement from "./pages/admin/DeliveryTimeManagement"; // <-- Import DeliveryTimeManagement
 
 // Restaurant Pages
 import RestaurantDashboard from "./pages/restaurant/RestaurantDashboard";
@@ -160,6 +161,7 @@ const App = () => (
                   <Route path="chargestaxesfees" element={<ChargesTaxesFeesManagement />} />
                   <Route path="return-instructions" element={<ReturnInstructionManagement />} /> {/* <-- Add this line */}
                   <Route path="cart-management" element={<CartManagement />} />
+                  <Route path="delivery-time-management" element={<DeliveryTimeManagement />} /> {/* <-- Add this line */}
                   <Route path="/admin/notifications" element={<AdminNotification />} />
                 </Route>
                 

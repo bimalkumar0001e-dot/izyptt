@@ -17,6 +17,7 @@ const ReturnInstructions = require('../models/ReturnInstructions.model');
 const MinCartAmount = require('../models/minCartAmount.model');
 const DeliveryFeeSection = require('../models/deliveryFeeSection.model');
 const ProductReview = require('../models/productReview.model');
+const DeliveryTime = require('../models/deliveryTime.model');
 
 
 
@@ -2244,3 +2245,50 @@ async function autoUpdateOrderStatuses() {
 
 // Start the interval when this module is loaded
 setInterval(autoUpdateOrderStatuses, AUTO_STATUS_INTERVAL_MS);
+
+// Delivery Time Management
+exports.createDeliveryTime = async (req, res) => {
+  try {
+    const { title, minDistance, maxDistance, minTime, maxTime } = req.body;
+    if (!title || minDistance == null || maxDistance == null || minTime == null || maxTime == null) {
+      return res.status(400).json({ error: 'All fields are required.' });
+    }
+    const deliveryTime = new DeliveryTime({ title, minDistance, maxDistance, minTime, maxTime });
+    await deliveryTime.save();
+    res.status(201).json(deliveryTime);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create delivery time.' });
+  }
+};
+
+exports.getAllDeliveryTimes = async (req, res) => {
+  try {
+    const times = await DeliveryTime.find().sort({ minDistance: 1 });
+    res.json(times);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch delivery times.' });
+  }
+};
+
+exports.updateDeliveryTime = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, minDistance, maxDistance, minTime, maxTime } = req.body;
+    const updated = await DeliveryTime.findByIdAndUpdate(id, { title, minDistance, maxDistance, minTime, maxTime }, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Delivery time not found.' });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update delivery time.' });
+  }
+};
+
+exports.deleteDeliveryTime = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await DeliveryTime.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ error: 'Delivery time not found.' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete delivery time.' });
+  }
+};

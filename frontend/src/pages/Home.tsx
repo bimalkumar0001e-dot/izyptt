@@ -324,6 +324,25 @@ const Home: React.FC = () => {
     fetchActiveOrders();
   }, [isAuthenticated, user]);
 
+  // --- Delivery Time Rule Cache ---
+  const [orderDeliveryTimeRules, setOrderDeliveryTimeRules] = useState<Record<string, {maxTime:number}>>({});
+
+  useEffect(() => {
+    // Fetch delivery time rule for each active order
+    const fetchRules = async () => {
+      const rulesRes = await fetch(`${API_BASE}/admin/delivery-times`);
+      const rules = await rulesRes.json();
+      const ruleMap: Record<string, {maxTime:number}> = {};
+      activeOrders.forEach(order => {
+        const dist = Number(order.deliveryAddress?.distance);
+        const rule = Array.isArray(rules) ? rules.find((r:any) => dist >= r.minDistance && dist <= r.maxDistance) : null;
+        if (rule) ruleMap[order._id || order.id] = { maxTime: rule.maxTime };
+      });
+      setOrderDeliveryTimeRules(ruleMap);
+    };
+    if (activeOrders.length > 0) fetchRules();
+  }, [activeOrders]);
+
   useEffect(() => {
     if (!activeOrders || activeOrders.length === 0) return;
     // Initialize timers for each order
@@ -333,18 +352,19 @@ const Home: React.FC = () => {
       const orderPlacedTime = new Date(order.createdAt).getTime();
       const now = Date.now();
       const elapsed = Math.floor((now - orderPlacedTime) / 1000);
+      const initialTimerSeconds = orderDeliveryTimeRules[order._id || order.id]?.maxTime ? orderDeliveryTimeRules[order._id || order.id].maxTime * 60 : 30 * 60;
       let secondsLeft = 0;
       let isFirstTimer = true;
-      if (elapsed < 30 * 60) {
-        secondsLeft = 30 * 60 - elapsed;
+      if (elapsed < initialTimerSeconds) {
+        secondsLeft = initialTimerSeconds - elapsed;
         isFirstTimer = true;
       } else {
-        const delayElapsed = elapsed - 30 * 60;
+        const delayElapsed = elapsed - initialTimerSeconds;
         const current15MinCycle = delayElapsed % (15 * 60);
         secondsLeft = 15 * 60 - current15MinCycle;
         isFirstTimer = false;
       }
-      const totalSeconds = isFirstTimer ? 30 * 60 : 15 * 60;
+      const totalSeconds = isFirstTimer ? initialTimerSeconds : 15 * 60;
       const percent = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 100);
       timers[order._id || order.id] = {
         secondsLeft,
@@ -362,18 +382,19 @@ const Home: React.FC = () => {
         const orderPlacedTime = new Date(order.createdAt).getTime();
         const now = Date.now();
         const elapsed = Math.floor((now - orderPlacedTime) / 1000);
+        const initialTimerSeconds = orderDeliveryTimeRules[order._id || order.id]?.maxTime ? orderDeliveryTimeRules[order._id || order.id].maxTime * 60 : 30 * 60;
         let secondsLeft = 0;
         let isFirstTimer = true;
-        if (elapsed < 30 * 60) {
-          secondsLeft = 30 * 60 - elapsed;
+        if (elapsed < initialTimerSeconds) {
+          secondsLeft = initialTimerSeconds - elapsed;
           isFirstTimer = true;
         } else {
-          const delayElapsed = elapsed - 30 * 60;
+          const delayElapsed = elapsed - initialTimerSeconds;
           const current15MinCycle = delayElapsed % (15 * 60);
           secondsLeft = 15 * 60 - current15MinCycle;
           isFirstTimer = false;
         }
-        const totalSeconds = isFirstTimer ? 30 * 60 : 15 * 60;
+        const totalSeconds = isFirstTimer ? initialTimerSeconds : 15 * 60;
         const percent = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 100);
         timers[order._id || order.id] = {
           secondsLeft,
@@ -385,7 +406,7 @@ const Home: React.FC = () => {
       setOrderTimers(timers);
     }, 1000);
     return () => clearInterval(interval);
-  }, [activeOrders]);
+  }, [activeOrders, orderDeliveryTimeRules]);
 
   useEffect(() => {
     // Automatically slide products from right to left every 5 minutes

@@ -220,4 +220,10 @@ router.post('/product-reviews', upload.array('images', 5), adminController.addPr
 router.put('/product-reviews/:id', upload.array('images', 5), adminController.updateProductReview);
 router.delete('/product-reviews/:id', adminController.deleteProductReview);
 
+// Delivery Time Management
+router.post('/delivery-times', adminController.createDeliveryTime);
+router.get('/delivery-times', adminController.getAllDeliveryTimes);
+router.put('/delivery-times/:id', adminController.updateDeliveryTime);
+router.delete('/delivery-times/:id', adminController.deleteDeliveryTime);
+
 module.exports = router;

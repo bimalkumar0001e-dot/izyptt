@@ -29,6 +29,7 @@ const DeliveryDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState<boolean>(true);
   const [orderTimers, setOrderTimers] = useState<{[orderId: string]: number}>({});
+  const [orderDeliveryTimeRules, setOrderDeliveryTimeRules] = useState<Record<string, {maxTime:number}>>({});
 
   // Timer effect: update every second for active orders
   useEffect(() => {
@@ -107,6 +108,24 @@ const DeliveryDashboard: React.FC = () => {
     };
     fetchBanners();
   }, [token, toast]);
+
+  // Fetch delivery time rule for each active order
+  useEffect(() => {
+    const fetchRules = async () => {
+      const rulesRes = await fetch(`${API_BASE}/admin/delivery-times`);
+      const rules = await rulesRes.json();
+      const ruleMap: Record<string, {maxTime:number}> = {};
+      orders.forEach(order => {
+        if (!['delivered','cancelled','canceled'].includes((order.status || '').toLowerCase())) {
+          const dist = Number(order.deliveryAddress?.distance);
+          const rule = Array.isArray(rules) ? rules.find((r:any) => dist >= r.minDistance && dist <= r.maxDistance) : null;
+          if (rule) ruleMap[order._id || order.id] = { maxTime: rule.maxTime };
+        }
+      });
+      setOrderDeliveryTimeRules(ruleMap);
+    };
+    if (orders.length > 0) fetchRules();
+  }, [orders]);
 
   // Calculate stats from orders
   const assignedOrders = orders.filter(order => ['out_for_delivery', 'on_the_way', 'packed', 'ready', 'picked'].includes(order.status)).length;
@@ -239,26 +258,26 @@ const DeliveryDashboard: React.FC = () => {
             .filter(order => !['delivered','cancelled','canceled'].includes((order.status || '').toLowerCase()))
             .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // oldest first
             .map(order => {
-              // 15-minute countdown timer logic
+              // Timer logic
               const orderPlacedTime = new Date(order.createdAt).getTime();
               const now = orderTimers[order._id] || Date.now();
               const elapsed = Math.floor((now - orderPlacedTime) / 1000);
-
+              const initialTimerSeconds = orderDeliveryTimeRules[order._id || order.id]?.maxTime ? orderDeliveryTimeRules[order._id || order.id].maxTime * 60 : 30 * 60;
               let secondsLeft = 0;
               let isFirstTimer = true;
               let delayed = false;
-              if (elapsed < 30 * 60) {
-                secondsLeft = 30 * 60 - elapsed;
+              if (elapsed < initialTimerSeconds) {
+                secondsLeft = initialTimerSeconds - elapsed;
                 isFirstTimer = true;
                 delayed = false;
               } else {
-                const delayElapsed = elapsed - 30 * 60;
+                const delayElapsed = elapsed - initialTimerSeconds;
                 const current15MinCycle = delayElapsed % (15 * 60);
                 secondsLeft = 15 * 60 - current15MinCycle;
                 isFirstTimer = false;
                 delayed = true;
               }
-              const totalSeconds = isFirstTimer ? 30 * 60 : 15 * 60;
+              const totalSeconds = isFirstTimer ? initialTimerSeconds : 15 * 60;
               const percent = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 100);
               const formatTimer = (secs: number) => {
                 const m = Math.floor(secs / 60).toString().padStart(2, '0');

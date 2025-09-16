@@ -113,9 +113,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed = false }) => {
       path: '/admin/return-instructions',
     },
     
-    
-
-
+    {
+      title: 'Delivery Time Management',
+      icon: <Package size={20} />,
+      path: '/admin/delivery-time-management',
+    },
 
     {
       title: 'Customer Support',

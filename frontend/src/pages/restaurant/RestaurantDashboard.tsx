@@ -33,6 +33,7 @@ const RestaurantDashboard: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [orderTimers, setOrderTimers] = useState<{[orderId: string]: number}>({});
+  const [orderDeliveryTimeRules, setOrderDeliveryTimeRules] = useState<Record<string, {maxTime:number}>>({});
 
   // Improve redirect logic to be more tolerant during loading
   useEffect(() => {
@@ -133,6 +134,24 @@ const RestaurantDashboard: React.FC = () => {
       });
     }, 1000);
     return () => clearInterval(interval);
+  }, [orders]);
+
+  // Fetch delivery time rule for each active order
+  useEffect(() => {
+    const fetchRules = async () => {
+      const rulesRes = await fetch(`${API_BASE}/admin/delivery-times`);
+      const rules = await rulesRes.json();
+      const ruleMap: Record<string, {maxTime:number}> = {};
+      orders.forEach(order => {
+        if (!['delivered','cancelled','canceled'].includes((order.status || '').toLowerCase())) {
+          const dist = Number(order.deliveryAddress?.distance);
+          const rule = Array.isArray(rules) ? rules.find((r:any) => dist >= r.minDistance && dist <= r.maxDistance) : null;
+          if (rule) ruleMap[order._id || order.id] = { maxTime: rule.maxTime };
+        }
+      });
+      setOrderDeliveryTimeRules(ruleMap);
+    };
+    if (orders.length > 0) fetchRules();
   }, [orders]);
 
   // Stats
@@ -279,20 +298,18 @@ const RestaurantDashboard: React.FC = () => {
                   const orderPlacedTime = new Date(order.createdAt).getTime();
                   const now = orderTimers[order._id] || Date.now();
                   let elapsed = Math.floor((now - orderPlacedTime) / 1000);
-
+                  const initialTimerSeconds = orderDeliveryTimeRules[order._id || order.id]?.maxTime ? orderDeliveryTimeRules[order._id || order.id].maxTime * 60 : 30 * 60;
                   let secondsLeft = 0;
                   let isFirstTimer = true;
                   let delayed = false;
                   let timerLabel = '';
-                  if (elapsed < 30 * 60) {
-                    // Initial 30 min timer
-                    secondsLeft = 30 * 60 - elapsed;
+                  if (elapsed < initialTimerSeconds) {
+                    secondsLeft = initialTimerSeconds - elapsed;
                     isFirstTimer = true;
                     delayed = false;
                     timerLabel = '';
                   } else {
-                    // After 30 min, repeat 15 min timer with "Order Delayed"
-                    const delayElapsed = elapsed - 30 * 60;
+                    const delayElapsed = elapsed - initialTimerSeconds;
                     const delayCycle = Math.floor(delayElapsed / (15 * 60));
                     const delayCycleElapsed = delayElapsed % (15 * 60);
                     secondsLeft = 15 * 60 - delayCycleElapsed;
@@ -300,7 +317,7 @@ const RestaurantDashboard: React.FC = () => {
                     delayed = true;
                     timerLabel = 'Order Delayed';
                   }
-                  const totalSeconds = isFirstTimer ? 30 * 60 : 15 * 60;
+                  const totalSeconds = isFirstTimer ? initialTimerSeconds : 15 * 60;
                   const percent = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 100);
                   const formatTimer = (secs: number) => {
                     const m = Math.floor(secs / 60).toString().padStart(2, '0');
