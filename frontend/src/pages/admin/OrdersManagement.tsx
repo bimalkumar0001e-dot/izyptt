@@ -639,25 +639,30 @@ const OrdersManagement: React.FC = () => {
                       <TableCell>
                         {getStatusBadge(order.status)}
                       </TableCell>
-                      {/* Delivery Partner */}
+                      {/* Delivery Partner (changeable) */}
                       <TableCell>
-                        {order.deliveryPartner && order.deliveryPartner.name
-                          ? order.deliveryPartner.name
-                          : (
+                        {order.deliveryPartner && order.deliveryPartner.name ? (
+                          <div className="flex items-center gap-2">
+                            <span>{order.deliveryPartner.name}</span>
                             <Button 
                               variant="outline" 
                               size="sm"
                               onClick={() => openAssignDialog(order._id)}
-                              disabled={
-                                order.status === 'delivered' ||
-                                order.status === 'canceled' ||
-                                order.status === 'cancelled'
-                              }
+                              disabled={order.status === 'delivered' || order.status === 'canceled' || order.status === 'cancelled'}
                             >
-                              Assign Partner
+                              Change
                             </Button>
-                          )
-                        }
+                          </div>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openAssignDialog(order._id)}
+                            disabled={order.status === 'delivered' || order.status === 'canceled' || order.status === 'cancelled'}
+                          >
+                            Assign Partner
+                          </Button>
+                        )}
                       </TableCell>
                       {/* Actions */}
                       <TableCell className="text-right">

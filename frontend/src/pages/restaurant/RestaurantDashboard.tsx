@@ -328,6 +328,12 @@ const RestaurantDashboard: React.FC = () => {
                       <div className="w-full text-left text-xs text-gray-700 mb-2 font-semibold">
                         Status: {order.status?.replace(/_/g, ' ').toUpperCase()}
                       </div>
+                      <div className="mb-2">
+                        <span className="font-semibold">Name:</span> {order.customer?.name || order.customerName || "-"}
+                      </div>
+                      <div className="mb-2">
+                        <span className="font-semibold">Phone:</span> {order.customer?.phone || order.customerPhone || "-"}
+                      </div>
                       <div className="w-full h-3 rounded-full bg-gray-200 mb-2 relative overflow-visible">
                         <div style={{ width: `${percent}%` }} className="h-3 rounded-full bg-gradient-to-r from-green-400 to-blue-400 transition-all duration-300" />
                         {/* Delivery boy image, same as TrackOrder/OrderConfirmation */}

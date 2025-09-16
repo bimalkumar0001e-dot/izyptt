@@ -329,6 +329,12 @@ const DeliveryDashboard: React.FC = () => {
                           <span className="font-semibold">Distance:</span> {order.deliveryAddress.distance} km
                         </div>
                       )}
+                      <div className="text-sm text-gray-800 mt-1">
+                        <span className="font-semibold">Customer Name:</span> {order.customer?.name || order.customerName || 'N/A'}
+                      </div>
+                      <div className="text-sm text-gray-800 mt-1">
+                        <span className="font-semibold">Customer Phone:</span> {order.customer?.phone || order.customerPhone || 'N/A'}
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-3 w-full mt-2">
