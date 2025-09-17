@@ -804,6 +804,7 @@ const Home: React.FC = () => {
                             restaurant: item.restaurantName
                           }}
                           hideAddToCart={isSiteDisabled}
+                          isSiteDisabled={isSiteDisabled}
                           quantity={getCartQuantity(item._id)}
                           cartItemId={getCartItemId(item._id)}
                           onAdd={() => handleAddToCart(item)}
@@ -868,6 +869,7 @@ const Home: React.FC = () => {
                             restaurant: item.restaurantName
                           }}
                           hideAddToCart={isSiteDisabled}
+                          isSiteDisabled={isSiteDisabled}
                           quantity={getCartQuantity(item._id)}
                           cartItemId={getCartItemId(item._id)}
                           onAdd={() => handleAddToCart(item)}
@@ -926,6 +928,7 @@ const Home: React.FC = () => {
                             restaurant: product.restaurantName || product.restaurant || ''
                           }}
                           hideAddToCart={isSiteDisabled}
+                          isSiteDisabled={isSiteDisabled}
                           quantity={quantity}
                           cartItemId={getCartItemId(product._id)}
                           onAdd={() => handleAddToCart(product)}
@@ -1068,7 +1071,8 @@ const Home: React.FC = () => {
                           id: product._id,
                           restaurant: product.restaurantName || product.restaurant || ''
                         }}
-                        hideAddToCart={true}
+                        hideAddToCart={isSiteDisabled}
+                        isSiteDisabled={isSiteDisabled}
                       />
                     ))
                   )}

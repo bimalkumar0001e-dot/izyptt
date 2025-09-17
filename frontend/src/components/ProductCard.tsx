@@ -14,9 +14,10 @@ interface ProductCardProps {
   onAdd?: (product: Product) => void;
   onIncrease?: (cartItemId: string, product: Product) => void;
   onDecrease?: (cartItemId: string, product: Product) => void;
+  isSiteDisabled?: boolean; // <-- Add this prop
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, hideAddToCart = false, quantity = 0, cartItemId, onAdd, onIncrease, onDecrease }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, hideAddToCart = false, quantity = 0, cartItemId, onAdd, onIncrease, onDecrease, isSiteDisabled = false }) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
@@ -77,47 +78,50 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, hideAddToCart
             )}
             {/* You can add more product details here if needed */}
           </div>
-          {!hideAddToCart && !available ? (
-            <Button 
-              size="sm" 
-              className="h-8 px-2 bg-[#F7B267] text-white rounded-xl font-bold flex items-center justify-center transition-all cursor-not-allowed"
-              disabled
-              style={{ minWidth: 80 }}
-            >
-              Unavailable
-            </Button>
-          ) : (!hideAddToCart && quantity === 0 ? (
-            <Button 
-              size="sm" 
-              className="h-8 px-2 bg-app-primary hover:bg-app-accent text-white rounded-xl font-semibold flex items-center justify-center transition-all"
-              onClick={handleAddToCart}
-              style={{ minWidth: 80 }}
-            >
-              <Plus className="w-4 h-4 mr-1" />Add
-            </Button>
-          ) : (
-            <div className="flex items-center h-8 bg-app-primary/10 rounded-xl shadow-sm px-1" style={{ minWidth: 80 }}>
-              <button 
-                onClick={(e) => { e.stopPropagation(); onDecrease && cartItemId && onDecrease(cartItemId, product); }}
-                className="px-2 py-1 text-app-primary font-bold rounded-l-xl focus:outline-none hover:bg-app-primary/20 transition"
-                aria-label="Decrease quantity"
-                style={{ borderRight: '1px solid #eee' }}
+          {/* Hide both Add and quantity selector if site is disabled */}
+          {isSiteDisabled ? null : (
+            !hideAddToCart && !available ? (
+              <Button 
+                size="sm" 
+                className="h-8 px-2 bg-[#F7B267] text-white rounded-xl font-bold flex items-center justify-center transition-all cursor-not-allowed"
+                disabled
+                style={{ minWidth: 80 }}
               >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="px-3 py-1 font-semibold text-gray-900 bg-white border-x border-gray-200" style={{ minWidth: 24, textAlign: 'center', borderRadius: 4 }}>
-                {quantity}
-              </span>
-              <button 
-                onClick={(e) => { e.stopPropagation(); onIncrease && cartItemId && onIncrease(cartItemId, product); }}
-                className="px-2 py-1 text-app-primary font-bold rounded-r-xl focus:outline-none hover:bg-app-primary/20 transition"
-                aria-label="Increase quantity"
-                style={{ borderLeft: '1px solid #eee' }}
+                Unavailable
+              </Button>
+            ) : (!hideAddToCart && quantity === 0 ? (
+              <Button 
+                size="sm" 
+                className="h-8 px-2 bg-app-primary hover:bg-app-accent text-white rounded-xl font-semibold flex items-center justify-center transition-all"
+                onClick={handleAddToCart}
+                style={{ minWidth: 80 }}
               >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
+                <Plus className="w-4 h-4 mr-1" />Add
+              </Button>
+            ) : (
+              <div className="flex items-center h-8 bg-app-primary/10 rounded-xl shadow-sm px-1" style={{ minWidth: 80 }}>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onDecrease && cartItemId && onDecrease(cartItemId, product); }}
+                  className="px-2 py-1 text-app-primary font-bold rounded-l-xl focus:outline-none hover:bg-app-primary/20 transition"
+                  aria-label="Decrease quantity"
+                  style={{ borderRight: '1px solid #eee' }}
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className="px-3 py-1 font-semibold text-gray-900 bg-white border-x border-gray-200" style={{ minWidth: 24, textAlign: 'center', borderRadius: 4 }}>
+                  {quantity}
+                </span>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onIncrease && cartItemId && onIncrease(cartItemId, product); }}
+                  className="px-2 py-1 text-app-primary font-bold rounded-r-xl focus:outline-none hover:bg-app-primary/20 transition"
+                  aria-label="Increase quantity"
+                  style={{ borderLeft: '1px solid #eee' }}
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
