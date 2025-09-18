@@ -82,10 +82,19 @@ exports.sendOtp = async (req, res) => {
             userRole = user ? user.role : 'customer';
         }
 
-        // Always generate and return OTP for customer
         if (userRole === 'customer') {
-            const otp = await sendOtp(phone, 'customer');
-            return res.status(200).json({ message: 'OTP generated. Please enter the code shown below.', otp });
+            const user = await User.findOne({ phone, role: 'customer' });
+            let sendSms = false;
+            if (!user) {
+                // New customer: send OTP via SMS
+                sendSms = true;
+            }
+            const otp = await sendOtp(phone, role, sendSms);
+            return res.status(200).json({
+                message: sendSms ? 'OTP sent to your phone number.' : 'OTP displayed on screen.',
+                // For new customer, do NOT include OTP in response
+                otp: !sendSms ? otp : undefined
+            });
         }
 
         // --- Role-based login gating for restaurant/delivery ---

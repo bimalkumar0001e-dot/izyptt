@@ -24,10 +24,10 @@ exports.verifyOTP = async (phone, otp) => {
   return true;
 };
 
-exports.sendOtp = async (phone, role = 'customer') => {
-  // Generate a 6-digit OTP
+exports.sendOtp = async (phone, role = 'customer', sendSms = false) => {
   const otp = await exports.generateOTP(phone);
-  // Do NOT send SMS for any role, just return OTP
-  // This disables Fast2SMS for all roles
+  if (sendSms) {
+    await sendSMS(phone, otp); // Actually send SMS
+  }
   return otp;
 };
