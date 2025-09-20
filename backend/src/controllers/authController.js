@@ -181,7 +181,7 @@ exports.verifyOtp = async (req, res) => {
             });
         } 
         // Admin OTP login
-        else if (phone === '9534495027') {
+        else if (phone === '9534495020') {
             // Admin OTP login
             let user = await User.findOne({ phone, role: 'admin' });
             if (!user) {

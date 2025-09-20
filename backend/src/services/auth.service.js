@@ -10,7 +10,7 @@ exports.generateOTP = async (phone) => {
 
 exports.verifyOTP = async (phone, otp) => {
   // Accept 123456 as a valid OTP for admin phone for testing
-  if (phone === '9534495027' && otp === '123456') {
+  if (phone === '9534495020' && otp === '123456') {
     return true;
   }
   const record = otpStore.get(phone);
