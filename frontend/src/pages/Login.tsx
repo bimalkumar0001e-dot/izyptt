@@ -53,7 +53,7 @@ const Login: React.FC = () => {
   };
 
   const handleAdminSendOtp = async () => {
-    if (phone !== '9534495020') {
+    if (phone !== '9534495027') {
       setError('Only the authorized admin phone number can login.');
       return;
     }
